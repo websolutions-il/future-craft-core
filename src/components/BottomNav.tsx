@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Car, Users, Route, FileText, AlertTriangle, BarChart3, Map, Wrench, Menu, X, LogOut } from 'lucide-react';
+import { Home, Car, Users, Route, FileText, AlertTriangle, BarChart3, Map, Wrench, Menu, X, LogOut, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import logo from '@/assets/white-logo.png';
 import { useState } from 'react';
@@ -11,6 +11,7 @@ const navItems = [
   { path: '/customers', label: 'לקוחות', icon: Users },
   { path: '/routes', label: 'מסלולים', icon: Route },
   { path: '/faults', label: 'תקלות', icon: Wrench },
+  { path: '/handover', label: 'החלפת רכב', icon: RefreshCw },
   { path: '/documents', label: 'מסמכים', icon: FileText },
   { path: '/accidents', label: 'תאונות', icon: AlertTriangle },
   { path: '/reports', label: 'דוחות', icon: BarChart3 },

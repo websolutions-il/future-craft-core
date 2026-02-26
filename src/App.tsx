@@ -14,6 +14,7 @@ import Drivers from "@/pages/Drivers";
 import Customers from "@/pages/Customers";
 import RoutesPage from "@/pages/RoutesPage";
 import Faults from "@/pages/Faults";
+import VehicleHandover from "@/pages/VehicleHandover";
 import Documents from "@/pages/Documents";
 import Accidents from "@/pages/Accidents";
 import Reports from "@/pages/Reports";
@@ -43,6 +44,7 @@ function AppRoutes() {
         <Route path="/customers" element={<Customers />} />
         <Route path="/routes" element={<RoutesPage />} />
         <Route path="/faults" element={<Faults />} />
+        <Route path="/handover" element={<VehicleHandover />} />
         <Route path="/documents" element={<Documents />} />
         <Route path="/accidents" element={<Accidents />} />
         <Route path="/reports" element={<Reports />} />
