@@ -104,9 +104,12 @@ export interface Expense {
   category: string;
   vendor: string;
   invoiceNumber: string;
+  invoiceDate: string;
   amount: number;
   odometer: number;
+  paymentMethod: 'credit' | 'cash' | 'fuel_card';
   notes?: string;
+  receiptImage?: FaultAttachment;
 }
 
 export interface Accident {
@@ -164,9 +167,9 @@ export const demoFaults: Fault[] = [
 ];
 
 export const demoExpenses: Expense[] = [
-  { id: '1', date: '2026-02-10', driverName: 'יוני אטיאס', vehiclePlate: '1212121', category: 'דלק', vendor: 'פז', invoiceNumber: 'INV-001', amount: 350, odometer: 15200 },
-  { id: '2', date: '2026-02-12', driverName: 'אילנה אטיאס', vehiclePlate: '3334455', category: 'תיקון', vendor: 'מוסך המרכז', invoiceNumber: 'INV-002', amount: 1200, odometer: 5050 },
-  { id: '3', date: '2026-02-15', driverName: 'משה לוי', vehiclePlate: '8888888', category: 'דלק', vendor: 'סונול', invoiceNumber: 'INV-003', amount: 280, odometer: 41800 },
+  { id: '1', date: '2026-02-10', driverName: 'יוני אטיאס', vehiclePlate: '1212121', category: 'דלק', vendor: 'פז', invoiceNumber: 'INV-001', invoiceDate: '2026-02-10', amount: 350, odometer: 15200, paymentMethod: 'fuel_card' },
+  { id: '2', date: '2026-02-12', driverName: 'אילנה אטיאס', vehiclePlate: '3334455', category: 'תיקון', vendor: 'מוסך המרכז', invoiceNumber: 'INV-002', invoiceDate: '2026-02-12', amount: 1200, odometer: 5050, paymentMethod: 'credit' },
+  { id: '3', date: '2026-02-15', driverName: 'משה לוי', vehiclePlate: '8888888', category: 'דלק', vendor: 'סונול', invoiceNumber: 'INV-003', invoiceDate: '2026-02-15', amount: 280, odometer: 41800, paymentMethod: 'cash' },
 ];
 
 export const demoAccidents: Accident[] = [
