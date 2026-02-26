@@ -75,6 +75,14 @@ export interface Route {
   distanceKm?: number;
 }
 
+export interface FaultAttachment {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  url: string;
+}
+
 export interface Fault {
   id: string;
   date: string;
@@ -85,6 +93,7 @@ export interface Fault {
   urgency: 'normal' | 'urgent' | 'critical';
   status: 'new' | 'in_progress' | 'resolved' | 'closed';
   notes?: string;
+  attachments?: FaultAttachment[];
 }
 
 export interface Expense {
