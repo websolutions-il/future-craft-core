@@ -8,16 +8,16 @@ export default function Dashboard() {
 
   const stats = [
     { label: 'רכבים פעילים', value: demoVehicles.filter(v => v.status === 'active').length, total: demoVehicles.length, icon: Car, color: 'bg-primary text-primary-foreground', link: '/vehicles' },
-    { label: 'נהגים פעילים', value: demoDrivers.filter(d => d.status === 'active').length, total: demoDrivers.length, icon: Users, color: 'bg-info text-info-foreground', link: '/drivers' },
-    { label: 'תקלות פתוחות', value: demoFaults.filter(f => f.status === 'new').length, total: demoFaults.length, icon: Wrench, color: 'bg-warning text-warning-foreground', link: '/faults' },
-    { label: 'תאונות פתוחות', value: demoAccidents.filter(a => a.status !== 'closed').length, total: demoAccidents.length, icon: AlertTriangle, color: 'bg-destructive text-destructive-foreground', link: '/accidents' },
+    { label: 'נהגים פעילים', value: demoDrivers.filter(d => d.status === 'active').length, total: demoDrivers.length, icon: Users, color: 'bg-primary/80 text-primary-foreground', link: '/drivers' },
+    { label: 'תקלות פתוחות', value: demoFaults.filter(f => f.status === 'new').length, total: demoFaults.length, icon: Wrench, color: 'bg-warning/15 text-warning border border-warning/30', link: '/faults' },
+    { label: 'תאונות פתוחות', value: demoAccidents.filter(a => a.status !== 'closed').length, total: demoAccidents.length, icon: AlertTriangle, color: 'bg-destructive/15 text-destructive border border-destructive/30', link: '/accidents' },
   ];
 
   const quickActions = [
-    { label: 'דיווח תקלה', icon: Wrench, link: '/faults', color: 'bg-warning text-warning-foreground' },
-    { label: 'דיווח תאונה', icon: AlertTriangle, link: '/accidents', color: 'bg-destructive text-destructive-foreground' },
-    { label: 'העלאת מסמך', icon: FileText, link: '/documents', color: 'bg-info text-info-foreground' },
-    { label: 'מסלולים', icon: Route, link: '/routes', color: 'bg-success text-success-foreground' },
+    { label: 'דיווח תקלה', icon: Wrench, link: '/faults', color: 'bg-card text-foreground border-2 border-warning/40' },
+    { label: 'דיווח תאונה', icon: AlertTriangle, link: '/accidents', color: 'bg-card text-foreground border-2 border-destructive/40' },
+    { label: 'העלאת מסמך', icon: FileText, link: '/documents', color: 'bg-card text-foreground border-2 border-primary/40' },
+    { label: 'מסלולים', icon: Route, link: '/routes', color: 'bg-card text-foreground border-2 border-success/40' },
   ];
 
   return (
