@@ -1,20 +1,53 @@
-import { demoExpenses, expenseCategories } from '@/data/demo-data';
-import { FileText, Search, Upload } from 'lucide-react';
+import { demoExpenses, Expense, expenseCategories } from '@/data/demo-data';
+import { FileText, Search, Plus, Paperclip } from 'lucide-react';
 import { useState } from 'react';
+import ExpenseForm from '@/components/ExpenseForm';
+import { toast } from 'sonner';
+
+const paymentLabels: Record<string, string> = {
+  credit: 'אשראי',
+  cash: 'מזומן',
+  fuel_card: 'דלקן',
+};
 
 export default function Documents() {
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [expenses, setExpenses] = useState<Expense[]>(demoExpenses);
 
-  const filtered = demoExpenses.filter(e => {
+  const filtered = expenses.filter(e => {
     const matchSearch = e.driverName.includes(search) || e.vehiclePlate.includes(search) || e.vendor.includes(search);
     const matchCat = !filterCategory || e.category === filterCategory;
     return matchSearch && matchCat;
   });
 
+  const handleNewExpense = (expense: Expense) => {
+    setExpenses(prev => [expense, ...prev]);
+    setShowForm(false);
+    toast.success('ההוצאה נוספה בהצלחה');
+  };
+
+  if (showForm) {
+    return (
+      <div className="animate-fade-in">
+        <ExpenseForm onSubmit={handleNewExpense} onCancel={() => setShowForm(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fade-in">
-      <h1 className="page-header">מסמכים והוצאות</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="page-header mb-0">מסמכים והוצאות</h1>
+        <button
+          onClick={() => setShowForm(true)}
+          className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]"
+        >
+          <Plus size={22} />
+          דיווח הוצאה
+        </button>
+      </div>
 
       <div className="relative mb-4">
         <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
@@ -61,7 +94,14 @@ export default function Documents() {
                   <span>🚗 {e.vehiclePlate}</span>
                   <span>👤 {e.driverName}</span>
                   <span>📅 {e.date}</span>
+                  <span>💳 {paymentLabels[e.paymentMethod] || e.paymentMethod}</span>
                 </div>
+                {e.receiptImage && (
+                  <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
+                    <Paperclip size={14} />
+                    חשבונית מצורפת
+                  </div>
+                )}
               </div>
             </div>
           </div>
