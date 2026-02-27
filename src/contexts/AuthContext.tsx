@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Session } from '@supabase/supabase-js';
 
@@ -32,30 +32,41 @@ export const useAuth = () => {
   return ctx;
 };
 
-async function fetchUserProfile(userId: string, email: string): Promise<UserProfile | null> {
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single();
+async function fetchUserProfile(userId: string, email: string, retries = 3): Promise<UserProfile | null> {
+  for (let i = 0; i < retries; i++) {
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
 
-  const { data: roleData } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', userId)
-    .single();
+    if (profileError || !profile) {
+      // Profile might not be created yet (trigger delay), wait and retry
+      if (i < retries - 1) {
+        await new Promise(r => setTimeout(r, 500));
+        continue;
+      }
+      console.error('Failed to fetch profile:', profileError);
+      return null;
+    }
 
-  if (!profile) return null;
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
 
-  return {
-    id: userId,
-    email,
-    full_name: profile.full_name || '',
-    phone: profile.phone || '',
-    company_name: profile.company_name || '',
-    is_active: profile.is_active ?? true,
-    role: (roleData?.role as AppRole) || 'driver',
-  };
+    return {
+      id: userId,
+      email,
+      full_name: profile.full_name || '',
+      phone: profile.phone || '',
+      company_name: profile.company_name || '',
+      is_active: profile.is_active ?? true,
+      role: (roleData?.role as AppRole) || 'driver',
+    };
+  }
+  return null;
 }
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -63,43 +74,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const loadProfile = useCallback(async (sess: Session | null) => {
+    if (sess?.user) {
+      const profile = await fetchUserProfile(sess.user.id, sess.user.email || '');
+      setUser(profile);
+      setSession(sess);
+    } else {
+      setUser(null);
+      setSession(null);
+    }
+    setLoading(false);
+  }, []);
+
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      setSession(newSession);
-      if (newSession?.user) {
-        // Use setTimeout to avoid potential deadlock with Supabase client
-        setTimeout(async () => {
-          const profile = await fetchUserProfile(newSession.user.id, newSession.user.email || '');
-          setUser(profile);
-          setLoading(false);
-        }, 0);
-      } else {
-        setUser(null);
-        setLoading(false);
-      }
+    // Set up listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      // Defer profile loading to avoid Supabase client deadlock
+      setTimeout(() => loadProfile(newSession), 0);
     });
 
-    // THEN check existing session
-    supabase.auth.getSession().then(async ({ data: { session: existingSession } }) => {
-      setSession(existingSession);
-      if (existingSession?.user) {
-        const profile = await fetchUserProfile(existingSession.user.id, existingSession.user.email || '');
-        setUser(profile);
-      }
-      setLoading(false);
+    // THEN get initial session
+    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+      loadProfile(initialSession);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [loadProfile]);
 
   const login = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error ? error.message : null };
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error: error.message };
+    // Manually load profile immediately after successful login
+    if (data.session) {
+      await loadProfile(data.session);
+    }
+    return { error: null };
   };
 
   const signup = async (email: string, password: string, metadata: { full_name: string; phone: string; company_name: string; role?: AppRole }) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -107,7 +120,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         emailRedirectTo: window.location.origin,
       },
     });
-    return { error: error ? error.message : null };
+    if (error) return { error: error.message };
+    // If auto-confirm is on, session is returned immediately
+    if (data.session) {
+      await loadProfile(data.session);
+    }
+    return { error: null };
   };
 
   const logout = async () => {
