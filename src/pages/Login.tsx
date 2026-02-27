@@ -1,20 +1,34 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { demoUsers } from '@/data/demo-data';
 import logo from '@/assets/logo.png';
 
 export default function Login() {
-  const { login } = useAuth();
-  const [username, setUsername] = useState('');
+  const { login, signup } = useAuth();
+  const [isSignup, setIsSignup] = useState(false);
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!login(username, password)) {
-      setError('שם משתמש או סיסמה שגויים');
+    setSuccess('');
+    setLoading(true);
+
+    if (isSignup) {
+      const { error } = await signup(email, password, { full_name: fullName, phone, company_name: companyName });
+      if (error) setError(error);
+      else setSuccess('נרשמת בהצלחה! בדוק את האימייל לאישור.');
+    } else {
+      const { error } = await login(email, password);
+      if (error) setError('שם משתמש או סיסמה שגויים');
     }
+    setLoading(false);
   };
 
   return (
@@ -26,58 +40,68 @@ export default function Login() {
           <p className="text-primary-foreground/70 text-lg mt-1">פתרונות מימון ותפעול לרכב</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-card rounded-3xl shadow-2xl p-8 space-y-6">
-          <h2 className="text-2xl font-bold text-center text-foreground">כניסה למערכת</h2>
-          
+        <form onSubmit={handleSubmit} className="bg-card rounded-3xl shadow-2xl p-8 space-y-5">
+          <h2 className="text-2xl font-bold text-center text-foreground">
+            {isSignup ? 'הרשמה למערכת' : 'כניסה למערכת'}
+          </h2>
+
           {error && (
             <div className="bg-destructive/10 text-destructive rounded-xl p-4 text-center text-lg font-medium">
               {error}
             </div>
           )}
+          {success && (
+            <div className="bg-success/10 text-success rounded-xl p-4 text-center text-lg font-medium">
+              {success}
+            </div>
+          )}
+
+          {isSignup && (
+            <>
+              <div>
+                <label className="block text-lg font-medium mb-2">שם מלא</label>
+                <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} required
+                  className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none transition-colors"
+                  placeholder="הכנס שם מלא..." />
+              </div>
+              <div>
+                <label className="block text-lg font-medium mb-2">טלפון</label>
+                <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+                  className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none transition-colors"
+                  placeholder="050-1234567" dir="ltr" />
+              </div>
+              <div>
+                <label className="block text-lg font-medium mb-2">שם חברה</label>
+                <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)}
+                  className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none transition-colors"
+                  placeholder="שם החברה שלך..." />
+              </div>
+            </>
+          )}
 
           <div>
-            <label className="block text-lg font-medium mb-2">שם משתמש / אימייל</label>
-            <input
-              type="text"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
+            <label className="block text-lg font-medium mb-2">אימייל</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
               className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none transition-colors"
-              placeholder="הכנס אימייל..."
-              dir="ltr"
-            />
+              placeholder="הכנס אימייל..." dir="ltr" />
           </div>
 
           <div>
-            <label className="block text-lg font-medium mb-2">קוד אישי</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
+            <label className="block text-lg font-medium mb-2">סיסמה</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
               className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none transition-colors"
-              placeholder="••••••"
-            />
+              placeholder="••••••" />
           </div>
 
-          <button
-            type="submit"
-            className="w-full bg-primary text-primary-foreground text-xl font-bold py-5 rounded-2xl shadow-lg hover:opacity-90 active:scale-[0.98] transition-all"
-          >
-            התחבר
+          <button type="submit" disabled={loading}
+            className="w-full bg-primary text-primary-foreground text-xl font-bold py-5 rounded-2xl shadow-lg hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50">
+            {loading ? 'טוען...' : isSignup ? 'הירשם' : 'התחבר'}
           </button>
 
-          <div className="mt-4 p-4 bg-muted rounded-xl">
-            <p className="text-sm text-muted-foreground font-medium mb-2">משתמשי דמו:</p>
-            {demoUsers.map(u => (
-              <button
-                key={u.id}
-                type="button"
-                onClick={() => { setUsername(u.email); login(u.email, ''); }}
-                className="block w-full text-right p-2 text-sm hover:bg-secondary rounded-lg transition-colors"
-              >
-                {u.name} ({u.role === 'super_admin' ? 'מנהל על' : u.role === 'fleet_manager' ? 'מנהל צי' : 'נהג'})
-              </button>
-            ))}
-          </div>
+          <button type="button" onClick={() => { setIsSignup(!isSignup); setError(''); setSuccess(''); }}
+            className="w-full text-center text-primary font-medium text-lg py-2">
+            {isSignup ? 'כבר יש לי חשבון - כניסה' : 'אין לי חשבון - הרשמה'}
+          </button>
         </form>
       </div>
     </div>

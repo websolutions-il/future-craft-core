@@ -23,9 +23,9 @@ export default function Dashboard() {
   return (
     <div className="animate-fade-in">
       <div className="mb-6">
-        <h1 className="page-header">שלום, {user?.name} 👋</h1>
+        <h1 className="page-header">שלום, {user?.full_name} 👋</h1>
         <p className="text-lg text-muted-foreground">
-          {roleLabels[user?.role || '']} • {user?.companyName}
+          {roleLabels[user?.role || '']} • {user?.company_name}
         </p>
       </div>
 
