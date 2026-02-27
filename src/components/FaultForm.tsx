@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react';
-import { Fault, FaultAttachment, faultTypes, demoVehicles, demoDrivers } from '@/data/demo-data';
+import { useState, useRef, useEffect } from 'react';
+import { Fault, FaultAttachment, faultTypes } from '@/data/demo-data';
 import { ArrowRight, Camera, Paperclip, X, Plus, AlertTriangle, Wrench } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface FaultFormProps {
   onSubmit: (fault: Fault) => void;
@@ -8,6 +9,17 @@ interface FaultFormProps {
 }
 
 export default function FaultForm({ onSubmit, onCancel }: FaultFormProps) {
+  const [dbVehicles, setDbVehicles] = useState<{ license_plate: string; manufacturer: string; model: string }[]>([]);
+  const [dbDrivers, setDbDrivers] = useState<{ full_name: string }[]>([]);
+
+  useEffect(() => {
+    supabase.from('vehicles').select('license_plate, manufacturer, model').then(({ data }) => {
+      if (data) setDbVehicles(data);
+    });
+    supabase.from('drivers').select('full_name').then(({ data }) => {
+      if (data) setDbDrivers(data);
+    });
+  }, []);
   const [driverName, setDriverName] = useState('');
   const [vehiclePlate, setVehiclePlate] = useState('');
   const [faultType, setFaultType] = useState('');
@@ -84,8 +96,8 @@ export default function FaultForm({ onSubmit, onCancel }: FaultFormProps) {
             className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none"
           >
             <option value="">בחר נהג...</option>
-            {demoDrivers.map(d => (
-              <option key={d.id} value={d.fullName}>{d.fullName}</option>
+            {dbDrivers.map(d => (
+              <option key={d.full_name} value={d.full_name}>{d.full_name}</option>
             ))}
           </select>
         </div>
@@ -99,8 +111,8 @@ export default function FaultForm({ onSubmit, onCancel }: FaultFormProps) {
             className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none"
           >
             <option value="">בחר רכב...</option>
-            {demoVehicles.map(v => (
-              <option key={v.id} value={v.licensePlate}>{v.licensePlate} - {v.manufacturer} {v.model}</option>
+            {dbVehicles.map(v => (
+              <option key={v.license_plate} value={v.license_plate}>{v.license_plate} - {v.manufacturer} {v.model}</option>
             ))}
           </select>
         </div>

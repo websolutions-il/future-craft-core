@@ -1,7 +1,9 @@
-import { useState, useRef } from 'react';
-import { demoVehicles, demoDrivers, FaultAttachment } from '@/data/demo-data';
+import { useState, useRef, useEffect } from 'react';
+import { FaultAttachment } from '@/data/demo-data';
 import { ArrowRight, Camera, MapPin, Navigation, X, Plus, Car, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 type ActionType = 'pickup' | 'return';
 
@@ -32,6 +34,7 @@ const conditionStatusLabels: Record<string, { text: string; cls: string }> = {
 };
 
 export default function VehicleHandover() {
+  const { user } = useAuth();
   const [action, setAction] = useState<ActionType>('pickup');
   const [vehiclePlate, setVehiclePlate] = useState('');
   const [odometer, setOdometer] = useState('');
@@ -55,18 +58,30 @@ export default function VehicleHandover() {
   const [photos, setPhotos] = useState<FaultAttachment[]>([]);
   const cameraRef = useRef<HTMLInputElement>(null);
 
-  const selectedVehicle = demoVehicles.find(v => v.licensePlate === vehiclePlate);
+  // Load from DB
+  const [dbVehicles, setDbVehicles] = useState<{ license_plate: string; manufacturer: string; model: string; year: number; vehicle_type: string }[]>([]);
+  const [dbDrivers, setDbDrivers] = useState<{ full_name: string; phone: string }[]>([]);
 
-  // Auto-fill driver phone when selected
+  useEffect(() => {
+    supabase.from('vehicles').select('license_plate, manufacturer, model, year, vehicle_type').then(({ data }) => {
+      if (data) setDbVehicles(data);
+    });
+    supabase.from('drivers').select('full_name, phone').then(({ data }) => {
+      if (data) setDbDrivers(data);
+    });
+  }, []);
+
+  const selectedVehicle = dbVehicles.find(v => v.license_plate === vehiclePlate);
+
   const handleFromDriverChange = (name: string) => {
     setFromDriver(name);
-    const driver = demoDrivers.find(d => d.fullName === name);
+    const driver = dbDrivers.find(d => d.full_name === name);
     if (driver) setFromDriverPhone(driver.phone);
   };
 
   const handleToDriverChange = (name: string) => {
     setToDriver(name);
-    const driver = demoDrivers.find(d => d.fullName === name);
+    const driver = dbDrivers.find(d => d.full_name === name);
     if (driver) setToDriverPhone(driver.phone);
   };
 
@@ -132,10 +147,35 @@ export default function VehicleHandover() {
 
   const isValid = vehiclePlate && fromDriver && toDriver && pickupDate && pickupTime;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!isValid) return;
-    toast.success('טופס החלפת רכב נשלח בהצלחה');
-    // Reset form or navigate away
+    const { error } = await supabase.from('vehicle_handovers' as any).insert({
+      action_type: action,
+      vehicle_plate: vehiclePlate,
+      vehicle_type: selectedVehicle?.vehicle_type || '',
+      manufacturer: selectedVehicle?.manufacturer || '',
+      model: selectedVehicle?.model || '',
+      odometer: parseInt(odometer) || 0,
+      vehicle_notes: vehicleNotes,
+      giving_driver_name: fromDriver,
+      giving_driver_phone: fromDriverPhone,
+      receiving_driver_name: toDriver,
+      receiving_driver_phone: toDriverPhone,
+      pickup_date: pickupDate,
+      pickup_time: pickupTime,
+      location_name: locationName,
+      location_address: locationAddress,
+      condition_checklist: conditions,
+      damage_summary: conditionNotes,
+      company_name: user?.company_name || '',
+      created_by: user?.id,
+    } as any);
+    if (error) {
+      toast.error('שגיאה בשמירת הטופס');
+      console.error(error);
+    } else {
+      toast.success('טופס החלפת רכב נשלח בהצלחה');
+    }
   };
 
   const inputClass = "w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
@@ -171,14 +211,14 @@ export default function VehicleHandover() {
             <label className="block text-lg font-medium mb-2">מספר רכב</label>
             <select value={vehiclePlate} onChange={e => setVehiclePlate(e.target.value)} className={inputClass}>
               <option value="">בחר רכב...</option>
-              {demoVehicles.map(v => (
-                <option key={v.id} value={v.licensePlate}>{v.licensePlate} - {v.manufacturer} {v.model}</option>
+              {dbVehicles.map(v => (
+                <option key={v.license_plate} value={v.license_plate}>{v.license_plate} - {v.manufacturer} {v.model}</option>
               ))}
             </select>
           </div>
           {selectedVehicle && (
             <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-muted">
-              <div><span className="text-sm text-muted-foreground">סוג רכב</span><p className="font-bold">{selectedVehicle.vehicleType}</p></div>
+              <div><span className="text-sm text-muted-foreground">סוג רכב</span><p className="font-bold">{selectedVehicle.vehicle_type}</p></div>
               <div><span className="text-sm text-muted-foreground">יצרן</span><p className="font-bold">{selectedVehicle.manufacturer}</p></div>
               <div><span className="text-sm text-muted-foreground">דגם</span><p className="font-bold">{selectedVehicle.model}</p></div>
               <div><span className="text-sm text-muted-foreground">שנה</span><p className="font-bold">{selectedVehicle.year}</p></div>
@@ -203,8 +243,8 @@ export default function VehicleHandover() {
             <label className="block text-lg font-medium mb-2">נהג מוסר</label>
             <select value={fromDriver} onChange={e => handleFromDriverChange(e.target.value)} className={inputClass}>
               <option value="">בחר נהג...</option>
-              {demoDrivers.map(d => (
-                <option key={d.id} value={d.fullName}>{d.fullName}</option>
+              {dbDrivers.map(d => (
+                <option key={d.full_name} value={d.full_name}>{d.full_name}</option>
               ))}
             </select>
           </div>
@@ -216,8 +256,8 @@ export default function VehicleHandover() {
             <label className="block text-lg font-medium mb-2">נהג מקבל</label>
             <select value={toDriver} onChange={e => handleToDriverChange(e.target.value)} className={inputClass}>
               <option value="">בחר נהג...</option>
-              {demoDrivers.filter(d => d.fullName !== fromDriver).map(d => (
-                <option key={d.id} value={d.fullName}>{d.fullName}</option>
+              {dbDrivers.filter(d => d.full_name !== fromDriver).map(d => (
+                <option key={d.full_name} value={d.full_name}>{d.full_name}</option>
               ))}
             </select>
           </div>
