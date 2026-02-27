@@ -89,7 +89,7 @@ export default function Login() {
             <label className="block text-lg font-medium mb-2">אימייל</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
               className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none transition-colors"
-              placeholder="הכנס אימייל..." dir="ltr" />
+              placeholder="הכנס אימייל..." dir="ltr" style={{ textAlign: 'right' }} />
           </div>
 
           <div>
