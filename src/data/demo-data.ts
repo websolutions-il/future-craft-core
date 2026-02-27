@@ -176,7 +176,7 @@ export const demoAccidents: Accident[] = [
   { id: '1', date: '2026-02-05', vehiclePlate: '1212121', driverName: 'אילנה אטיאס', location: 'כביש 4 צומת גלילות', description: 'פגיעה קלה בפגוש אחורי', hasInsurance: true, thirdParty: true, estimatedCost: 3500, status: 'in_progress' },
 ];
 
-export const faultTypes = ['פנצ\'ר', 'מנוע', 'חשמל', 'בלמים', 'מיזוג', 'תאורה', 'מרכב', 'אחר'];
+export const faultTypes = ['מנוע', 'חשמל', 'פנצ\'ר', 'מיזוג', 'אחר'];
 export const urgencyLevels = ['normal', 'urgent', 'critical'] as const;
 export const expenseCategories = ['דלק', 'תיקון', 'רכישה', 'ביטוח', 'טסט', 'אחר'];
 export const serviceTypes = { one_time: 'חד פעמי', daily: 'יומי', monthly: 'חודשי', fixed: 'קבוע' };

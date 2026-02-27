@@ -13,6 +13,7 @@ export default function FaultForm({ onSubmit, onCancel }: FaultFormProps) {
   const [faultType, setFaultType] = useState('');
   const [description, setDescription] = useState('');
   const [urgency, setUrgency] = useState<'normal' | 'urgent' | 'critical'>('normal');
+  const [notes, setNotes] = useState('');
   const [attachments, setAttachments] = useState<FaultAttachment[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -56,6 +57,7 @@ export default function FaultForm({ onSubmit, onCancel }: FaultFormProps) {
       description,
       urgency,
       status: 'new',
+      notes: notes || undefined,
       attachments,
     };
     onSubmit(fault);
@@ -143,6 +145,18 @@ export default function FaultForm({ onSubmit, onCancel }: FaultFormProps) {
             onChange={e => setDescription(e.target.value)}
             rows={4}
             placeholder="תאר את התקלה בפירוט..."
+            className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none resize-none"
+          />
+        </div>
+
+        {/* Notes */}
+        <div>
+          <label className="block text-lg font-medium mb-2">הערות</label>
+          <textarea
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            rows={3}
+            placeholder="הערות נוספות (אופציונלי)..."
             className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none resize-none"
           />
         </div>
