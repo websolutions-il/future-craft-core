@@ -176,7 +176,7 @@ export function DesktopSidebar() {
   ];
 
   return (
-    <aside className="hidden md:flex flex-col w-64 bg-primary text-primary-foreground min-h-screen fixed right-0 top-0 z-20">
+    <aside className="hidden md:flex flex-col w-64 bg-primary text-primary-foreground h-screen fixed right-0 top-0 z-20">
       <div className="p-6 flex flex-col items-center border-b border-primary-foreground/20">
         <img src={logo} alt="דליה" className="h-16 mb-2" />
         <p className="text-sm opacity-80">{user?.full_name}</p>
