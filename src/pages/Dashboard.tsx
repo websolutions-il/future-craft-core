@@ -2,9 +2,14 @@ import { Car, Users, Wrench, AlertTriangle, Route, FileText, TrendingUp, Clock }
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { demoVehicles, demoDrivers, demoFaults, demoAccidents, demoRoutes, roleLabels } from '@/data/demo-data';
+import DriverDashboard from '@/components/DriverDashboard';
 
 export default function Dashboard() {
   const { user } = useAuth();
+
+  if (user?.role === 'driver') {
+    return <DriverDashboard />;
+  }
 
   const stats = [
     { label: 'רכבים פעילים', value: demoVehicles.filter(v => v.status === 'active').length, total: demoVehicles.length, icon: Car, color: 'bg-primary text-primary-foreground', link: '/vehicles' },
