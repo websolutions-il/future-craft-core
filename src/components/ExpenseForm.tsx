@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react';
-import { Expense, FaultAttachment, expenseCategories, demoVehicles, demoDrivers } from '@/data/demo-data';
+import { useState, useRef, useEffect } from 'react';
+import { Expense, FaultAttachment, expenseCategories } from '@/data/demo-data';
+import { supabase } from '@/integrations/supabase/client';
 import { ArrowRight, Camera, X, Plus } from 'lucide-react';
 
 interface ExpenseFormProps {
@@ -14,6 +15,17 @@ const paymentMethods = [
 ];
 
 export default function ExpenseForm({ onSubmit, onCancel }: ExpenseFormProps) {
+  const [dbVehicles, setDbVehicles] = useState<{ license_plate: string; manufacturer: string; model: string }[]>([]);
+  const [dbDrivers, setDbDrivers] = useState<{ full_name: string }[]>([]);
+
+  useEffect(() => {
+    supabase.from('vehicles').select('license_plate, manufacturer, model').then(({ data }) => {
+      if (data) setDbVehicles(data);
+    });
+    supabase.from('drivers').select('full_name').then(({ data }) => {
+      if (data) setDbDrivers(data);
+    });
+  }, []);
   const [driverName, setDriverName] = useState('');
   const [vehiclePlate, setVehiclePlate] = useState('');
   const [odometer, setOdometer] = useState('');
@@ -87,8 +99,8 @@ export default function ExpenseForm({ onSubmit, onCancel }: ExpenseFormProps) {
               <label className="block text-lg font-medium mb-2">שם הנהג</label>
               <select value={driverName} onChange={e => setDriverName(e.target.value)} className={inputClass}>
                 <option value="">בחר נהג...</option>
-                {demoDrivers.map(d => (
-                  <option key={d.id} value={d.fullName}>{d.fullName}</option>
+                {dbDrivers.map(d => (
+                  <option key={d.full_name} value={d.full_name}>{d.full_name}</option>
                 ))}
               </select>
             </div>
@@ -96,8 +108,8 @@ export default function ExpenseForm({ onSubmit, onCancel }: ExpenseFormProps) {
               <label className="block text-lg font-medium mb-2">מספר רכב</label>
               <select value={vehiclePlate} onChange={e => setVehiclePlate(e.target.value)} className={inputClass}>
                 <option value="">בחר רכב...</option>
-                {demoVehicles.map(v => (
-                  <option key={v.id} value={v.licensePlate}>{v.licensePlate} - {v.manufacturer} {v.model}</option>
+                {dbVehicles.map(v => (
+                  <option key={v.license_plate} value={v.license_plate}>{v.license_plate} - {v.manufacturer} {v.model}</option>
                 ))}
               </select>
             </div>
