@@ -14,6 +14,216 @@ export type Database = {
   }
   public: {
     Tables: {
+      accidents: {
+        Row: {
+          company_name: string | null
+          created_at: string | null
+          created_by: string | null
+          date: string | null
+          description: string | null
+          driver_name: string | null
+          estimated_cost: number | null
+          has_insurance: boolean | null
+          id: string
+          images: string | null
+          location: string | null
+          notes: string | null
+          status: string | null
+          third_party: boolean | null
+          vehicle_plate: string | null
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date?: string | null
+          description?: string | null
+          driver_name?: string | null
+          estimated_cost?: number | null
+          has_insurance?: boolean | null
+          id?: string
+          images?: string | null
+          location?: string | null
+          notes?: string | null
+          status?: string | null
+          third_party?: boolean | null
+          vehicle_plate?: string | null
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date?: string | null
+          description?: string | null
+          driver_name?: string | null
+          estimated_cost?: number | null
+          has_insurance?: boolean | null
+          id?: string
+          images?: string | null
+          location?: string | null
+          notes?: string | null
+          status?: string | null
+          third_party?: boolean | null
+          vehicle_plate?: string | null
+        }
+        Relationships: []
+      }
+      drivers: {
+        Row: {
+          city: string | null
+          company_name: string | null
+          created_at: string | null
+          created_by: string | null
+          email: string | null
+          full_name: string
+          id: string
+          license_expiry: string | null
+          license_number: string | null
+          license_types: string[] | null
+          notes: string | null
+          phone: string | null
+          status: string | null
+          street: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          city?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          license_expiry?: string | null
+          license_number?: string | null
+          license_types?: string[] | null
+          notes?: string | null
+          phone?: string | null
+          status?: string | null
+          street?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          city?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          license_expiry?: string | null
+          license_number?: string | null
+          license_types?: string[] | null
+          notes?: string | null
+          phone?: string | null
+          status?: string | null
+          street?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          amount: number | null
+          category: string | null
+          company_name: string | null
+          created_at: string | null
+          created_by: string | null
+          date: string | null
+          driver_name: string | null
+          id: string
+          image_url: string | null
+          invoice_date: string | null
+          invoice_number: string | null
+          notes: string | null
+          odometer: number | null
+          vehicle_plate: string | null
+          vendor: string | null
+        }
+        Insert: {
+          amount?: number | null
+          category?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date?: string | null
+          driver_name?: string | null
+          id?: string
+          image_url?: string | null
+          invoice_date?: string | null
+          invoice_number?: string | null
+          notes?: string | null
+          odometer?: number | null
+          vehicle_plate?: string | null
+          vendor?: string | null
+        }
+        Update: {
+          amount?: number | null
+          category?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date?: string | null
+          driver_name?: string | null
+          id?: string
+          image_url?: string | null
+          invoice_date?: string | null
+          invoice_number?: string | null
+          notes?: string | null
+          odometer?: number | null
+          vehicle_plate?: string | null
+          vendor?: string | null
+        }
+        Relationships: []
+      }
+      faults: {
+        Row: {
+          company_name: string | null
+          created_at: string | null
+          created_by: string | null
+          date: string | null
+          description: string | null
+          driver_name: string | null
+          fault_type: string | null
+          id: string
+          notes: string | null
+          serial_id: string | null
+          status: string | null
+          urgency: string | null
+          vehicle_plate: string | null
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date?: string | null
+          description?: string | null
+          driver_name?: string | null
+          fault_type?: string | null
+          id?: string
+          notes?: string | null
+          serial_id?: string | null
+          status?: string | null
+          urgency?: string | null
+          vehicle_plate?: string | null
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date?: string | null
+          description?: string | null
+          driver_name?: string | null
+          fault_type?: string | null
+          id?: string
+          notes?: string | null
+          serial_id?: string | null
+          status?: string | null
+          urgency?: string | null
+          vehicle_plate?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           company_name: string | null
@@ -44,6 +254,87 @@ export type Database = {
         }
         Relationships: []
       }
+      service_orders: {
+        Row: {
+          company_name: string | null
+          created_at: string | null
+          created_by: string | null
+          date_time: string | null
+          description: string | null
+          driver_name: string | null
+          driver_phone: string | null
+          id: string
+          manager_approval: string | null
+          manufacturer: string | null
+          model: string | null
+          notes: string | null
+          odometer: number | null
+          ordering_user: string | null
+          reference_number: string | null
+          service_category: string | null
+          service_date: string | null
+          service_time: string | null
+          treatment_status: string | null
+          vehicle_notes: string | null
+          vehicle_plate: string | null
+          vehicle_type: string | null
+          vendor_name: string | null
+          vendor_phone: string | null
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date_time?: string | null
+          description?: string | null
+          driver_name?: string | null
+          driver_phone?: string | null
+          id?: string
+          manager_approval?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          odometer?: number | null
+          ordering_user?: string | null
+          reference_number?: string | null
+          service_category?: string | null
+          service_date?: string | null
+          service_time?: string | null
+          treatment_status?: string | null
+          vehicle_notes?: string | null
+          vehicle_plate?: string | null
+          vehicle_type?: string | null
+          vendor_name?: string | null
+          vendor_phone?: string | null
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date_time?: string | null
+          description?: string | null
+          driver_name?: string | null
+          driver_phone?: string | null
+          id?: string
+          manager_approval?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          odometer?: number | null
+          ordering_user?: string | null
+          reference_number?: string | null
+          service_category?: string | null
+          service_date?: string | null
+          service_time?: string | null
+          treatment_status?: string | null
+          vehicle_notes?: string | null
+          vehicle_plate?: string | null
+          vehicle_type?: string | null
+          vendor_name?: string | null
+          vendor_phone?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -59,6 +350,153 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      vehicle_handovers: {
+        Row: {
+          action_type: string | null
+          company_name: string | null
+          condition_checklist: Json | null
+          created_at: string | null
+          created_by: string | null
+          damage_summary: string | null
+          date_time: string | null
+          giving_driver_name: string | null
+          giving_driver_phone: string | null
+          id: string
+          lat: number | null
+          lng: number | null
+          location_address: string | null
+          location_name: string | null
+          manufacturer: string | null
+          model: string | null
+          notes: string | null
+          odometer: number | null
+          pickup_date: string | null
+          pickup_time: string | null
+          receiving_driver_name: string | null
+          receiving_driver_phone: string | null
+          reference_number: string | null
+          vehicle_notes: string | null
+          vehicle_plate: string | null
+          vehicle_type: string | null
+        }
+        Insert: {
+          action_type?: string | null
+          company_name?: string | null
+          condition_checklist?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          damage_summary?: string | null
+          date_time?: string | null
+          giving_driver_name?: string | null
+          giving_driver_phone?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          location_address?: string | null
+          location_name?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          odometer?: number | null
+          pickup_date?: string | null
+          pickup_time?: string | null
+          receiving_driver_name?: string | null
+          receiving_driver_phone?: string | null
+          reference_number?: string | null
+          vehicle_notes?: string | null
+          vehicle_plate?: string | null
+          vehicle_type?: string | null
+        }
+        Update: {
+          action_type?: string | null
+          company_name?: string | null
+          condition_checklist?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          damage_summary?: string | null
+          date_time?: string | null
+          giving_driver_name?: string | null
+          giving_driver_phone?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          location_address?: string | null
+          location_name?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          odometer?: number | null
+          pickup_date?: string | null
+          pickup_time?: string | null
+          receiving_driver_name?: string | null
+          receiving_driver_phone?: string | null
+          reference_number?: string | null
+          vehicle_notes?: string | null
+          vehicle_plate?: string | null
+          vehicle_type?: string | null
+        }
+        Relationships: []
+      }
+      vehicles: {
+        Row: {
+          assigned_driver_id: string | null
+          company_name: string | null
+          comprehensive_insurance_expiry: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          insurance_expiry: string | null
+          license_plate: string
+          manufacturer: string | null
+          model: string | null
+          notes: string | null
+          odometer: number | null
+          status: string | null
+          test_expiry: string | null
+          updated_at: string | null
+          vehicle_type: string | null
+          year: number | null
+        }
+        Insert: {
+          assigned_driver_id?: string | null
+          company_name?: string | null
+          comprehensive_insurance_expiry?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          insurance_expiry?: string | null
+          license_plate: string
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          odometer?: number | null
+          status?: string | null
+          test_expiry?: string | null
+          updated_at?: string | null
+          vehicle_type?: string | null
+          year?: number | null
+        }
+        Update: {
+          assigned_driver_id?: string | null
+          company_name?: string | null
+          comprehensive_insurance_expiry?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          insurance_expiry?: string | null
+          license_plate?: string
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          odometer?: number | null
+          status?: string | null
+          test_expiry?: string | null
+          updated_at?: string | null
+          vehicle_type?: string | null
+          year?: number | null
         }
         Relationships: []
       }
