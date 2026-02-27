@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import logo from '@/assets/logo.png';
 
 export default function Login() {
@@ -22,8 +23,13 @@ export default function Login() {
 
     if (isSignup) {
       const { error } = await signup(email, password, { full_name: fullName, phone, company_name: companyName });
-      if (error) setError(error);
-      else setSuccess('נרשמת בהצלחה! בדוק את האימייל לאישור.');
+      if (error) {
+        setError(error);
+      } else {
+        // If auto-confirm is on, isAuthenticated will become true and redirect happens
+        // Otherwise show message
+        setSuccess('נרשמת בהצלחה! בדוק את האימייל לאישור.');
+      }
     } else {
       const { error } = await login(email, password);
       if (error) setError('שם משתמש או סיסמה שגויים');
