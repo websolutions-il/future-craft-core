@@ -19,12 +19,32 @@ import Documents from "@/pages/Documents";
 import Accidents from "@/pages/Accidents";
 import Reports from "@/pages/Reports";
 import Roadmap from "@/pages/Roadmap";
+import Settings from "@/pages/Settings";
+import AttachCar from "@/pages/AttachCar";
+import Alerts from "@/pages/Alerts";
+import HistoryPage from "@/pages/History";
+import ServiceOrders from "@/pages/ServiceOrders";
+import DriverView from "@/pages/DriverView";
+import Expenses from "@/pages/Expenses";
+import WorkOrders from "@/pages/WorkOrders";
+import Emergency from "@/pages/Emergency";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 function AppRoutes() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground text-lg">טוען...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
@@ -49,6 +69,15 @@ function AppRoutes() {
         <Route path="/accidents" element={<Accidents />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/roadmap" element={<Roadmap />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/attach-car" element={<AttachCar />} />
+        <Route path="/alerts" element={<Alerts />} />
+        <Route path="/history" element={<HistoryPage />} />
+        <Route path="/service-orders" element={<ServiceOrders />} />
+        <Route path="/driver-view" element={<DriverView />} />
+        <Route path="/expenses" element={<Expenses />} />
+        <Route path="/work-orders" element={<WorkOrders />} />
+        <Route path="/emergency" element={<Emergency />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
