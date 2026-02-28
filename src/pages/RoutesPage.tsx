@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Route as RouteIcon, Search, ArrowRight, MapPin, Clock, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Route as RouteIcon, Search, ArrowRight, MapPin, Clock, Plus, Edit2, Trash2, UserRoundCog } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface RouteRow {
   id: string;
@@ -36,6 +37,12 @@ export default function RoutesPage() {
   const [editItem, setEditItem] = useState<RouteRow | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Change driver dialog state
+  const [changeDriverRoute, setChangeDriverRoute] = useState<RouteRow | null>(null);
+  const [allDrivers, setAllDrivers] = useState<{ full_name: string }[]>([]);
+  const [newDriverName, setNewDriverName] = useState('');
+  const [changingDriver, setChangingDriver] = useState(false);
+
   const loadData = async () => {
     setLoading(true);
     const { data } = await supabase.from('routes').select('*').order('created_at', { ascending: false });
@@ -44,6 +51,22 @@ export default function RoutesPage() {
   };
 
   useEffect(() => { loadData(); }, []);
+
+  useEffect(() => {
+    if (changeDriverRoute) {
+      supabase.from('drivers').select('full_name').then(({ data }) => { if (data) setAllDrivers(data); });
+      setNewDriverName(changeDriverRoute.driver_name || '');
+    }
+  }, [changeDriverRoute]);
+
+  const handleChangeDriver = async () => {
+    if (!changeDriverRoute) return;
+    setChangingDriver(true);
+    const { error } = await supabase.from('routes').update({ driver_name: newDriverName }).eq('id', changeDriverRoute.id);
+    setChangingDriver(false);
+    if (error) { toast.error('שגיאה בעדכון נהג'); console.error(error); }
+    else { toast.success('הנהג עודכן בהצלחה'); setChangeDriverRoute(null); loadData(); }
+  };
 
   const isManager = user?.role === 'fleet_manager' || user?.role === 'super_admin';
   const filtered = routes.filter(r => !search || r.name?.includes(search) || r.origin?.includes(search) || r.destination?.includes(search));
@@ -121,6 +144,9 @@ export default function RoutesPage() {
               </button>
               {isManager && (
                 <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+                  <button onClick={() => setChangeDriverRoute(r)} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent/50 text-accent-foreground font-bold text-sm min-h-[44px]">
+                    <UserRoundCog size={16} /> שינוי נהג
+                  </button>
                   <button onClick={() => { setEditItem(r); setViewMode('form'); }} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/10 text-primary font-bold text-sm min-h-[44px]">
                     <Edit2 size={16} /> תיקון
                   </button>
@@ -134,6 +160,40 @@ export default function RoutesPage() {
           ))}
         </div>
       )}
+
+      {/* Change Driver Dialog */}
+      <Dialog open={!!changeDriverRoute} onOpenChange={(open) => { if (!open) setChangeDriverRoute(null); }}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-xl">שינוי נהג למסלול</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 bg-muted rounded-xl">
+              <p className="text-sm text-muted-foreground">מסלול</p>
+              <p className="font-bold text-lg">{changeDriverRoute?.name}</p>
+              <p className="text-muted-foreground">{changeDriverRoute?.origin} → {changeDriverRoute?.destination}</p>
+            </div>
+            {changeDriverRoute?.driver_name && (
+              <div className="p-3 bg-muted rounded-xl">
+                <p className="text-sm text-muted-foreground">נהג נוכחי</p>
+                <p className="font-bold">{changeDriverRoute.driver_name}</p>
+              </div>
+            )}
+            <div>
+              <label className="block text-lg font-medium mb-2">בחר נהג חדש</label>
+              <select value={newDriverName} onChange={e => setNewDriverName(e.target.value)}
+                className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none">
+                <option value="">ללא נהג</option>
+                {allDrivers.map(d => <option key={d.full_name} value={d.full_name}>{d.full_name}</option>)}
+              </select>
+            </div>
+            <button onClick={handleChangeDriver} disabled={changingDriver}
+              className="w-full py-4 rounded-xl text-lg font-bold bg-primary text-primary-foreground disabled:opacity-50">
+              {changingDriver ? 'מעדכן...' : '✅ עדכן נהג'}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
