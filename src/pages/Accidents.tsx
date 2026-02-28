@@ -91,6 +91,12 @@ export default function Accidents() {
             {a.has_insurance && <span className="status-badge status-active">ביטוח ✓</span>}
             {a.third_party && <span className="status-badge status-pending">צד ג׳</span>}
           </div>
+          {a.images && a.images.length > 0 && (
+            <div className="mt-4">
+              <p className="text-sm text-muted-foreground mb-2">תמונות</p>
+              <img src={a.images} alt="תמונת תאונה" className="w-full rounded-xl max-h-64 object-cover" />
+            </div>
+          )}
           {a.notes && <p className="mt-4 p-3 bg-muted rounded-xl text-muted-foreground">{a.notes}</p>}
         </div>
         {isManager && (
