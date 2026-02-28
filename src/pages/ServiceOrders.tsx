@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Briefcase, Plus, Search, ArrowRight, Clock, CheckCircle } from 'lucide-react';
+import { Briefcase, Plus, Search, ArrowRight, Clock, CheckCircle, MessageSquareReply, Filter } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface ServiceRow {
   id: string;
@@ -19,6 +20,10 @@ interface ServiceRow {
   odometer: number;
   notes: string;
   created_at: string;
+  company_name: string;
+  manager_approval: string;
+  ordering_user: string;
+  reference_number: string;
 }
 
 const statusLabels: Record<string, { text: string; cls: string }> = {
@@ -28,27 +33,114 @@ const statusLabels: Record<string, { text: string; cls: string }> = {
   cancelled: { text: 'בוטל', cls: 'status-inactive' },
 };
 
-const serviceCategories = ['טיפול תקופתי', 'תיקון', 'צמיגים', 'בלמים', 'מיזוג', 'חשמל', 'פחחות וצבע', 'אחר'];
+const serviceCategories = ['טיפול תקופתי', 'תיקון', 'צמיגים', 'בלמים', 'מיזוג', 'חשמל', 'פחחות וצבע', 'חידוש טסט', 'חידוש ביטוח', 'אחר'];
 
 export default function ServiceOrders() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<ServiceRow[]>([]);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [filterStatus, setFilterStatus] = useState('');
+  const [replyOrder, setReplyOrder] = useState<ServiceRow | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [replyStatus, setReplyStatus] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<ServiceRow | null>(null);
 
   const loadOrders = async () => {
     const { data } = await supabase.from('service_orders').select('*').order('created_at', { ascending: false });
-    if (data) setOrders(data as ServiceRow[]);
+    if (data) setOrders(data as unknown as ServiceRow[]);
   };
 
   useEffect(() => { loadOrders(); }, []);
 
-  const filtered = orders.filter(o =>
-    o.vehicle_plate?.includes(search) || o.service_category?.includes(search) || o.vendor_name?.includes(search) || o.driver_name?.includes(search)
-  );
+  const isManager = user?.role === 'fleet_manager' || user?.role === 'super_admin';
+
+  const filtered = orders.filter(o => {
+    const matchSearch = !search ||
+      o.vehicle_plate?.includes(search) ||
+      o.service_category?.includes(search) ||
+      o.vendor_name?.includes(search) ||
+      o.driver_name?.includes(search) ||
+      o.company_name?.includes(search) ||
+      o.ordering_user?.includes(search) ||
+      o.reference_number?.includes(search);
+    const matchStatus = !filterStatus || o.treatment_status === filterStatus;
+    return matchSearch && matchStatus;
+  });
+
+  const handleReply = async () => {
+    if (!replyOrder) return;
+    setSendingReply(true);
+    const updates: any = {};
+    if (replyText) updates.manager_approval = replyText;
+    if (replyStatus) updates.treatment_status = replyStatus;
+
+    const { error } = await supabase.from('service_orders').update(updates).eq('id', replyOrder.id);
+
+    if (!error && replyOrder.ordering_user) {
+      // Notify the ordering user via driver_notifications if we can find them
+      const { data: profiles } = await supabase.from('profiles').select('id').eq('full_name', replyOrder.ordering_user).limit(1);
+      if (profiles && profiles.length > 0) {
+        await supabase.from('driver_notifications').insert({
+          user_id: profiles[0].id,
+          type: 'service',
+          title: '📋 מענה להזמנת שירות',
+          message: `הזמנת שירות "${replyOrder.service_category}" לרכב ${replyOrder.vehicle_plate}: ${replyText}`,
+          link: '/service-orders',
+        });
+      }
+    }
+
+    setSendingReply(false);
+    if (error) { toast.error('שגיאה'); console.error(error); }
+    else { toast.success('המענה נשלח בהצלחה'); setReplyOrder(null); setReplyText(''); setReplyStatus(''); loadOrders(); }
+  };
 
   if (showForm) {
     return <ServiceOrderForm onDone={() => { setShowForm(false); loadOrders(); }} user={user} />;
+  }
+
+  if (selectedOrder) {
+    const o = selectedOrder;
+    const st = statusLabels[o.treatment_status] || statusLabels.new;
+    return (
+      <div className="animate-fade-in">
+        <button onClick={() => setSelectedOrder(null)} className="flex items-center gap-2 text-primary text-lg font-medium mb-4 min-h-[48px]"><ArrowRight size={20} /> חזרה</button>
+        <div className="card-elevated">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold">{o.service_category}</h1>
+            <span className={`status-badge ${st.cls}`}>{st.text}</span>
+          </div>
+          {o.description && <p className="text-muted-foreground mb-4">{o.description}</p>}
+          <div className="grid grid-cols-2 gap-4 text-lg mb-4">
+            <div><span className="text-muted-foreground text-sm">רכב</span><p className="font-bold">{o.vehicle_plate}</p></div>
+            <div><span className="text-muted-foreground text-sm">נהג</span><p className="font-bold">{o.driver_name}</p></div>
+            {o.company_name && <div><span className="text-muted-foreground text-sm">חברה</span><p className="font-bold">{o.company_name}</p></div>}
+            {o.ordering_user && <div><span className="text-muted-foreground text-sm">מזמין</span><p className="font-bold">{o.ordering_user}</p></div>}
+            {o.vendor_name && <div><span className="text-muted-foreground text-sm">ספק</span><p className="font-bold">{o.vendor_name}</p></div>}
+            {o.vendor_phone && <div><span className="text-muted-foreground text-sm">טלפון ספק</span><p className="font-bold" dir="ltr">{o.vendor_phone}</p></div>}
+            {o.service_date && <div><span className="text-muted-foreground text-sm">תאריך</span><p className="font-bold">{new Date(o.service_date).toLocaleDateString('he-IL')}</p></div>}
+            {o.service_time && <div><span className="text-muted-foreground text-sm">שעה</span><p className="font-bold">{o.service_time}</p></div>}
+            {o.odometer > 0 && <div><span className="text-muted-foreground text-sm">ק"מ</span><p className="font-bold">{o.odometer.toLocaleString()}</p></div>}
+            {o.reference_number && <div><span className="text-muted-foreground text-sm">מס׳ אסמכתא</span><p className="font-bold">{o.reference_number}</p></div>}
+          </div>
+          {o.notes && <p className="p-3 bg-muted rounded-xl text-muted-foreground mb-4">{o.notes}</p>}
+          {o.manager_approval && (
+            <div className="p-3 bg-primary/10 rounded-xl mb-4">
+              <span className="text-sm text-muted-foreground">מענה מנהל</span>
+              <p className="font-bold text-primary">{o.manager_approval}</p>
+            </div>
+          )}
+          {isManager && (
+            <button onClick={() => { setReplyOrder(o); setReplyStatus(o.treatment_status || 'new'); }}
+              className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-bold text-lg flex items-center justify-center gap-2">
+              <MessageSquareReply size={20} /> הגב להזמנה
+            </button>
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -66,17 +158,34 @@ export default function ServiceOrders() {
         )}
       </div>
 
-      <div className="relative mb-4">
+      <div className="relative mb-3">
         <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="חיפוש..."
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="חיפוש לפי שם, חברה, רכב, מספר..."
           className="w-full pr-12 p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none" />
+      </div>
+
+      {/* Status filter */}
+      <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
+        <button onClick={() => setFilterStatus('')}
+          className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${!filterStatus ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+          הכל ({orders.length})
+        </button>
+        {Object.entries(statusLabels).map(([key, val]) => {
+          const count = orders.filter(o => o.treatment_status === key).length;
+          return (
+            <button key={key} onClick={() => setFilterStatus(filterStatus === key ? '' : key)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${filterStatus === key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+              {val.text} ({count})
+            </button>
+          );
+        })}
       </div>
 
       <div className="space-y-3">
         {filtered.map(o => {
           const st = statusLabels[o.treatment_status] || statusLabels.new;
           return (
-            <div key={o.id} className="card-elevated">
+            <button key={o.id} onClick={() => setSelectedOrder(o)} className="card-elevated w-full text-right hover:shadow-lg transition-shadow">
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                   {o.treatment_status === 'completed' ? <CheckCircle size={28} className="text-primary" /> : <Clock size={28} className="text-primary" />}
@@ -86,18 +195,19 @@ export default function ServiceOrders() {
                     <p className="text-xl font-bold">{o.service_category}</p>
                     <span className={`status-badge ${st.cls}`}>{st.text}</span>
                   </div>
-                  {o.description && <p className="text-muted-foreground">{o.description}</p>}
+                  {o.description && <p className="text-muted-foreground line-clamp-1">{o.description}</p>}
                   <div className="grid grid-cols-2 gap-2 mt-3 text-sm text-muted-foreground">
                     <span>🚗 {o.vehicle_plate}</span>
                     <span>👤 {o.driver_name}</span>
-                    {o.vendor_name && <span>🏪 {o.vendor_name}</span>}
+                    {o.company_name && <span>🏢 {o.company_name}</span>}
                     {o.service_date && <span>📅 {new Date(o.service_date).toLocaleDateString('he-IL')}</span>}
-                    {o.odometer > 0 && <span>📊 {o.odometer.toLocaleString()} ק"מ</span>}
                   </div>
-                  {o.notes && <p className="text-sm text-muted-foreground mt-2 bg-muted p-2 rounded-lg">{o.notes}</p>}
+                  {o.manager_approval && (
+                    <p className="text-xs text-primary mt-2 font-medium">✅ יש מענה מנהל</p>
+                  )}
                 </div>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
@@ -108,6 +218,39 @@ export default function ServiceOrders() {
           <p className="text-xl">אין הזמנות שירות</p>
         </div>
       )}
+
+      {/* Reply Dialog */}
+      <Dialog open={!!replyOrder} onOpenChange={(open) => { if (!open) setReplyOrder(null); }}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-xl">מענה להזמנת שירות</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 bg-muted rounded-xl">
+              <p className="text-sm text-muted-foreground">הזמנה</p>
+              <p className="font-bold">{replyOrder?.service_category} - רכב {replyOrder?.vehicle_plate}</p>
+              {replyOrder?.ordering_user && <p className="text-sm text-muted-foreground">מזמין: {replyOrder.ordering_user}</p>}
+            </div>
+            <div>
+              <label className="block font-medium mb-2">עדכון סטטוס</label>
+              <select value={replyStatus} onChange={e => setReplyStatus(e.target.value)}
+                className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none">
+                {Object.entries(statusLabels).map(([k, v]) => <option key={k} value={k}>{v.text}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block font-medium mb-2">תגובה / מענה</label>
+              <textarea value={replyText} onChange={e => setReplyText(e.target.value)} rows={3}
+                className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none resize-none"
+                placeholder="כתוב מענה ללקוח..." />
+            </div>
+            <button onClick={handleReply} disabled={sendingReply || (!replyText && !replyStatus)}
+              className="w-full py-4 rounded-xl text-lg font-bold bg-primary text-primary-foreground disabled:opacity-50">
+              {sendingReply ? 'שולח...' : '📨 שלח מענה'}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
