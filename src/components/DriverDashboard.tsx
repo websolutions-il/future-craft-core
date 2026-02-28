@@ -419,10 +419,16 @@ export default function DriverDashboard() {
 
       {/* My Routes */}
       <div>
-        <h2 className="text-xl font-bold mb-3 flex items-center gap-2">
-          <MapPin size={20} className="text-primary" />
-          המסלולים שלי
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <MapPin size={20} className="text-primary" />
+            המסלולים שלי
+          </h2>
+          <Link to="/driver-schedule" className="text-sm text-primary font-semibold hover:underline flex items-center gap-1">
+            <Calendar size={14} />
+            לוח שבועי
+          </Link>
+        </div>
         {routes.length > 0 ? (
           <div className="space-y-2">
             {routes.map(route => (
