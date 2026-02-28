@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { email, password, full_name, role, company_name, action, user_id, is_active } = await req.json();
+    const { email, password, full_name, role, company_name, phone, action, user_id, is_active } = await req.json();
 
     if (action === 'update-password') {
       if (!email || !password) {
@@ -195,8 +195,8 @@ Deno.serve(async (req) => {
           id: userData.user.id,
           full_name,
           company_name,
-          phone: '',
-          is_active: true,
+          phone: phone || '',
+          is_active: typeof is_active === 'boolean' ? is_active : true,
         },
         { onConflict: 'id' }
       );

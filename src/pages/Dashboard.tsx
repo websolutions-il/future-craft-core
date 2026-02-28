@@ -58,8 +58,10 @@ interface CreateUserFormState {
   email: string;
   password: string;
   fullName: string;
+  phone: string;
   companyName: string;
   role: AppRole;
+  isActive: boolean;
 }
 
 const isOpenStatus = (status: string | null | undefined) =>
@@ -115,9 +117,26 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: () => voi
     email: '',
     password: '',
     fullName: '',
+    phone: '',
     companyName: '',
     role: 'fleet_manager',
+    isActive: true,
   });
+  const [createCompanyOptions, setCreateCompanyOptions] = useState<string[]>([]);
+  const [createCompanyPickerOpen, setCreateCompanyPickerOpen] = useState(false);
+
+  useEffect(() => {
+    const loadCompaniesForCreate = async () => {
+      const { data } = await supabase.from('profiles').select('company_name');
+      const companies = Array.from(
+        new Set(
+          (data || []).map(r => r.company_name?.trim()).filter((c): c is string => Boolean(c))
+        )
+      );
+      setCreateCompanyOptions(companies);
+    };
+    loadCompaniesForCreate();
+  }, []);
 
   const loadSuperAdminStats = async () => {
     setLoading(true);
@@ -192,8 +211,10 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: () => voi
         email: form.email,
         password: form.password,
         full_name: form.fullName,
+        phone: form.phone,
         company_name: form.companyName,
         role: form.role,
+        is_active: form.isActive,
       },
     });
     setCreatingUser(false);
@@ -209,10 +230,10 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: () => voi
 
     toast({
       title: 'המשתמש נוצר בהצלחה',
-      description: 'ניתן להתחבר עם הפרטים החדשים מיד.',
+      description: `מזהה משתמש: ${data?.user_id?.slice(0, 8) || '-'} | ניתן להתחבר עם הפרטים החדשים מיד.`,
     });
 
-    setForm({ email: '', password: '', fullName: '', companyName: '', role: 'fleet_manager' });
+    setForm({ email: '', password: '', fullName: '', phone: '', companyName: '', role: 'fleet_manager', isActive: true });
     setShowCreateUserModal(false);
     loadSuperAdminStats();
   };
@@ -274,7 +295,7 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: () => voi
         <div className="fixed inset-0 z-50 bg-foreground/50 flex items-center justify-center p-4">
           <div className="bg-card rounded-2xl shadow-2xl w-full max-w-lg p-5">
             <h2 className="text-xl font-bold mb-4">פתיחת משתמש חדש</h2>
-            <form onSubmit={submitCreateUser} className="space-y-3">
+            <form onSubmit={submitCreateUser} className="space-y-3 max-h-[70vh] overflow-y-auto">
               <input
                 value={form.fullName}
                 onChange={(event) => setForm((prev) => ({ ...prev, fullName: event.target.value }))}
@@ -300,12 +321,52 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: () => voi
                 required
               />
               <input
-                value={form.companyName}
-                onChange={(event) => setForm((prev) => ({ ...prev, companyName: event.target.value }))}
-                placeholder="שם חברה"
+                value={form.phone}
+                onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
+                placeholder="מספר טלפון"
                 className="w-full p-3 rounded-xl border border-input bg-background"
-                required
+                dir="ltr"
               />
+
+              {/* Company picker */}
+              <Popover open={createCompanyPickerOpen} onOpenChange={setCreateCompanyPickerOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="w-full p-3 rounded-xl border border-input bg-background flex items-center justify-between text-right"
+                  >
+                    <ChevronsUpDown size={16} className="text-muted-foreground shrink-0" />
+                    <span className="flex-1 text-right">
+                      {form.companyName || 'בחר חברה...'}
+                    </span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[60]" align="start">
+                  <Command dir="rtl">
+                    <CommandInput placeholder="חיפוש חברה..." />
+                    <CommandList>
+                      <CommandEmpty>לא נמצאו חברות</CommandEmpty>
+                      <CommandGroup>
+                        {createCompanyOptions.map((company) => (
+                          <CommandItem
+                            key={company}
+                            value={company}
+                            onSelect={() => {
+                              setForm((prev) => ({ ...prev, companyName: company }));
+                              setCreateCompanyPickerOpen(false);
+                            }}
+                            className="flex items-center justify-between"
+                          >
+                            <Check size={16} className={cn("shrink-0", form.companyName === company ? "opacity-100" : "opacity-0")} />
+                            <span className="flex-1 text-right font-medium">{company}</span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
               <select
                 value={form.role}
                 onChange={(event) => setForm((prev) => ({ ...prev, role: event.target.value as AppRole }))}
@@ -315,6 +376,23 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: () => voi
                 <option value="driver">נהג</option>
                 <option value="super_admin">מנהל על</option>
               </select>
+
+              {/* Active toggle */}
+              <div className="flex items-center justify-between p-3 rounded-xl border border-input bg-background">
+                <button
+                  type="button"
+                  onClick={() => setForm((prev) => ({ ...prev, isActive: !prev.isActive }))}
+                  className={cn(
+                    "px-4 py-1.5 rounded-lg text-sm font-bold transition-colors",
+                    form.isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-destructive text-destructive-foreground"
+                  )}
+                >
+                  {form.isActive ? 'כן' : 'לא'}
+                </button>
+                <span className="font-medium">משתמש פעיל</span>
+              </div>
 
               <div className="flex gap-2 pt-1">
                 <button
