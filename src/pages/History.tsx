@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { History as HistoryIcon, Wrench, AlertTriangle, Car, FileText, RefreshCw, Filter, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { History as HistoryIcon, Wrench, AlertTriangle, Car, FileText, RefreshCw, Filter, Search, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 type EventType = 'fault' | 'accident' | 'handover' | 'service' | 'expense';
@@ -25,6 +26,7 @@ const typeConfig: Record<EventType, { label: string; icon: typeof Wrench; colorC
 };
 
 export default function HistoryPage() {
+  const navigate = useNavigate();
   const [events, setEvents] = useState<HistoryEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -153,7 +155,13 @@ export default function HistoryPage() {
                   const cfg = typeConfig[ev.type];
                   const Icon = cfg.icon;
                   return (
-                    <div key={ev.id} className="card-elevated mr-6 relative">
+                    <button key={ev.id} onClick={() => {
+                      const routes: Record<EventType, string> = {
+                        fault: '/faults', accident: '/accidents', handover: '/vehicle-handover',
+                        service: '/service-orders', expense: '/expenses',
+                      };
+                      navigate(routes[ev.type]);
+                    }} className="card-elevated mr-6 relative w-full text-right hover:shadow-lg hover:border-primary/30 transition-all cursor-pointer">
                       {/* Timeline dot */}
                       <div className={`absolute -right-[33px] top-4 w-10 h-10 rounded-full flex items-center justify-center ${cfg.colorCls} border-2 border-background`}>
                         <Icon size={18} />
@@ -163,9 +171,12 @@ export default function HistoryPage() {
                           <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ${cfg.colorCls}`}>{cfg.label}</span>
                           <p className="text-lg font-bold">{ev.title}</p>
                         </div>
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">
-                          {new Date(ev.date).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground whitespace-nowrap">
+                            {new Date(ev.date).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          <ExternalLink size={14} className="text-primary opacity-60" />
+                        </div>
                       </div>
                       {ev.description && <p className="text-muted-foreground">{ev.description}</p>}
                       <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
@@ -174,7 +185,7 @@ export default function HistoryPage() {
                         {ev.meta && <span>📌 {ev.meta}</span>}
                         {ev.status && <span className="status-badge status-active text-xs">{ev.status}</span>}
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
