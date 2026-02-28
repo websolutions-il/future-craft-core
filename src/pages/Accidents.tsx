@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, Plus, ArrowRight, Search, Edit2 } from 'lucide-react';
+import { AlertTriangle, Plus, ArrowRight, Search, Edit2, Mail, Share2, Download, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -106,6 +106,51 @@ export default function Accidents() {
             ) : null;
           })()}
           {a.notes && <p className="mt-4 p-3 bg-muted rounded-xl text-muted-foreground">{a.notes}</p>}
+
+          {/* Share buttons */}
+          <div className="mt-6 space-y-3">
+            <h3 className="text-lg font-bold">שיתוף ושליחה</h3>
+            <div className="flex gap-3 flex-wrap">
+              <a
+                href={`mailto:?subject=${encodeURIComponent(`דיווח תאונה - ${a.vehicle_plate}`)}&body=${encodeURIComponent(
+                  `דיווח תאונה - ${a.vehicle_plate}\n\nנהג: ${a.driver_name}\nמיקום: ${a.location || '—'}\nתאריך: ${a.date ? new Date(a.date).toLocaleDateString('he-IL') : '—'}\nתיאור: ${a.description}\nעלות משוערת: ₪${(a.estimated_cost || 0).toLocaleString()}\nביטוח: ${a.has_insurance ? 'כן' : 'לא'}\nצד ג׳: ${a.third_party ? 'כן' : 'לא'}\n${a.notes ? `הערות: ${a.notes}\n` : ''}${(() => { let imgs: string[] = []; try { imgs = a.images ? JSON.parse(a.images) : []; } catch { if (a.images) imgs = [a.images]; } return imgs.length > 0 ? `\nתמונות:\n${imgs.join('\n')}` : ''; })()}`
+                )}`}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground font-bold text-base min-h-[48px]"
+              >
+                <Mail size={20} /> שלח באימייל
+              </a>
+              <button
+                onClick={() => {
+                  let imgs: string[] = [];
+                  try { imgs = a.images ? JSON.parse(a.images) : []; } catch { if (a.images) imgs = [a.images]; }
+                  const text = `דיווח תאונה - ${a.vehicle_plate}\nנהג: ${a.driver_name}\nתיאור: ${a.description}${imgs.length > 0 ? '\n\nתמונות:\n' + imgs.join('\n') : ''}`;
+                  if (navigator.share) {
+                    navigator.share({ title: `תאונה - ${a.vehicle_plate}`, text }).catch(() => {});
+                  } else {
+                    navigator.clipboard.writeText(text);
+                    toast.success('הועתק ללוח');
+                  }
+                }}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-muted text-foreground font-bold text-base min-h-[48px]"
+              >
+                <Share2 size={20} /> שתף
+              </button>
+            </div>
+            {(() => {
+              let imgs: string[] = [];
+              try { imgs = a.images ? JSON.parse(a.images) : []; } catch { if (a.images) imgs = [a.images]; }
+              return imgs.length > 0 ? (
+                <a
+                  href={`https://drive.google.com/drive/u/0/my-drive`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-input text-foreground font-bold text-base min-h-[48px] hover:bg-muted transition-colors"
+                >
+                  <ExternalLink size={20} /> פתח Google Drive
+                </a>
+              ) : null;
+            })()}
+          </div>
         </div>
         {isManager && (
           <div className="card-elevated">
