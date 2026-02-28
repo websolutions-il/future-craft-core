@@ -141,6 +141,48 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Update user profile fields
+    if (action === 'update-profile') {
+      if (!user_id) {
+        return new Response(JSON.stringify({ error: 'user_id is required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const updates: Record<string, unknown> = {};
+      if (full_name !== undefined) updates.full_name = full_name;
+      if (phone !== undefined) updates.phone = phone;
+      if (company_name !== undefined) updates.company_name = company_name;
+      if (typeof is_active === 'boolean') updates.is_active = is_active;
+
+      if (Object.keys(updates).length === 0) {
+        return new Response(JSON.stringify({ error: 'No fields to update' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { error } = await supabaseAdmin.from('profiles').update(updates).eq('id', user_id);
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // If role is provided, update it too
+      if (role) {
+        await supabaseAdmin.from('user_roles').delete().eq('user_id', user_id);
+        await supabaseAdmin.from('user_roles').insert({ user_id, role });
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Toggle user active status
     if (action === 'toggle-active') {
       if (!user_id || typeof is_active !== 'boolean') {
