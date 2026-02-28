@@ -1,7 +1,7 @@
 import { Map, CheckCircle2, Clock, Calendar, Rocket } from 'lucide-react';
 
-const currentVersion = '1.0.0-beta';
-const releaseDate = '2026-02-26';
+const currentVersion = '2.0.0-beta';
+const releaseDate = '2026-02-28';
 
 interface RoadmapPhase {
   phase: string;
@@ -12,78 +12,64 @@ interface RoadmapPhase {
 
 const roadmap: RoadmapPhase[] = [
   {
-    phase: 'שלב 1',
-    title: 'תשתית ותצוגה בסיסית (MVP)',
-    status: 'current',
+    phase: 'שלב 1', title: 'תשתית ואימות', status: 'done',
     items: [
       { name: 'מסך התחברות עם הפרדת הרשאות', done: true },
-      { name: 'דשבורד ראשי עם סטטיסטיקות', done: true },
-      { name: 'ניהול רכבים - רשימה + כרטיס', done: true },
-      { name: 'ניהול נהגים - רשימה + כרטיס', done: true },
-      { name: 'ניהול לקוחות - רשימה + כרטיס', done: true },
-      { name: 'ניהול מסלולי נסיעה', done: true },
-      { name: 'דיווח ומעקב תקלות', done: true },
-      { name: 'מסמכים והוצאות', done: true },
-      { name: 'תאונות ואירועים', done: true },
-      { name: 'דוחות כספיים ותפעוליים', done: true },
-      { name: 'עיצוב Mobile-First לנהגים', done: true },
-      { name: 'ניווט תחתון מאסיבי למובייל', done: true },
-      { name: 'RTL מלא + עברית', done: true },
-      { name: 'Roadmap מסודר', done: true },
+      { name: 'חיבור Lovable Cloud (DB)', done: true },
+      { name: 'מערכת אימות עם 3 רמות הרשאה', done: true },
+      { name: 'הפרדת נתונים לפי חברה (Multi-Tenant)', done: true },
+      { name: 'RLS מלא על כל הטבלאות', done: true },
+      { name: 'עיצוב Mobile-First + RTL', done: true },
     ],
   },
   {
-    phase: 'שלב 2',
-    title: 'בסיס נתונים ואימות',
-    status: 'planned',
+    phase: 'שלב 2', title: 'מודולים ראשיים', status: 'done',
     items: [
-      { name: 'חיבור Lovable Cloud (Supabase)', done: false },
-      { name: 'מערכת אימות אמיתית עם הרשאות', done: false },
-      { name: 'הפרדת נתונים לפי חברה (Multi-Tenant)', done: false },
-      { name: 'CRUD מלא לכל המודולים', done: false },
-      { name: 'שמירת היסטוריית שינויים', done: false },
-      { name: 'מערכת הצמדת רכב-נהג עם אישורים', done: false },
+      { name: 'דשבורד מנהל עם סטטיסטיקות וגרפים חיים', done: true },
+      { name: 'ניהול רכבים מלא - CRUD + תוקף מסמכים', done: true },
+      { name: 'ניהול נהגים מלא - CRUD + רישיונות', done: true },
+      { name: 'ניהול לקוחות - CRUD מ-DB', done: true },
+      { name: 'ניהול מסלולים - CRUD מ-DB', done: true },
+      { name: 'דיווח ומעקב תקלות - עריכה וסטטוס', done: true },
+      { name: 'דיווח תאונות - עריכה וסטטוס', done: true },
+      { name: 'ניהול הוצאות - קטגוריות וסיכומים', done: true },
+      { name: 'הזמנות שירות', done: true },
+      { name: 'טופס החלפת רכב עם GPS', done: true },
+      { name: 'הצמדת רכב-נהג', done: true },
+      { name: 'היסטוריה - ציר זמן מאוחד', done: true },
     ],
   },
   {
-    phase: 'שלב 3',
-    title: 'מודולים מתקדמים',
-    status: 'planned',
+    phase: 'שלב 3', title: 'מודולים מתקדמים', status: 'current',
     items: [
-      { name: 'יומן פעילות - תצוגה יומית/שבועית/חודשית', done: false },
-      { name: 'מעקב נסיעות בזמן אמת (GPS)', done: false },
-      { name: 'העלאת תמונות ומסמכים (Storage)', done: false },
-      { name: 'מערכת הסכמים ותעריפים ללקוחות', done: false },
-      { name: 'מעקב טיפולים ותחזוקה לרכבים', done: false },
-      { name: 'התראות - תוקף טסט, ביטוח, טיפולים', done: false },
-      { name: 'מערכת החלפת נהגים זמנית', done: false },
+      { name: 'עמוד התראות חכם - תוקף + תקלות דחופות', done: true },
+      { name: 'שירותי חירום 24/7 עם GPS', done: true },
+      { name: 'סידור עבודה - ניהול משימות', done: true },
+      { name: 'דוחות כספיים ותפעוליים חיים', done: true },
+      { name: 'ייצוא CSV', done: true },
+      { name: 'עמוד מסמכים - מבנה קטגוריות', done: true },
+      { name: 'הגדרות - פרופיל, סיסמה, תצוגה', done: true },
+      { name: 'העלאת קבצים ותמונות', done: false },
+      { name: 'דשבורד נהג מותאם', done: false },
     ],
   },
   {
-    phase: 'שלב 4',
-    title: 'דוחות וייצוא',
-    status: 'planned',
+    phase: 'שלב 4', title: 'דוחות מתקדמים וייצוא', status: 'planned',
     items: [
-      { name: 'דוח הוצאות לפי רכב/נהג/תקופה', done: false },
-      { name: 'דוח תאונות מפורט', done: false },
-      { name: 'דוח שימוש ברכב לפי קילומטראז\'', done: false },
-      { name: 'דוח פעילות מסלולים', done: false },
+      { name: 'דוח לפי רכב/נהג/תקופה', done: false },
       { name: 'ייצוא PDF', done: false },
       { name: 'שליחת דוח במייל', done: false },
       { name: 'פילטרים מתקדמים לכל דוח', done: false },
     ],
   },
   {
-    phase: 'שלב 5',
-    title: 'אינטגרציות ואופטימיזציה',
-    status: 'planned',
+    phase: 'שלב 5', title: 'אינטגרציות ואופטימיזציה', status: 'planned',
     items: [
       { name: 'חיבור WhatsApp לנהגים', done: false },
-      { name: 'PWA - התקנה על מכשיר הנהג', done: false },
+      { name: 'PWA - התקנה על מכשיר', done: false },
       { name: 'עבודה אופליין + סנכרון', done: false },
-      { name: 'חיבור למערכת הנהלת חשבונות', done: false },
-      { name: 'חיבור CRM', done: false },
-      { name: 'Audit Log מלא - תיעוד פעולות משתמשים', done: false },
+      { name: 'חיבור מערכת הנהלת חשבונות', done: false },
+      { name: 'Audit Log מלא', done: false },
       { name: 'פאנל מנהל על - ניהול חברות', done: false },
     ],
   },
@@ -101,9 +87,8 @@ export default function Roadmap() {
         <span className="flex items-center gap-1"><Rocket size={16} /> גרסה {currentVersion}</span>
       </div>
 
-      {/* Legend */}
       <div className="flex gap-4 mb-6 text-sm">
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-success inline-block" /> הושלם</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-primary inline-block" /> הושלם</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-warning inline-block" /> בפיתוח</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-muted-foreground/30 inline-block" /> מתוכנן</span>
       </div>
@@ -112,7 +97,7 @@ export default function Roadmap() {
         {roadmap.map((phase, idx) => {
           const doneCount = phase.items.filter(i => i.done).length;
           const progress = Math.round((doneCount / phase.items.length) * 100);
-          const statusColor = phase.status === 'done' ? 'border-success' : phase.status === 'current' ? 'border-warning' : 'border-muted';
+          const statusColor = phase.status === 'done' ? 'border-primary' : phase.status === 'current' ? 'border-warning' : 'border-muted';
 
           return (
             <div key={idx} className={`card-elevated border-r-4 ${statusColor}`}>
@@ -121,33 +106,19 @@ export default function Roadmap() {
                   <span className="text-sm text-muted-foreground font-medium">{phase.phase}</span>
                   <h2 className="text-xl font-bold">{phase.title}</h2>
                 </div>
-                <div className="text-left">
-                  <span className={`status-badge ${phase.status === 'current' ? 'status-pending' : phase.status === 'done' ? 'status-active' : 'status-inactive'}`}>
-                    {phase.status === 'current' ? 'בפיתוח' : phase.status === 'done' ? 'הושלם' : 'מתוכנן'}
-                  </span>
-                </div>
+                <span className={`status-badge ${phase.status === 'current' ? 'status-pending' : phase.status === 'done' ? 'status-active' : 'status-inactive'}`}>
+                  {phase.status === 'current' ? 'בפיתוח' : phase.status === 'done' ? 'הושלם' : 'מתוכנן'}
+                </span>
               </div>
-
-              {/* Progress bar */}
               <div className="w-full bg-muted rounded-full h-3 mb-4">
-                <div
-                  className="bg-success h-3 rounded-full transition-all"
-                  style={{ width: `${progress}%` }}
-                />
+                <div className="bg-primary h-3 rounded-full transition-all" style={{ width: `${progress}%` }} />
               </div>
-              <p className="text-sm text-muted-foreground mb-3">{doneCount} / {phase.items.length} משימות ({progress}%)</p>
-
+              <p className="text-sm text-muted-foreground mb-3">{doneCount} / {phase.items.length} ({progress}%)</p>
               <div className="space-y-2">
                 {phase.items.map((item, i) => (
                   <div key={i} className="flex items-center gap-3 py-2">
-                    {item.done ? (
-                      <CheckCircle2 size={22} className="text-success flex-shrink-0" />
-                    ) : (
-                      <Clock size={22} className="text-muted-foreground/40 flex-shrink-0" />
-                    )}
-                    <span className={`text-lg ${item.done ? 'text-foreground' : 'text-muted-foreground'}`}>
-                      {item.name}
-                    </span>
+                    {item.done ? <CheckCircle2 size={22} className="text-primary flex-shrink-0" /> : <Clock size={22} className="text-muted-foreground/40 flex-shrink-0" />}
+                    <span className={`text-lg ${item.done ? 'text-foreground' : 'text-muted-foreground'}`}>{item.name}</span>
                   </div>
                 ))}
               </div>
@@ -156,13 +127,12 @@ export default function Roadmap() {
         })}
       </div>
 
-      {/* Footer with version */}
       <div className="mt-12 p-6 bg-primary text-primary-foreground rounded-2xl text-center">
         <p className="text-2xl font-bold mb-2">דליה - מערכת ניהול צי רכב</p>
         <p className="opacity-80">פתרונות מימון ותפעול לרכב</p>
         <div className="mt-4 flex justify-center gap-6 text-sm opacity-70">
           <span>גרסה {currentVersion}</span>
-          <span>תאריך שחרור: {releaseDate}</span>
+          <span>תאריך: {releaseDate}</span>
         </div>
       </div>
     </div>

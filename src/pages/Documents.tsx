@@ -1,119 +1,63 @@
-import { demoExpenses, Expense, expenseCategories } from '@/data/demo-data';
-import { FileText, Search, Plus, Paperclip } from 'lucide-react';
-import { useState } from 'react';
-import ExpenseForm from '@/components/ExpenseForm';
-import { toast } from 'sonner';
-
-const paymentLabels: Record<string, string> = {
-  credit: 'אשראי',
-  cash: 'מזומן',
-  fuel_card: 'דלקן',
-};
+import { useState, useEffect } from 'react';
+import { FileText, Search, Plus, Upload, Download, Trash2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Documents() {
-  const [search, setSearch] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [expenses, setExpenses] = useState<Expense[]>(demoExpenses);
-
-  const filtered = expenses.filter(e => {
-    const matchSearch = e.driverName.includes(search) || e.vehiclePlate.includes(search) || e.vendor.includes(search);
-    const matchCat = !filterCategory || e.category === filterCategory;
-    return matchSearch && matchCat;
-  });
-
-  const handleNewExpense = (expense: Expense) => {
-    setExpenses(prev => [expense, ...prev]);
-    setShowForm(false);
-    toast.success('ההוצאה נוספה בהצלחה');
-  };
-
-  if (showForm) {
-    return (
-      <div className="animate-fade-in">
-        <ExpenseForm onSubmit={handleNewExpense} onCancel={() => setShowForm(false)} />
-      </div>
-    );
-  }
+  const { user } = useAuth();
 
   return (
     <div className="animate-fade-in">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="page-header mb-0">מסמכים והוצאות</h1>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]"
-        >
-          <Plus size={22} />
-          דיווח הוצאה
-        </button>
-      </div>
+      <h1 className="page-header flex items-center gap-3"><FileText size={28} /> מסמכים</h1>
 
-      <div className="relative mb-4">
-        <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="חיפוש לפי נהג, רכב או ספק..."
-          className="w-full pr-12 p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none"
-        />
-      </div>
-
-      <div className="flex gap-2 mb-6 overflow-x-auto">
-        <button
-          onClick={() => setFilterCategory('')}
-          className={`px-5 py-3 rounded-xl text-lg font-medium whitespace-nowrap transition-colors ${!filterCategory ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
-        >
-          הכל
-        </button>
-        {expenseCategories.map(cat => (
-          <button
-            key={cat}
-            onClick={() => setFilterCategory(filterCategory === cat ? '' : cat)}
-            className={`px-5 py-3 rounded-xl text-lg font-medium whitespace-nowrap transition-colors ${filterCategory === cat ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      <div className="space-y-3">
-        {filtered.map(e => (
-          <div key={e.id} className="card-elevated">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <FileText size={28} className="text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-xl font-bold">{e.category}</p>
-                  <span className="text-xl font-bold text-primary">₪{e.amount.toLocaleString()}</span>
-                </div>
-                <p className="text-muted-foreground">ספק: {e.vendor} • חשבונית: {e.invoiceNumber}</p>
-                <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-                  <span>🚗 {e.vehiclePlate}</span>
-                  <span>👤 {e.driverName}</span>
-                  <span>📅 {e.date}</span>
-                  <span>💳 {paymentLabels[e.paymentMethod] || e.paymentMethod}</span>
-                </div>
-                {e.receiptImage && (
-                  <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
-                    <Paperclip size={14} />
-                    חשבונית מצורפת
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {filtered.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
-          <FileText size={48} className="mx-auto mb-4 opacity-50" />
-          <p className="text-xl">אין מסמכים להצגה</p>
+      <div className="card-elevated mb-4">
+        <h2 className="text-lg font-bold mb-3">מסמכי רכב</h2>
+        <p className="text-muted-foreground mb-4">ניהול מסמכים ואישורים לרכבי הצי - טסט, ביטוח, רישיון רכב</p>
+        <div className="grid grid-cols-2 gap-3">
+          <DocCategory label="רישיונות רכב" icon="🚗" count={0} />
+          <DocCategory label="ביטוח חובה" icon="🛡️" count={0} />
+          <DocCategory label="ביטוח מקיף" icon="📋" count={0} />
+          <DocCategory label="טסט" icon="✅" count={0} />
         </div>
-      )}
+      </div>
+
+      <div className="card-elevated mb-4">
+        <h2 className="text-lg font-bold mb-3">מסמכי נהגים</h2>
+        <p className="text-muted-foreground mb-4">רישיונות נהיגה, תעודות, אישורים</p>
+        <div className="grid grid-cols-2 gap-3">
+          <DocCategory label="רישיונות נהיגה" icon="🪪" count={0} />
+          <DocCategory label="אישורי בריאות" icon="🏥" count={0} />
+          <DocCategory label="הסכמי עבודה" icon="📝" count={0} />
+          <DocCategory label="אחר" icon="📎" count={0} />
+        </div>
+      </div>
+
+      <div className="card-elevated">
+        <h2 className="text-lg font-bold mb-3">חשבוניות והוצאות</h2>
+        <p className="text-muted-foreground mb-4">חשבוניות דלק, תחזוקה וספקים</p>
+        <div className="grid grid-cols-2 gap-3">
+          <DocCategory label="חשבוניות דלק" icon="⛽" count={0} />
+          <DocCategory label="חשבוניות תחזוקה" icon="🔧" count={0} />
+          <DocCategory label="חשבוניות ספקים" icon="🏪" count={0} />
+          <DocCategory label="קבלות" icon="🧾" count={0} />
+        </div>
+      </div>
+
+      <p className="text-center text-muted-foreground mt-8 text-sm">
+        📌 העלאת מסמכים תהיה זמינה בשלב הבא
+      </p>
+    </div>
+  );
+}
+
+function DocCategory({ label, icon, count }: { label: string; icon: string; count: number }) {
+  return (
+    <div className="p-4 rounded-xl bg-muted/50 border border-border flex items-center gap-3">
+      <span className="text-2xl">{icon}</span>
+      <div className="flex-1">
+        <p className="font-medium">{label}</p>
+        <p className="text-sm text-muted-foreground">{count} מסמכים</p>
+      </div>
     </div>
   );
 }
