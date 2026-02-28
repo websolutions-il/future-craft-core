@@ -38,7 +38,8 @@ export default function Reports() {
   const { user } = useAuth();
   const [raw, setRaw] = useState<RawData>({ vehicles: [], drivers: [], faults: [], accidents: [], expenses: [], serviceOrders: [] });
   const [loading, setLoading] = useState(true);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(true);
+  const [expandedReport, setExpandedReport] = useState<string | null>(null);
 
   // Filter state
   const [filterCompany, setFilterCompany] = useState('');
@@ -149,30 +150,70 @@ export default function Reports() {
   const selectClass = "w-full p-3 text-base rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
 
   const exportCSV = () => {
-    const rows: string[][] = [['דוח', 'ערך']];
+    const rows: string[][] = [];
+
+    if (showReport('expenses') && filtered.expenses.length > 0) {
+      rows.push(['--- הוצאות ---']);
+      rows.push(['תאריך', 'קטגוריה', 'ספק', 'רכב', 'נהג', 'סכום', 'חשבונית']);
+      filtered.expenses.forEach(e => rows.push([
+        e.date ? new Date(e.date).toLocaleDateString('he-IL') : '',
+        e.category || '', e.vendor || '', e.vehicle_plate || '', e.driver_name || '',
+        (e.amount || 0).toString(), e.invoice_number || '',
+      ]));
+      rows.push([]);
+    }
+    if (showReport('faults') && filtered.faults.length > 0) {
+      rows.push(['--- תקלות ---']);
+      rows.push(['תאריך', 'סוג', 'תיאור', 'רכב', 'נהג', 'סטטוס', 'דחיפות']);
+      filtered.faults.forEach(f => rows.push([
+        f.date ? new Date(f.date).toLocaleDateString('he-IL') : '',
+        f.fault_type || '', f.description || '', f.vehicle_plate || '', f.driver_name || '',
+        f.status || '', f.urgency || '',
+      ]));
+      rows.push([]);
+    }
+    if (showReport('accidents') && filtered.accidents.length > 0) {
+      rows.push(['--- תאונות ---']);
+      rows.push(['תאריך', 'תיאור', 'רכב', 'נהג', 'מיקום', 'סטטוס', 'עלות']);
+      filtered.accidents.forEach(a => rows.push([
+        a.date ? new Date(a.date).toLocaleDateString('he-IL') : '',
+        a.description || '', a.vehicle_plate || '', a.driver_name || '',
+        a.location || '', a.status || '', (a.estimated_cost || 0).toString(),
+      ]));
+      rows.push([]);
+    }
+    if (showReport('service_orders') && filtered.serviceOrders.length > 0) {
+      rows.push(['--- הזמנות שירות ---']);
+      rows.push(['תאריך', 'קטגוריה', 'תיאור', 'רכב', 'נהג', 'ספק', 'סטטוס']);
+      filtered.serviceOrders.forEach(s => rows.push([
+        s.service_date ? new Date(s.service_date).toLocaleDateString('he-IL') : '',
+        s.service_category || '', s.description || '', s.vehicle_plate || '',
+        s.driver_name || '', s.vendor_name || '', s.treatment_status || '',
+      ]));
+      rows.push([]);
+    }
     if (showReport('vehicles')) {
-      rows.push(['רכבים פעילים', filtered.vehicles.filter(v => v.status === 'active').length.toString()]);
-      rows.push(['סה"כ רכבים', filtered.vehicles.length.toString()]);
+      rows.push(['--- רכבים ---']);
+      rows.push(['לוחית', 'יצרן', 'דגם', 'שנה', 'סטטוס', 'קמ']);
+      filtered.vehicles.forEach(v => rows.push([
+        v.license_plate || '', v.manufacturer || '', v.model || '',
+        (v.year || '').toString(), v.status || '', (v.odometer || 0).toString(),
+      ]));
+      rows.push([]);
     }
     if (showReport('drivers')) {
-      rows.push(['נהגים פעילים', filtered.drivers.filter(d => d.status === 'active').length.toString()]);
-      rows.push(['סה"כ נהגים', filtered.drivers.length.toString()]);
+      rows.push(['--- נהגים ---']);
+      rows.push(['שם', 'טלפון', 'רישיון', 'תוקף רישיון', 'סטטוס']);
+      filtered.drivers.forEach(d => rows.push([
+        d.full_name || '', d.phone || '', d.license_number || '',
+        d.license_expiry || '', d.status || '',
+      ]));
     }
-    if (showReport('expenses')) {
-      rows.push(['סה"כ הוצאות', totalExpenses.toString()]);
-      rows.push(['מספר חשבוניות', filtered.expenses.length.toString()]);
+
+    if (rows.length === 0) {
+      rows.push(['אין נתונים להצגה']);
     }
-    if (showReport('faults')) {
-      rows.push(['תקלות פתוחות', filtered.faults.filter(f => ['new', 'open', 'in_progress'].includes(f.status)).length.toString()]);
-      rows.push(['סה"כ תקלות', filtered.faults.length.toString()]);
-    }
-    if (showReport('accidents')) {
-      rows.push(['תאונות פתוחות', filtered.accidents.filter(a => a.status !== 'closed').length.toString()]);
-      rows.push(['עלות תאונות', totalAccidentCost.toString()]);
-    }
-    if (showReport('service_orders')) {
-      rows.push(['סה"כ הזמנות', filtered.serviceOrders.length.toString()]);
-    }
+
     const csv = '\uFEFF' + rows.map(r => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -189,7 +230,9 @@ export default function Reports() {
           <Download size={20} /> ייצוא
         </button>
       </div>
-      <p className="text-muted-foreground mb-4">סקירה כללית של נתוני המערכת</p>
+      <p className="text-muted-foreground mb-4">
+        {hasActiveFilters ? 'מציג נתונים מסוננים — ייצוא CSV יכלול רק את הנתונים המוצגים' : 'סקירה כללית מבוססת נתונים חיים — סנן לצפייה ממוקדת'}
+      </p>
 
       {/* Filter Toggle Button */}
       <button
@@ -311,8 +354,8 @@ export default function Reports() {
 
       {/* Report Cards */}
       <div className="space-y-4">
-        {/* Expenses */}
         {showReport('expenses') && (
+          <div onClick={() => setExpandedReport(expandedReport === 'expenses' ? null : 'expenses')} className="cursor-pointer">
           <ReportCard title="דוח הוצאות כולל" icon={FileText} color="bg-primary/10 text-primary"
             stats={[
               { label: 'סה"כ הוצאות', value: `₪${totalExpenses.toLocaleString()}` },
@@ -320,6 +363,7 @@ export default function Reports() {
               { label: 'ממוצע לחשבונית', value: `₪${filtered.expenses.length > 0 ? Math.round(totalExpenses / filtered.expenses.length).toLocaleString() : 0}` },
             ]}
           />
+          </div>
         )}
 
         {/* Vehicles */}
@@ -344,8 +388,59 @@ export default function Reports() {
           />
         )}
 
+        {showReport('expenses') && filtered.expenses.length > 0 && expandedReport === 'expenses' && (
+          <DetailTable headers={['תאריך', 'קטגוריה', 'ספק', 'רכב', 'סכום']}
+            rows={filtered.expenses.map(e => [
+              e.date ? new Date(e.date).toLocaleDateString('he-IL') : '-',
+              e.category || '-', e.vendor || '-', e.vehicle_plate || '-',
+              `₪${(e.amount || 0).toLocaleString()}`,
+            ])} />
+        )}
+
+        {/* Vehicles */}
+        {showReport('vehicles') && (
+          <div onClick={() => setExpandedReport(expandedReport === 'vehicles' ? null : 'vehicles')} className="cursor-pointer">
+          <ReportCard title="דוח רכבים" icon={Car} color="bg-primary/10 text-primary"
+            stats={[
+              { label: 'רכבים פעילים', value: filtered.vehicles.filter(v => v.status === 'active').length.toString() },
+              { label: 'בטיפול', value: filtered.vehicles.filter(v => v.status === 'in_service').length.toString() },
+              { label: 'סה"כ רכבים', value: filtered.vehicles.length.toString() },
+            ]}
+          />
+          </div>
+        )}
+        {showReport('vehicles') && filtered.vehicles.length > 0 && expandedReport === 'vehicles' && (
+          <DetailTable headers={['לוחית', 'יצרן', 'דגם', 'שנה', 'סטטוס', 'ק"מ']}
+            rows={filtered.vehicles.map(v => [
+              v.license_plate || '-', v.manufacturer || '-', v.model || '-',
+              (v.year || '-').toString(), v.status === 'active' ? 'פעיל' : v.status || '-',
+              (v.odometer || 0).toLocaleString(),
+            ])} />
+        )}
+
+        {/* Faults / Treatments */}
+        {showReport('faults') && (
+          <div onClick={() => setExpandedReport(expandedReport === 'faults' ? null : 'faults')} className="cursor-pointer">
+          <ReportCard title="דוח טיפולים / תקלות" icon={Wrench} color="bg-warning/10 text-warning"
+            stats={[
+              { label: 'פתוחות', value: filtered.faults.filter(f => ['new', 'open', 'in_progress'].includes(f.status)).length.toString() },
+              { label: 'דחופות', value: filtered.faults.filter(f => ['urgent', 'critical'].includes(f.urgency)).length.toString() },
+              { label: 'סה"כ', value: filtered.faults.length.toString() },
+            ]}
+          />
+          </div>
+        )}
+        {showReport('faults') && filtered.faults.length > 0 && expandedReport === 'faults' && (
+          <DetailTable headers={['תאריך', 'סוג', 'רכב', 'נהג', 'סטטוס']}
+            rows={filtered.faults.map(f => [
+              f.date ? new Date(f.date).toLocaleDateString('he-IL') : '-',
+              f.fault_type || '-', f.vehicle_plate || '-', f.driver_name || '-', f.status || '-',
+            ])} />
+        )}
+
         {/* Accidents */}
         {showReport('accidents') && (
+          <div onClick={() => setExpandedReport(expandedReport === 'accidents' ? null : 'accidents')} className="cursor-pointer">
           <ReportCard title="דוח תאונות" icon={AlertTriangle} color="bg-destructive/10 text-destructive"
             stats={[
               { label: 'פתוחות', value: filtered.accidents.filter(a => a.status !== 'closed').length.toString() },
@@ -353,10 +448,20 @@ export default function Reports() {
               { label: 'סה"כ', value: filtered.accidents.length.toString() },
             ]}
           />
+          </div>
+        )}
+        {showReport('accidents') && filtered.accidents.length > 0 && expandedReport === 'accidents' && (
+          <DetailTable headers={['תאריך', 'תיאור', 'רכב', 'נהג', 'עלות']}
+            rows={filtered.accidents.map(a => [
+              a.date ? new Date(a.date).toLocaleDateString('he-IL') : '-',
+              a.description || '-', a.vehicle_plate || '-', a.driver_name || '-',
+              `₪${(a.estimated_cost || 0).toLocaleString()}`,
+            ])} />
         )}
 
         {/* Drivers */}
         {showReport('drivers') && (
+          <div onClick={() => setExpandedReport(expandedReport === 'drivers' ? null : 'drivers')} className="cursor-pointer">
           <ReportCard title="דוח נהגים" icon={Users} color="bg-primary/10 text-primary"
             stats={[
               { label: 'פעילים', value: filtered.drivers.filter(d => d.status === 'active').length.toString() },
@@ -364,10 +469,19 @@ export default function Reports() {
               { label: 'סה"כ', value: filtered.drivers.length.toString() },
             ]}
           />
+          </div>
+        )}
+        {showReport('drivers') && filtered.drivers.length > 0 && expandedReport === 'drivers' && (
+          <DetailTable headers={['שם', 'טלפון', 'רישיון', 'תוקף', 'סטטוס']}
+            rows={filtered.drivers.map(d => [
+              d.full_name || '-', d.phone || '-', d.license_number || '-',
+              d.license_expiry || '-', d.status === 'active' ? 'פעיל' : 'לא פעיל',
+            ])} />
         )}
 
         {/* Service Orders */}
         {showReport('service_orders') && (
+          <div onClick={() => setExpandedReport(expandedReport === 'service_orders' ? null : 'service_orders')} className="cursor-pointer">
           <ReportCard title="דוח הזמנות שירות" icon={ShoppingCart} color="bg-primary/10 text-primary"
             stats={[
               { label: 'חדשות', value: filtered.serviceOrders.filter(s => s.treatment_status === 'new').length.toString() },
@@ -375,6 +489,15 @@ export default function Reports() {
               { label: 'סה"כ', value: filtered.serviceOrders.length.toString() },
             ]}
           />
+          </div>
+        )}
+        {showReport('service_orders') && filtered.serviceOrders.length > 0 && expandedReport === 'service_orders' && (
+          <DetailTable headers={['תאריך', 'קטגוריה', 'רכב', 'נהג', 'ספק', 'סטטוס']}
+            rows={filtered.serviceOrders.map(s => [
+              s.service_date ? new Date(s.service_date).toLocaleDateString('he-IL') : '-',
+              s.service_category || '-', s.vehicle_plate || '-', s.driver_name || '-',
+              s.vendor_name || '-', s.treatment_status || '-',
+            ])} />
         )}
 
         {/* Profit & Loss */}
@@ -424,10 +547,11 @@ function ReportCard({ title, icon: Icon, color, stats }: {
   stats: { label: string; value: string }[];
 }) {
   return (
-    <div className="card-elevated">
+    <div className="card-elevated hover:shadow-lg transition-shadow">
       <div className="flex items-center gap-3 mb-4">
         <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", color)}><Icon size={24} /></div>
-        <h2 className="text-xl font-bold">{title}</h2>
+        <h2 className="text-xl font-bold flex-1">{title}</h2>
+        <ChevronDown size={18} className="text-muted-foreground" />
       </div>
       <div className={cn("grid gap-4", stats.length === 2 ? "grid-cols-2" : "grid-cols-3")}>
         {stats.map(stat => (
@@ -437,6 +561,27 @@ function ReportCard({ title, icon: Icon, color, stats }: {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function DetailTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
+  return (
+    <div className="card-elevated overflow-x-auto animate-fade-in -mt-2">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-border">
+            {headers.map(h => <th key={h} className="py-2 px-3 text-right font-bold text-muted-foreground">{h}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} className="border-b border-border/50 last:border-0">
+              {row.map((cell, j) => <td key={j} className="py-2 px-3">{cell}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
