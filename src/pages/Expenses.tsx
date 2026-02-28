@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FileText, Plus, Search, ArrowRight, TrendingUp } from 'lucide-react';
+import ExpenseCard from '@/components/ExpenseCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -94,21 +95,7 @@ export default function Expenses() {
       ) : (
         <div className="space-y-3">
           {filtered.map(e => (
-            <div key={e.id} className="card-elevated">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xl font-bold">{e.category}</p>
-                <span className="text-xl font-black text-primary">₪{(e.amount || 0).toLocaleString()}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-muted-foreground text-sm">
-                <span>🚗 {e.vehicle_plate}</span>
-                <span>👤 {e.driver_name}</span>
-                <span>📅 {e.date ? new Date(e.date).toLocaleDateString('he-IL') : ''}</span>
-                <span>🏪 {e.vendor}</span>
-                {e.invoice_number && <span>🧾 {e.invoice_number}</span>}
-                {e.odometer > 0 && <span>📊 {e.odometer.toLocaleString()} ק"מ</span>}
-              </div>
-              {e.notes && <p className="text-sm text-muted-foreground mt-2 bg-muted p-2 rounded-lg">{e.notes}</p>}
-            </div>
+            <ExpenseCard key={e.id} expense={e} />
           ))}
         </div>
       )}
