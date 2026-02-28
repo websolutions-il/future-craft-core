@@ -191,7 +191,14 @@ function AccidentForm({ accident, onDone, onBack, user }: { accident: AccidentRo
     const payload = { vehicle_plate: vehiclePlate, driver_name: driverName, location, description, has_insurance: hasInsurance, third_party: thirdParty, estimated_cost: parseFloat(estimatedCost) || 0, notes, images: imageUrl || '' };
     let error;
     if (isEdit) { ({ error } = await supabase.from('accidents').update(payload).eq('id', accident!.id)); }
-    else { ({ error } = await supabase.from('accidents').insert({ ...payload, company_name: user?.company_name || '', created_by: user?.id })); }
+    else {
+      const insertPayload = { ...payload, company_name: user?.company_name || '', created_by: user?.id };
+      ({ error } = await supabase.from('accidents').insert(insertPayload));
+      // Send email notification to fleet managers (fire-and-forget)
+      if (!error) {
+        supabase.functions.invoke('notify-accident-email', { body: { record: insertPayload } }).catch(console.error);
+      }
+    }
     setLoading(false);
     if (error) { toast.error('שגיאה'); } else { toast.success(isEdit ? 'עודכן' : 'דיווח נשלח'); onDone(); }
   };
