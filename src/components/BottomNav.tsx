@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { Home, Car, Users, Route, Wrench, FileText, AlertTriangle, BarChart3, RefreshCw, Menu, X, LogOut, Settings, Bell, Briefcase, ClipboardList, History, UserCheck, Phone } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 import logo from '@/assets/white-logo.png';
 import { useState } from 'react';
 
@@ -61,9 +62,9 @@ const managerMobileNav: NavItem[] = [
 // Driver mobile bottom nav
 const driverMobileNav: NavItem[] = [
   { path: '/dashboard', label: 'בית', icon: Home },
+  { path: '/driver-notifications', label: 'התראות', icon: Bell },
   { path: '/faults', label: 'תקלה', icon: Wrench },
   { path: '/expenses', label: 'חשבוניות', icon: FileText },
-  { path: '/accidents', label: 'תאונות', icon: AlertTriangle },
 ];
 
 // All manager items flat (for "more" menu on mobile)
@@ -73,6 +74,7 @@ export default function BottomNav() {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [showMore, setShowMore] = useState(false);
+  const unreadCount = useUnreadNotifications();
 
   const isDriver = user?.role === 'driver';
   const mobileNav = isDriver ? driverMobileNav : managerMobileNav;
@@ -131,10 +133,15 @@ export default function BottomNav() {
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `nav-item-mobile flex-1 ${isActive ? 'text-primary font-bold' : 'text-muted-foreground'}`
+                `nav-item-mobile flex-1 relative ${isActive ? 'text-primary font-bold' : 'text-muted-foreground'}`
               }
             >
               <item.icon size={26} />
+              {item.path === '/driver-notifications' && unreadCount > 0 && (
+                <span className="absolute top-1 left-1/2 bg-destructive text-destructive-foreground text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
               <span className="text-xs">{item.label}</span>
             </NavLink>
           ))}
@@ -156,6 +163,7 @@ export default function BottomNav() {
 export function DesktopSidebar() {
   const { user, logout } = useAuth();
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({ 'בית': true });
+  const unreadCount = useUnreadNotifications();
 
   const isDriver = user?.role === 'driver';
 
@@ -166,6 +174,8 @@ export function DesktopSidebar() {
   // Driver gets a simple flat sidebar
   const driverSidebarItems: NavItem[] = [
     { path: '/dashboard', label: 'דשבורד', icon: Home },
+    { path: '/driver-notifications', label: 'התראות', icon: Bell },
+    { path: '/driver-schedule', label: 'לוח זמנים', icon: ClipboardList },
     { path: '/faults', label: 'דיווח תקלה', icon: Wrench },
     { path: '/expenses', label: 'דלק וחשבוניות', icon: FileText },
     { path: '/accidents', label: 'תאונה וחירום', icon: AlertTriangle },
@@ -194,13 +204,18 @@ export function DesktopSidebar() {
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-6 py-4 text-lg font-medium transition-colors ${
+                `flex items-center gap-3 px-6 py-4 text-lg font-medium transition-colors relative ${
                   isActive ? 'bg-primary-foreground/20 font-bold' : 'hover:bg-primary-foreground/10'
                 }`
               }
             >
               <item.icon size={22} />
               <span>{item.label}</span>
+              {item.path === '/driver-notifications' && unreadCount > 0 && (
+                <span className="bg-destructive text-destructive-foreground text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1 mr-auto">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </NavLink>
           ))
         ) : (
