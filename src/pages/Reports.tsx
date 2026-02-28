@@ -1,65 +1,178 @@
-import { useState, useEffect } from 'react';
-import { BarChart3, Car, Users, FileText, Wrench, AlertTriangle, Download } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { BarChart3, Car, Users, FileText, Wrench, AlertTriangle, Download, Filter, ChevronDown, ChevronUp, ShoppingCart, TrendingUp, Package } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
-interface ReportStats {
-  vehicles: { total: number; active: number; inService: number };
-  drivers: { total: number; active: number };
-  faults: { total: number; open: number; urgent: number };
-  accidents: { total: number; open: number; cost: number };
-  expenses: { total: number; count: number; avg: number };
+interface RawData {
+  vehicles: any[];
+  drivers: any[];
+  faults: any[];
+  accidents: any[];
+  expenses: any[];
+  serviceOrders: any[];
 }
+
+const paymentMethods = [
+  { value: 'cash', label: 'מזומן' },
+  { value: 'credit_card', label: 'כרטיס אשראי' },
+  { value: 'check', label: "צ'ק" },
+  { value: 'transfer', label: 'העברה' },
+];
+
+const reportTypes = [
+  { value: 'vehicles', label: 'סיכום רכבים' },
+  { value: 'drivers', label: 'סיכום נהגים' },
+  { value: 'expenses', label: 'הוצאות לפי תקופה' },
+  { value: 'profit_loss', label: 'רווח והפסד' },
+  { value: 'faults', label: 'טיפולים' },
+  { value: 'accidents', label: 'תאונות' },
+  { value: 'service_orders', label: 'הזמנות' },
+  { value: 'vendors', label: 'סיכום לפי ספקים' },
+];
 
 export default function Reports() {
   const { user } = useAuth();
-  const [stats, setStats] = useState<ReportStats | null>(null);
+  const [raw, setRaw] = useState<RawData>({ vehicles: [], drivers: [], faults: [], accidents: [], expenses: [], serviceOrders: [] });
   const [loading, setLoading] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
-  useEffect(() => { loadStats(); }, []);
+  // Filter state
+  const [filterCompany, setFilterCompany] = useState('');
+  const [filterDateFrom, setFilterDateFrom] = useState<Date | undefined>();
+  const [filterDateTo, setFilterDateTo] = useState<Date | undefined>();
+  const [filterReportTypes, setFilterReportTypes] = useState<string[]>([]);
+  const [filterVendor, setFilterVendor] = useState('');
+  const [filterPayment, setFilterPayment] = useState('');
+  const [filterVehicle, setFilterVehicle] = useState('');
+  const [filterDriver, setFilterDriver] = useState('');
 
-  const loadStats = async () => {
-    const [vRes, dRes, fRes, aRes, eRes] = await Promise.all([
-      supabase.from('vehicles').select('id, status'),
-      supabase.from('drivers').select('id, status'),
-      supabase.from('faults').select('id, status, urgency'),
-      supabase.from('accidents').select('id, status, estimated_cost'),
-      supabase.from('expenses').select('id, amount'),
+  useEffect(() => { loadData(); }, []);
+
+  const loadData = async () => {
+    const [vRes, dRes, fRes, aRes, eRes, soRes] = await Promise.all([
+      supabase.from('vehicles').select('*'),
+      supabase.from('drivers').select('*'),
+      supabase.from('faults').select('*'),
+      supabase.from('accidents').select('*'),
+      supabase.from('expenses').select('*'),
+      supabase.from('service_orders').select('*'),
     ]);
-
-    const vehicles = vRes.data || [];
-    const drivers = dRes.data || [];
-    const faults = fRes.data || [];
-    const accidents = aRes.data || [];
-    const expenses = eRes.data || [];
-
-    const totalExpenses = expenses.reduce((s, e: any) => s + (e.amount || 0), 0);
-
-    setStats({
-      vehicles: { total: vehicles.length, active: vehicles.filter((v: any) => v.status === 'active').length, inService: vehicles.filter((v: any) => v.status === 'in_service').length },
-      drivers: { total: drivers.length, active: drivers.filter((d: any) => d.status === 'active').length },
-      faults: { total: faults.length, open: faults.filter((f: any) => ['new', 'open', 'in_progress'].includes(f.status)).length, urgent: faults.filter((f: any) => ['urgent', 'critical'].includes(f.urgency)).length },
-      accidents: { total: accidents.length, open: accidents.filter((a: any) => a.status !== 'closed').length, cost: accidents.reduce((s, a: any) => s + (a.estimated_cost || 0), 0) },
-      expenses: { total: totalExpenses, count: expenses.length, avg: expenses.length > 0 ? Math.round(totalExpenses / expenses.length) : 0 },
+    setRaw({
+      vehicles: vRes.data || [],
+      drivers: dRes.data || [],
+      faults: fRes.data || [],
+      accidents: aRes.data || [],
+      expenses: eRes.data || [],
+      serviceOrders: soRes.data || [],
     });
     setLoading(false);
   };
 
+  // Derived unique values for filters
+  const companies = useMemo(() => [...new Set(raw.vehicles.map(v => v.company_name).filter(Boolean))], [raw]);
+  const vendors = useMemo(() => [...new Set([...raw.expenses.map(e => e.vendor), ...raw.serviceOrders.map(s => s.vendor_name)].filter(Boolean))], [raw]);
+  const vehiclePlates = useMemo(() => [...new Set(raw.vehicles.map(v => v.license_plate).filter(Boolean))], [raw]);
+  const driverNames = useMemo(() => [...new Set(raw.drivers.map(d => d.full_name).filter(Boolean))], [raw]);
+
+  // Apply filters
+  const filtered = useMemo(() => {
+    const inDateRange = (dateStr: string | null) => {
+      if (!dateStr) return true;
+      const d = new Date(dateStr);
+      if (filterDateFrom && d < filterDateFrom) return false;
+      if (filterDateTo) {
+        const to = new Date(filterDateTo);
+        to.setHours(23, 59, 59, 999);
+        if (d > to) return false;
+      }
+      return true;
+    };
+    const matchCompany = (c: string | null) => !filterCompany || c === filterCompany;
+    const matchVehicle = (v: string | null) => !filterVehicle || v === filterVehicle;
+    const matchDriver = (d: string | null) => !filterDriver || d === filterDriver;
+
+    return {
+      vehicles: raw.vehicles.filter(v => matchCompany(v.company_name) && matchVehicle(v.license_plate)),
+      drivers: raw.drivers.filter(d => matchCompany(d.company_name) && matchDriver(d.full_name)),
+      faults: raw.faults.filter(f => matchCompany(f.company_name) && matchVehicle(f.vehicle_plate) && matchDriver(f.driver_name) && inDateRange(f.date)),
+      accidents: raw.accidents.filter(a => matchCompany(a.company_name) && matchVehicle(a.vehicle_plate) && matchDriver(a.driver_name) && inDateRange(a.date)),
+      expenses: raw.expenses.filter(e => matchCompany(e.company_name) && matchVehicle(e.vehicle_plate) && matchDriver(e.driver_name) && inDateRange(e.date) && (!filterVendor || e.vendor === filterVendor)),
+      serviceOrders: raw.serviceOrders.filter(s => matchCompany(s.company_name) && matchVehicle(s.vehicle_plate) && matchDriver(s.driver_name) && inDateRange(s.created_at) && (!filterVendor || s.vendor_name === filterVendor)),
+    };
+  }, [raw, filterCompany, filterDateFrom, filterDateTo, filterVendor, filterPayment, filterVehicle, filterDriver]);
+
+  const showReport = (type: string) => filterReportTypes.length === 0 || filterReportTypes.includes(type);
+  const toggleReportType = (type: string) => setFilterReportTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]);
+
+  const clearFilters = () => {
+    setFilterCompany('');
+    setFilterDateFrom(undefined);
+    setFilterDateTo(undefined);
+    setFilterReportTypes([]);
+    setFilterVendor('');
+    setFilterPayment('');
+    setFilterVehicle('');
+    setFilterDriver('');
+  };
+
+  const hasActiveFilters = filterCompany || filterDateFrom || filterDateTo || filterReportTypes.length > 0 || filterVendor || filterPayment || filterVehicle || filterDriver;
+
+  // Stats
+  const totalExpenses = filtered.expenses.reduce((s, e) => s + (e.amount || 0), 0);
+  const totalAccidentCost = filtered.accidents.reduce((s, a) => s + (a.estimated_cost || 0), 0);
+
+  // Vendor summary
+  const vendorSummary = useMemo(() => {
+    const map: Record<string, { count: number; total: number }> = {};
+    filtered.expenses.forEach(e => {
+      if (!e.vendor) return;
+      if (!map[e.vendor]) map[e.vendor] = { count: 0, total: 0 };
+      map[e.vendor].count++;
+      map[e.vendor].total += e.amount || 0;
+    });
+    filtered.serviceOrders.forEach(s => {
+      if (!s.vendor_name) return;
+      if (!map[s.vendor_name]) map[s.vendor_name] = { count: 0, total: 0 };
+      map[s.vendor_name].count++;
+    });
+    return Object.entries(map).sort((a, b) => b[1].total - a[1].total);
+  }, [filtered]);
+
+  if (loading) {
+    return <div className="animate-fade-in text-center py-12"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto" /></div>;
+  }
+
+  const selectClass = "w-full p-3 text-base rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
+
   const exportCSV = () => {
-    if (!stats) return;
-    const rows = [
-      ['דוח', 'ערך'],
-      ['רכבים פעילים', stats.vehicles.active.toString()],
-      ['סה"כ רכבים', stats.vehicles.total.toString()],
-      ['נהגים פעילים', stats.drivers.active.toString()],
-      ['סה"כ נהגים', stats.drivers.total.toString()],
-      ['תקלות פתוחות', stats.faults.open.toString()],
-      ['תקלות דחופות', stats.faults.urgent.toString()],
-      ['תאונות פתוחות', stats.accidents.open.toString()],
-      ['עלות תאונות', stats.accidents.cost.toString()],
-      ['סה"כ הוצאות', stats.expenses.total.toString()],
-      ['מספר חשבוניות', stats.expenses.count.toString()],
-    ];
+    const rows: string[][] = [['דוח', 'ערך']];
+    if (showReport('vehicles')) {
+      rows.push(['רכבים פעילים', filtered.vehicles.filter(v => v.status === 'active').length.toString()]);
+      rows.push(['סה"כ רכבים', filtered.vehicles.length.toString()]);
+    }
+    if (showReport('drivers')) {
+      rows.push(['נהגים פעילים', filtered.drivers.filter(d => d.status === 'active').length.toString()]);
+      rows.push(['סה"כ נהגים', filtered.drivers.length.toString()]);
+    }
+    if (showReport('expenses')) {
+      rows.push(['סה"כ הוצאות', totalExpenses.toString()]);
+      rows.push(['מספר חשבוניות', filtered.expenses.length.toString()]);
+    }
+    if (showReport('faults')) {
+      rows.push(['תקלות פתוחות', filtered.faults.filter(f => ['new', 'open', 'in_progress'].includes(f.status)).length.toString()]);
+      rows.push(['סה"כ תקלות', filtered.faults.length.toString()]);
+    }
+    if (showReport('accidents')) {
+      rows.push(['תאונות פתוחות', filtered.accidents.filter(a => a.status !== 'closed').length.toString()]);
+      rows.push(['עלות תאונות', totalAccidentCost.toString()]);
+    }
+    if (showReport('service_orders')) {
+      rows.push(['סה"כ הזמנות', filtered.serviceOrders.length.toString()]);
+    }
     const csv = '\uFEFF' + rows.map(r => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -68,44 +181,259 @@ export default function Reports() {
     link.click();
   };
 
-  if (loading) {
-    return <div className="animate-fade-in text-center py-12"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto" /></div>;
-  }
-
-  const s = stats!;
-
-  const reportCards = [
-    { title: 'דוח הוצאות', icon: FileText, color: 'bg-primary/10 text-primary', stats: [{ label: 'סה"כ הוצאות', value: `₪${s.expenses.total.toLocaleString()}` }, { label: 'חשבוניות', value: s.expenses.count.toString() }, { label: 'ממוצע', value: `₪${s.expenses.avg.toLocaleString()}` }] },
-    { title: 'דוח רכבים', icon: Car, color: 'bg-primary/10 text-primary', stats: [{ label: 'פעילים', value: s.vehicles.active.toString() }, { label: 'בטיפול', value: s.vehicles.inService.toString() }, { label: 'סה"כ', value: s.vehicles.total.toString() }] },
-    { title: 'דוח תקלות', icon: Wrench, color: 'bg-warning/10 text-warning', stats: [{ label: 'פתוחות', value: s.faults.open.toString() }, { label: 'דחופות', value: s.faults.urgent.toString() }, { label: 'סה"כ', value: s.faults.total.toString() }] },
-    { title: 'דוח תאונות', icon: AlertTriangle, color: 'bg-destructive/10 text-destructive', stats: [{ label: 'פתוחות', value: s.accidents.open.toString() }, { label: 'עלות', value: `₪${s.accidents.cost.toLocaleString()}` }, { label: 'סה"כ', value: s.accidents.total.toString() }] },
-    { title: 'דוח נהגים', icon: Users, color: 'bg-primary/10 text-primary', stats: [{ label: 'פעילים', value: s.drivers.active.toString() }, { label: 'סה"כ', value: s.drivers.total.toString() }] },
-  ];
-
   return (
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="page-header !mb-0 flex items-center gap-3"><BarChart3 size={28} /> דוחות</h1>
-        <button onClick={exportCSV} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]">
-          <Download size={22} /> ייצוא CSV
+        <h1 className="page-header !mb-0 flex items-center gap-3"><BarChart3 size={28} /> דוחות כספיים ותפעוליים</h1>
+        <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground text-base font-bold min-h-[48px]">
+          <Download size={20} /> ייצוא
         </button>
       </div>
-      <p className="text-muted-foreground mb-6">סקירה כללית מבוססת נתונים חיים</p>
-      <div className="space-y-4">
-        {reportCards.map(card => (
-          <div key={card.title} className="card-elevated">
-            <div className="flex items-center gap-3 mb-4">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${card.color}`}><card.icon size={24} /></div>
-              <h2 className="text-xl font-bold">{card.title}</h2>
+      <p className="text-muted-foreground mb-4">סקירה כללית של נתוני המערכת</p>
+
+      {/* Filter Toggle Button */}
+      <button
+        onClick={() => setFiltersOpen(!filtersOpen)}
+        className={cn(
+          "w-full flex items-center justify-between p-4 rounded-xl mb-4 text-lg font-bold transition-colors",
+          hasActiveFilters ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+        )}
+      >
+        <span className="flex items-center gap-2">
+          <Filter size={20} />
+          סינון מתקדם
+          {hasActiveFilters && <span className="bg-primary-foreground/20 text-primary-foreground text-xs px-2 py-0.5 rounded-full">פעיל</span>}
+        </span>
+        {filtersOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+      </button>
+
+      {/* Filter Panel */}
+      {filtersOpen && (
+        <div className="card-elevated mb-6 space-y-4 animate-fade-in">
+          {/* Company */}
+          {user?.role === 'super_admin' && (
+            <div>
+              <label className="block text-sm font-medium mb-1">חברה</label>
+              <select value={filterCompany} onChange={e => setFilterCompany(e.target.value)} className={selectClass}>
+                <option value="">הכל</option>
+                {companies.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
             </div>
-            <div className={`grid gap-4 ${card.stats.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-              {card.stats.map(stat => (
-                <div key={stat.label} className="text-center">
-                  <p className="text-2xl font-black">{stat.value}</p>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                </div>
+          )}
+
+          {/* Date Range */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">מתאריך</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className={cn(selectClass, "text-right", !filterDateFrom && "text-muted-foreground")}>
+                    {filterDateFrom ? format(filterDateFrom, 'dd/MM/yyyy') : 'בחר...'}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={filterDateFrom} onSelect={setFilterDateFrom} initialFocus className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">עד תאריך</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className={cn(selectClass, "text-right", !filterDateTo && "text-muted-foreground")}>
+                    {filterDateTo ? format(filterDateTo, 'dd/MM/yyyy') : 'בחר...'}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={filterDateTo} onSelect={setFilterDateTo} initialFocus className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          {/* Report Types */}
+          <div>
+            <label className="block text-sm font-medium mb-2">סוג דוח</label>
+            <div className="flex flex-wrap gap-2">
+              {reportTypes.map(rt => (
+                <button key={rt.value} onClick={() => toggleReportType(rt.value)}
+                  className={cn(
+                    "px-3 py-2 rounded-xl text-sm font-medium border-2 transition-all",
+                    filterReportTypes.includes(rt.value) ? "border-primary bg-primary/10 text-primary" : "border-transparent bg-muted text-muted-foreground"
+                  )}>{rt.label}</button>
               ))}
             </div>
+          </div>
+
+          {/* Vendor */}
+          <div>
+            <label className="block text-sm font-medium mb-1">ספק</label>
+            <select value={filterVendor} onChange={e => setFilterVendor(e.target.value)} className={selectClass}>
+              <option value="">הכל</option>
+              {vendors.map(v => <option key={v} value={v}>{v}</option>)}
+            </select>
+          </div>
+
+          {/* Payment Method */}
+          <div>
+            <label className="block text-sm font-medium mb-1">אופן תשלום</label>
+            <select value={filterPayment} onChange={e => setFilterPayment(e.target.value)} className={selectClass}>
+              <option value="">הכל</option>
+              {paymentMethods.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+            </select>
+          </div>
+
+          {/* Vehicle & Driver */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">רכב</label>
+              <select value={filterVehicle} onChange={e => setFilterVehicle(e.target.value)} className={selectClass}>
+                <option value="">הכל</option>
+                {vehiclePlates.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">נהג</label>
+              <select value={filterDriver} onChange={e => setFilterDriver(e.target.value)} className={selectClass}>
+                <option value="">הכל</option>
+                {driverNames.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {hasActiveFilters && (
+            <button onClick={clearFilters} className="w-full py-3 rounded-xl bg-destructive/10 text-destructive font-bold text-base">
+              ✕ נקה סינון
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Report Cards */}
+      <div className="space-y-4">
+        {/* Expenses */}
+        {showReport('expenses') && (
+          <ReportCard title="דוח הוצאות כולל" icon={FileText} color="bg-primary/10 text-primary"
+            stats={[
+              { label: 'סה"כ הוצאות', value: `₪${totalExpenses.toLocaleString()}` },
+              { label: 'מספר חשבוניות', value: filtered.expenses.length.toString() },
+              { label: 'ממוצע לחשבונית', value: `₪${filtered.expenses.length > 0 ? Math.round(totalExpenses / filtered.expenses.length).toLocaleString() : 0}` },
+            ]}
+          />
+        )}
+
+        {/* Vehicles */}
+        {showReport('vehicles') && (
+          <ReportCard title="דוח רכבים" icon={Car} color="bg-primary/10 text-primary"
+            stats={[
+              { label: 'רכבים פעילים', value: filtered.vehicles.filter(v => v.status === 'active').length.toString() },
+              { label: 'בטיפול', value: filtered.vehicles.filter(v => v.status === 'in_service').length.toString() },
+              { label: 'סה"כ רכבים', value: filtered.vehicles.length.toString() },
+            ]}
+          />
+        )}
+
+        {/* Faults / Treatments */}
+        {showReport('faults') && (
+          <ReportCard title="דוח טיפולים / תקלות" icon={Wrench} color="bg-warning/10 text-warning"
+            stats={[
+              { label: 'פתוחות', value: filtered.faults.filter(f => ['new', 'open', 'in_progress'].includes(f.status)).length.toString() },
+              { label: 'דחופות', value: filtered.faults.filter(f => ['urgent', 'critical'].includes(f.urgency)).length.toString() },
+              { label: 'סה"כ', value: filtered.faults.length.toString() },
+            ]}
+          />
+        )}
+
+        {/* Accidents */}
+        {showReport('accidents') && (
+          <ReportCard title="דוח תאונות" icon={AlertTriangle} color="bg-destructive/10 text-destructive"
+            stats={[
+              { label: 'פתוחות', value: filtered.accidents.filter(a => a.status !== 'closed').length.toString() },
+              { label: 'עלות משוערת', value: `₪${totalAccidentCost.toLocaleString()}` },
+              { label: 'סה"כ', value: filtered.accidents.length.toString() },
+            ]}
+          />
+        )}
+
+        {/* Drivers */}
+        {showReport('drivers') && (
+          <ReportCard title="דוח נהגים" icon={Users} color="bg-primary/10 text-primary"
+            stats={[
+              { label: 'פעילים', value: filtered.drivers.filter(d => d.status === 'active').length.toString() },
+              { label: 'לא פעילים', value: filtered.drivers.filter(d => d.status !== 'active').length.toString() },
+              { label: 'סה"כ', value: filtered.drivers.length.toString() },
+            ]}
+          />
+        )}
+
+        {/* Service Orders */}
+        {showReport('service_orders') && (
+          <ReportCard title="דוח הזמנות שירות" icon={ShoppingCart} color="bg-primary/10 text-primary"
+            stats={[
+              { label: 'חדשות', value: filtered.serviceOrders.filter(s => s.treatment_status === 'new').length.toString() },
+              { label: 'בטיפול', value: filtered.serviceOrders.filter(s => s.treatment_status === 'in_progress').length.toString() },
+              { label: 'סה"כ', value: filtered.serviceOrders.length.toString() },
+            ]}
+          />
+        )}
+
+        {/* Profit & Loss */}
+        {showReport('profit_loss') && (
+          <ReportCard title="רווח והפסד" icon={TrendingUp} color="bg-primary/10 text-primary"
+            stats={[
+              { label: 'הוצאות', value: `₪${totalExpenses.toLocaleString()}` },
+              { label: 'עלות תאונות', value: `₪${totalAccidentCost.toLocaleString()}` },
+              { label: 'סה"כ עלויות', value: `₪${(totalExpenses + totalAccidentCost).toLocaleString()}` },
+            ]}
+          />
+        )}
+
+        {/* Vendor Summary */}
+        {showReport('vendors') && (
+          <div className="card-elevated">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-primary/10 text-primary"><Package size={24} /></div>
+              <h2 className="text-xl font-bold">סיכום לפי ספקים</h2>
+            </div>
+            {vendorSummary.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">אין נתונים</p>
+            ) : (
+              <div className="space-y-3">
+                {vendorSummary.map(([name, data]) => (
+                  <div key={name} className="flex items-center justify-between bg-muted rounded-xl p-3">
+                    <span className="font-bold">{name}</span>
+                    <div className="flex items-center gap-4 text-sm">
+                      <span className="text-muted-foreground">{data.count} פריטים</span>
+                      {data.total > 0 && <span className="font-bold text-primary">₪{data.total.toLocaleString()}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ReportCard({ title, icon: Icon, color, stats }: {
+  title: string;
+  icon: any;
+  color: string;
+  stats: { label: string; value: string }[];
+}) {
+  return (
+    <div className="card-elevated">
+      <div className="flex items-center gap-3 mb-4">
+        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", color)}><Icon size={24} /></div>
+        <h2 className="text-xl font-bold">{title}</h2>
+      </div>
+      <div className={cn("grid gap-4", stats.length === 2 ? "grid-cols-2" : "grid-cols-3")}>
+        {stats.map(stat => (
+          <div key={stat.label} className="text-center">
+            <p className="text-2xl font-black">{stat.value}</p>
+            <p className="text-sm text-muted-foreground">{stat.label}</p>
           </div>
         ))}
       </div>
