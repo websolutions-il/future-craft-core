@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { email, password, full_name, role, company_name, action } = await req.json();
+    const { email, password, full_name, role, company_name, action, user_id } = await req.json();
 
     if (action === 'update-password') {
       if (!email || !password) {
@@ -81,6 +81,29 @@ Deno.serve(async (req) => {
       }
 
       const { error } = await supabaseAdmin.auth.admin.updateUserById(targetUser.id, { password });
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Reset password by user ID (for user management screen)
+    if (action === 'reset-password-by-id') {
+      if (!user_id || !password) {
+        return new Response(JSON.stringify({ error: 'user_id and password are required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, { password });
       if (error) {
         return new Response(JSON.stringify({ error: error.message }), {
           status: 400,
