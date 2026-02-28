@@ -29,6 +29,7 @@ import Expenses from "@/pages/Expenses";
 import WorkOrders from "@/pages/WorkOrders";
 import Emergency from "@/pages/Emergency";
 import DriverNotifications from "@/pages/DriverNotifications";
+import DriverWeeklySchedule from "@/pages/DriverWeeklySchedule";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -81,6 +82,7 @@ function AppRoutes() {
         <Route path="/work-orders" element={<WorkOrders />} />
         <Route path="/emergency" element={<Emergency />} />
         <Route path="/driver-notifications" element={<DriverNotifications />} />
+        <Route path="/driver-schedule" element={<DriverWeeklySchedule />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
