@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { FaultAttachment } from '@/data/demo-data';
-import { ArrowRight, Camera, MapPin, Navigation, X, Plus, Car, RefreshCw } from 'lucide-react';
+import { ArrowRight, Camera, MapPin, Navigation, X, Plus, Car, RefreshCw, MessageCircle, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -42,8 +42,17 @@ export default function VehicleHandover() {
   
   const [fromDriver, setFromDriver] = useState('');
   const [fromDriverPhone, setFromDriverPhone] = useState('');
+  const [fromIsOther, setFromIsOther] = useState(false);
+  const [fromOtherId, setFromOtherId] = useState('');
+  const [fromOtherLicense, setFromOtherLicense] = useState('');
+  const [fromOtherLicenseExpiry, setFromOtherLicenseExpiry] = useState('');
+
   const [toDriver, setToDriver] = useState('');
   const [toDriverPhone, setToDriverPhone] = useState('');
+  const [toIsOther, setToIsOther] = useState(false);
+  const [toOtherId, setToOtherId] = useState('');
+  const [toOtherLicense, setToOtherLicense] = useState('');
+  const [toOtherLicenseExpiry, setToOtherLicenseExpiry] = useState('');
   
   const [pickupDate, setPickupDate] = useState(new Date().toISOString().split('T')[0]);
   const [pickupTime, setPickupTime] = useState(new Date().toTimeString().slice(0, 5));
@@ -74,15 +83,32 @@ export default function VehicleHandover() {
   const selectedVehicle = dbVehicles.find(v => v.license_plate === vehiclePlate);
 
   const handleFromDriverChange = (name: string) => {
+    if (name === '__other__') {
+      setFromIsOther(true); setFromDriver(''); setFromDriverPhone('');
+      return;
+    }
+    setFromIsOther(false);
     setFromDriver(name);
     const driver = dbDrivers.find(d => d.full_name === name);
     if (driver) setFromDriverPhone(driver.phone);
   };
 
   const handleToDriverChange = (name: string) => {
+    if (name === '__other__') {
+      setToIsOther(true); setToDriver(''); setToDriverPhone('');
+      return;
+    }
+    setToIsOther(false);
     setToDriver(name);
     const driver = dbDrivers.find(d => d.full_name === name);
     if (driver) setToDriverPhone(driver.phone);
+  };
+
+  const sendWhatsApp = (phone: string, driverName: string) => {
+    if (!phone) { toast.error('אין מספר טלפון'); return; }
+    const cleanPhone = phone.replace(/\D/g, '').replace(/^0/, '972');
+    const message = `שלום ${driverName},\nבקשת אישור להחלפת רכב ${vehiclePlate}.\nתאריך: ${pickupDate}\nשעה: ${pickupTime}\nאנא אשר/י קבלה.\nתודה!`;
+    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const getLocation = () => {
@@ -239,31 +265,68 @@ export default function VehicleHandover() {
       <div className="card-elevated mb-5">
         <h2 className="text-lg font-bold mb-4 text-primary">טופס {action === 'pickup' ? 'לקיחה' : 'החזרה'}</h2>
         <div className="space-y-4">
+          {/* From Driver */}
           <div>
             <label className="block text-lg font-medium mb-2">נהג מוסר</label>
-            <select value={fromDriver} onChange={e => handleFromDriverChange(e.target.value)} className={inputClass}>
+            <select value={fromIsOther ? '__other__' : fromDriver} onChange={e => handleFromDriverChange(e.target.value)} className={inputClass}>
               <option value="">בחר נהג...</option>
               {dbDrivers.map(d => (
                 <option key={d.full_name} value={d.full_name}>{d.full_name}</option>
               ))}
+              <option value="__other__">➕ אחר (נהג זמני)</option>
             </select>
           </div>
+          {fromIsOther && (
+            <div className="p-4 rounded-xl bg-muted/50 border border-border space-y-3">
+              <p className="text-sm font-bold text-primary flex items-center gap-2"><UserPlus size={16} /> פרטי נהג זמני (מוסר)</p>
+              <input value={fromDriver} onChange={e => setFromDriver(e.target.value)} placeholder="שם נהג..." className={inputClass} />
+              <input value={fromOtherId} onChange={e => setFromOtherId(e.target.value)} placeholder="מספר מזהה (ת.ז)..." className={inputClass} />
+              <input value={fromOtherLicense} onChange={e => setFromOtherLicense(e.target.value)} placeholder="מספר רישיון נהיגה..." className={inputClass} />
+              <input type="date" value={fromOtherLicenseExpiry} onChange={e => setFromOtherLicenseExpiry(e.target.value)} placeholder="תוקף רישיון" className={inputClass} />
+            </div>
+          )}
           <div>
             <label className="block text-lg font-medium mb-2">טלפון נהג מוסר</label>
-            <input type="tel" value={fromDriverPhone} onChange={e => setFromDriverPhone(e.target.value)} placeholder="מספר טלפון..." className={inputClass} />
+            <div className="flex gap-2">
+              <input type="tel" value={fromDriverPhone} onChange={e => setFromDriverPhone(e.target.value)} placeholder="מספר טלפון..." className={`${inputClass} flex-1`} />
+              {fromDriverPhone && (
+                <button onClick={() => sendWhatsApp(fromDriverPhone, fromDriver)} className="px-4 rounded-xl bg-[hsl(142,70%,45%)] text-white font-bold flex items-center gap-2 min-h-[48px]">
+                  <MessageCircle size={20} />
+                </button>
+              )}
+            </div>
           </div>
+
+          {/* To Driver */}
           <div>
             <label className="block text-lg font-medium mb-2">נהג מקבל</label>
-            <select value={toDriver} onChange={e => handleToDriverChange(e.target.value)} className={inputClass}>
+            <select value={toIsOther ? '__other__' : toDriver} onChange={e => handleToDriverChange(e.target.value)} className={inputClass}>
               <option value="">בחר נהג...</option>
               {dbDrivers.filter(d => d.full_name !== fromDriver).map(d => (
                 <option key={d.full_name} value={d.full_name}>{d.full_name}</option>
               ))}
+              <option value="__other__">➕ אחר (נהג זמני)</option>
             </select>
           </div>
+          {toIsOther && (
+            <div className="p-4 rounded-xl bg-muted/50 border border-border space-y-3">
+              <p className="text-sm font-bold text-primary flex items-center gap-2"><UserPlus size={16} /> פרטי נהג זמני (מקבל)</p>
+              <input value={toDriver} onChange={e => setToDriver(e.target.value)} placeholder="שם נהג..." className={inputClass} />
+              <input value={toOtherId} onChange={e => setToOtherId(e.target.value)} placeholder="מספר מזהה (ת.ז)..." className={inputClass} />
+              <input value={toOtherLicense} onChange={e => setToOtherLicense(e.target.value)} placeholder="מספר רישיון נהיגה..." className={inputClass} />
+              <input type="date" value={toOtherLicenseExpiry} onChange={e => setToOtherLicenseExpiry(e.target.value)} placeholder="תוקף רישיון" className={inputClass} />
+            </div>
+          )}
           <div>
-            <label className="block text-lg font-medium mb-2">טלפון נהג מקבל (לוואטסאפ)</label>
-            <input type="tel" value={toDriverPhone} onChange={e => setToDriverPhone(e.target.value)} placeholder="מספר טלפון..." className={inputClass} />
+            <label className="block text-lg font-medium mb-2">טלפון נהג מקבל</label>
+            <div className="flex gap-2">
+              <input type="tel" value={toDriverPhone} onChange={e => setToDriverPhone(e.target.value)} placeholder="מספר טלפון..." className={`${inputClass} flex-1`} />
+              {toDriverPhone && (
+                <button onClick={() => sendWhatsApp(toDriverPhone, toDriver)} className="px-4 rounded-xl bg-[hsl(142,70%,45%)] text-white font-bold flex items-center gap-2 min-h-[48px]">
+                  <MessageCircle size={20} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
