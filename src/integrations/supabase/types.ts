@@ -485,6 +485,45 @@ export type Database = {
         }
         Relationships: []
       }
+      temporary_drivers: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          created_by: string | null
+          full_name: string
+          handover_id: string | null
+          id: string
+          id_number: string
+          license_expiry: string | null
+          license_number: string
+          phone: string | null
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          full_name?: string
+          handover_id?: string | null
+          id?: string
+          id_number?: string
+          license_expiry?: string | null
+          license_number?: string
+          phone?: string | null
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          full_name?: string
+          handover_id?: string | null
+          id?: string
+          id_number?: string
+          license_expiry?: string | null
+          license_number?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
       trip_logs: {
         Row: {
           company_name: string | null

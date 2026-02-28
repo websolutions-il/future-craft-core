@@ -200,6 +200,37 @@ export default function VehicleHandover() {
       toast.error('שגיאה בשמירת הטופס');
       console.error(error);
     } else {
+      // Save temporary driver records if applicable
+      const tempDriverPromises: Promise<any>[] = [];
+      if (fromIsOther && fromDriver) {
+        tempDriverPromises.push(
+          (supabase.from('temporary_drivers' as any).insert({
+            full_name: fromDriver,
+            id_number: fromOtherId,
+            license_number: fromOtherLicense,
+            license_expiry: fromOtherLicenseExpiry || null,
+            phone: fromDriverPhone,
+            company_name: user?.company_name || '',
+            created_by: user?.id,
+          } as any) as any).then(() => {})
+        );
+      }
+      if (toIsOther && toDriver) {
+        tempDriverPromises.push(
+          (supabase.from('temporary_drivers' as any).insert({
+            full_name: toDriver,
+            id_number: toOtherId,
+            license_number: toOtherLicense,
+            license_expiry: toOtherLicenseExpiry || null,
+            phone: toDriverPhone,
+            company_name: user?.company_name || '',
+            created_by: user?.id,
+          } as any) as any).then(() => {})
+        );
+      }
+      if (tempDriverPromises.length > 0) {
+        await Promise.all(tempDriverPromises);
+      }
       toast.success('טופס החלפת רכב נשלח בהצלחה');
     }
   };
