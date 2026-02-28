@@ -3,6 +3,7 @@ import { FileText, Plus, Search, ArrowRight, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import ImageUpload from '@/components/ImageUpload';
 
 interface ExpenseRow {
   id: string;
@@ -124,6 +125,7 @@ function ExpenseFormPage({ onDone, onBack, user }: { onDone: () => void; onBack:
   const [amount, setAmount] = useState('');
   const [odometer, setOdometer] = useState('');
   const [notes, setNotes] = useState('');
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const [vehicles, setVehicles] = useState<{ license_plate: string; manufacturer: string; model: string }[]>([]);
@@ -148,7 +150,7 @@ function ExpenseFormPage({ onDone, onBack, user }: { onDone: () => void; onBack:
     const { error } = await supabase.from('expenses').insert({
       vehicle_plate: vehiclePlate, driver_name: driverName, category, vendor,
       invoice_number: invoiceNumber, amount: parseFloat(amount) || 0,
-      odometer: parseInt(odometer) || 0, notes,
+      odometer: parseInt(odometer) || 0, notes, image_url: imageUrl || '',
       company_name: user?.company_name || '', created_by: user?.id,
     });
     setLoading(false);
@@ -192,6 +194,7 @@ function ExpenseFormPage({ onDone, onBack, user }: { onDone: () => void; onBack:
         <div><label className="block text-lg font-medium mb-2">ק"מ</label>
           <input type="number" value={odometer} onChange={e => setOdometer(e.target.value)} placeholder="0" className={inputClass} />
         </div>
+        <ImageUpload label="צילום חשבונית" folder="expenses" imageUrl={imageUrl} onImageUploaded={setImageUrl} />
         <div><label className="block text-lg font-medium mb-2">הערות</label>
           <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="הערות..." className={`${inputClass} resize-none`} />
         </div>
