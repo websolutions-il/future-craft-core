@@ -3,7 +3,7 @@ import { AlertTriangle, Plus, ArrowRight, Search, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import ImageUpload from '@/components/ImageUpload';
+import MultiImageUpload from '@/components/MultiImageUpload';
 
 interface AccidentRow {
   id: string;
@@ -91,12 +91,20 @@ export default function Accidents() {
             {a.has_insurance && <span className="status-badge status-active">ביטוח ✓</span>}
             {a.third_party && <span className="status-badge status-pending">צד ג׳</span>}
           </div>
-          {a.images && a.images.length > 0 && (
-            <div className="mt-4">
-              <p className="text-sm text-muted-foreground mb-2">תמונות</p>
-              <img src={a.images} alt="תמונת תאונה" className="w-full rounded-xl max-h-64 object-cover" />
-            </div>
-          )}
+          {(() => {
+            let imgs: string[] = [];
+            try { imgs = a.images ? JSON.parse(a.images) : []; } catch { if (a.images) imgs = [a.images]; }
+            return imgs.length > 0 ? (
+              <div className="mt-4">
+                <p className="text-sm text-muted-foreground mb-2">תמונות ({imgs.length})</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {imgs.map((url, i) => (
+                    <img key={i} src={url} alt={`תמונה ${i + 1}`} className="w-full rounded-xl h-36 object-cover" />
+                  ))}
+                </div>
+              </div>
+            ) : null;
+          })()}
           {a.notes && <p className="mt-4 p-3 bg-muted rounded-xl text-muted-foreground">{a.notes}</p>}
         </div>
         {isManager && (
@@ -182,7 +190,10 @@ function AccidentForm({ accident, onDone, onBack, user }: { accident: AccidentRo
   const [thirdParty, setThirdParty] = useState(accident?.third_party || false);
   const [estimatedCost, setEstimatedCost] = useState(accident?.estimated_cost?.toString() || '');
   const [notes, setNotes] = useState(accident?.notes || '');
-  const [imageUrl, setImageUrl] = useState<string | null>(accident?.images || null);
+  const [imageUrls, setImageUrls] = useState<string[]>(() => {
+    if (!accident?.images) return [];
+    try { return JSON.parse(accident.images); } catch { return accident.images ? [accident.images] : []; }
+  });
   const [loading, setLoading] = useState(false);
 
   const [vehicles, setVehicles] = useState<{ license_plate: string; manufacturer: string; model: string }[]>([]);
@@ -194,7 +205,7 @@ function AccidentForm({ accident, onDone, onBack, user }: { accident: AccidentRo
   const handleSubmit = async () => {
     if (!isValid) return;
     setLoading(true);
-    const payload = { vehicle_plate: vehiclePlate, driver_name: driverName, location, description, has_insurance: hasInsurance, third_party: thirdParty, estimated_cost: parseFloat(estimatedCost) || 0, notes, images: imageUrl || '' };
+    const payload = { vehicle_plate: vehiclePlate, driver_name: driverName, location, description, has_insurance: hasInsurance, third_party: thirdParty, estimated_cost: parseFloat(estimatedCost) || 0, notes, images: JSON.stringify(imageUrls) };
     let error;
     if (isEdit) { ({ error } = await supabase.from('accidents').update(payload).eq('id', accident!.id)); }
     else {
@@ -238,7 +249,7 @@ function AccidentForm({ accident, onDone, onBack, user }: { accident: AccidentRo
             <span className="text-lg font-medium">צד ג׳</span>
           </label>
         </div>
-        <ImageUpload label="תמונות מהתאונה" folder="accidents" imageUrl={imageUrl} onImageUploaded={setImageUrl} />
+        <MultiImageUpload label="תמונות מהתאונה" folder="accidents" imageUrls={imageUrls} onImagesChanged={setImageUrls} max={10} />
         <div><label className="block text-lg font-medium mb-2">הערות</label>
           <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={`${inputClass} resize-none`} /></div>
         <button onClick={handleSubmit} disabled={!isValid || loading}
