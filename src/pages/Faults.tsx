@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Wrench, Search, AlertTriangle, Plus, ArrowRight, Edit2 } from 'lucide-react';
+import { Wrench, Search, AlertTriangle, Plus, ArrowRight, Edit2, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import MultiImageUpload from '@/components/MultiImageUpload';
 
 interface FaultRow {
   id: string;
@@ -15,6 +16,7 @@ interface FaultRow {
   urgency: string;
   status: string;
   notes: string;
+  images: string;
   created_at: string;
 }
 
@@ -35,6 +37,16 @@ const statusLabels: Record<string, { text: string; cls: string }> = {
 const faultTypes = ['מנוע', 'בלמים', 'צמיגים', 'חשמל', 'מיזוג', 'פחחות', 'תאורה', 'אחר'];
 
 type ViewMode = 'list' | 'detail' | 'form';
+
+function parseImages(images: string | null): string[] {
+  if (!images) return [];
+  try {
+    const parsed = JSON.parse(images);
+    return Array.isArray(parsed) ? parsed : [images];
+  } catch {
+    return images ? [images] : [];
+  }
+}
 
 export default function Faults() {
   const { user } = useAuth();
@@ -78,6 +90,9 @@ export default function Faults() {
     const f = selectedFault;
     const urg = urgencyLabels[f.urgency] || urgencyLabels.normal;
     const st = statusLabels[f.status] || statusLabels.new;
+    const isClosed = f.status === 'closed' || f.status === 'resolved';
+    const faultImages = parseImages(f.images);
+
     return (
       <div className="animate-fade-in">
         <button onClick={() => { setViewMode('list'); setSelectedFault(null); }} className="flex items-center gap-2 text-primary text-lg font-medium mb-4 min-h-[48px]">
@@ -89,7 +104,7 @@ export default function Faults() {
             <div className="flex items-center gap-2">
               <span className={`status-badge ${urg.cls}`}>{urg.text}</span>
               <span className={`status-badge ${st.cls}`}>{st.text}</span>
-              {isManager && (
+              {isManager && !isClosed && (
                 <button onClick={() => { setEditFault(f); setViewMode('form'); }} className="p-2 rounded-xl bg-primary/10 text-primary">
                   <Edit2 size={18} />
                 </button>
@@ -104,12 +119,31 @@ export default function Faults() {
             {f.serial_id && <div><span className="text-muted-foreground text-sm">מספר סידורי</span><p className="font-bold">{f.serial_id}</p></div>}
           </div>
           {f.notes && <p className="mt-4 p-3 bg-muted rounded-xl text-muted-foreground">{f.notes}</p>}
+
+          {/* Images */}
+          {faultImages.length > 0 && (
+            <div className="mt-4">
+              <p className="text-sm text-muted-foreground mb-2">תמונות</p>
+              <div className="grid grid-cols-2 gap-3">
+                {faultImages.map((url, i) => (
+                  <img key={i} src={url} alt={`תקלה ${i + 1}`} className="w-full rounded-xl max-h-48 object-cover" />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {isClosed && (
+            <div className="mt-4 flex items-center gap-2 p-3 bg-muted rounded-xl text-muted-foreground">
+              <Lock size={16} />
+              <span className="text-sm">תקלה סגורה – לא ניתן לערוך</span>
+            </div>
+          )}
         </div>
         {isManager && (
           <div className="card-elevated">
             <h2 className="text-lg font-bold mb-3">שנה סטטוס</h2>
             <div className="flex gap-2 flex-wrap">
-              {Object.entries(statusLabels).map(([key, { text, cls }]) => (
+              {Object.entries(statusLabels).map(([key, { text }]) => (
                 <button key={key} onClick={() => { handleStatusChange(f.id, key); setSelectedFault({ ...f, status: key }); }}
                   className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${f.status === key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                   {text}
@@ -121,8 +155,6 @@ export default function Faults() {
       </div>
     );
   }
-
-  const statusCounts = { all: faults.length, new: faults.filter(f => f.status === 'new' || f.status === 'open').length, in_progress: faults.filter(f => f.status === 'in_progress').length, resolved: faults.filter(f => f.status === 'resolved' || f.status === 'closed').length };
 
   return (
     <div className="animate-fade-in">
@@ -145,7 +177,7 @@ export default function Faults() {
         ))}
       </div>
       <div className="flex gap-2 mb-5 flex-wrap">
-        {(['', 'new', 'in_progress', 'resolved', 'closed'] as const).map(key => (
+        {(['', 'new', 'open', 'in_progress', 'resolved', 'closed'] as const).map(key => (
           <button key={key} onClick={() => setFilterStatus(filterStatus === key ? '' : key)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${filterStatus === key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
             {key === '' ? 'הכל' : (statusLabels[key]?.text || key)}
@@ -200,6 +232,7 @@ function FaultForm({ fault, onDone, onBack, user }: { fault: FaultRow | null; on
   const [description, setDescription] = useState(fault?.description || '');
   const [urgency, setUrgency] = useState(fault?.urgency || 'normal');
   const [notes, setNotes] = useState(fault?.notes || '');
+  const [imageUrls, setImageUrls] = useState<string[]>(parseImages(fault?.images || ''));
   const [loading, setLoading] = useState(false);
 
   const [vehicles, setVehicles] = useState<{ license_plate: string; manufacturer: string; model: string }[]>([]);
@@ -221,14 +254,21 @@ function FaultForm({ fault, onDone, onBack, user }: { fault: FaultRow | null; on
   const handleSubmit = async () => {
     if (!isValid) return;
     setLoading(true);
-    const payload = { vehicle_plate: vehiclePlate, driver_name: driverName, fault_type: faultType, description, urgency, notes };
+    const payload = {
+      vehicle_plate: vehiclePlate,
+      driver_name: driverName,
+      fault_type: faultType,
+      description,
+      urgency,
+      notes,
+      images: imageUrls.length > 0 ? JSON.stringify(imageUrls) : '',
+    };
     let error;
     if (isEdit) {
       ({ error } = await supabase.from('faults').update(payload).eq('id', fault!.id));
     } else {
-      const insertPayload = { ...payload, status: 'new', company_name: user?.company_name || '', created_by: user?.id };
+      const insertPayload = { ...payload, status: 'open', company_name: user?.company_name || '', created_by: user?.id };
       ({ error } = await supabase.from('faults').insert(insertPayload));
-      // Send email for urgent/critical faults
       if (!error && (urgency === 'urgent' || urgency === 'critical')) {
         supabase.functions.invoke('notify-accident-email', { body: { record: insertPayload, type: 'fault' } }).catch(console.error);
       }
@@ -283,6 +323,16 @@ function FaultForm({ fault, onDone, onBack, user }: { fault: FaultRow | null; on
           <label className="block text-lg font-medium mb-2">הערות</label>
           <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="הערות..." className={`${inputClass} resize-none`} />
         </div>
+
+        {/* Image Upload */}
+        <MultiImageUpload
+          label="תמונות תקלה"
+          imageUrls={imageUrls}
+          onImagesChanged={setImageUrls}
+          folder="faults"
+          max={5}
+        />
+
         <button onClick={handleSubmit} disabled={!isValid || loading}
           className={`w-full py-5 rounded-xl text-xl font-bold transition-colors ${isValid && !loading ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}>
           {loading ? 'שומר...' : isEdit ? '💾 עדכן תקלה' : '💾 שמור תקלה'}
