@@ -1,483 +1,625 @@
-import { useState, useEffect } from 'react';
-import { Car, Users, Wrench, AlertTriangle, ClipboardList, Clock, TrendingUp, Calendar, Shield, ChevronLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import {
+  AlertTriangle,
+  BarChart3,
+  Building2,
+  Car,
+  ClipboardList,
+  FilePlus2,
+  Route,
+  UserPlus,
+  Users,
+  Wrench,
+  ArrowRightLeft,
+  Bell,
+} from 'lucide-react';
+import { useAuth, type AppRole } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import DriverDashboard from '@/components/DriverDashboard';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { toast } from '@/hooks/use-toast';
 
-interface DashboardStats {
-  vehiclesActive: number;
-  vehiclesTotal: number;
-  driversActive: number;
-  driversTotal: number;
-  faultsOpen: number;
-  faultsTotal: number;
-  accidentsOpen: number;
-  accidentsTotal: number;
-  todayTasks: number;
-  expensesMonth: number;
+const OPEN_TREATMENT_STATUSES = ['new', 'open', 'in_progress', 'pending', 'חדש', 'פתוח', 'בטיפול'];
+const MAINTENANCE_STATUSES = ['maintenance', 'in_service', 'בתחזוקה', 'בטיפול'];
+
+interface SuperAdminStats {
+  companiesCount: number;
+  usersCount: number;
+  emergencyOpenCount: number;
+  vehiclesInTreatmentCount: number;
 }
 
-interface RecentFault {
+interface FleetVehiclePreview {
   id: string;
-  fault_type: string;
-  vehicle_plate: string;
-  driver_name: string;
-  urgency: string;
-  status: string;
-  created_at: string;
+  manufacturer: string;
+  model: string;
+  year: number | null;
+  odometer: number;
 }
 
-interface UpcomingTask {
-  id: string;
-  service_category: string;
-  vehicle_plate: string;
-  driver_name: string;
-  service_date: string;
-  service_time: string;
-  treatment_status: string;
+interface FleetStats {
+  vehiclesCount: number;
+  driversCount: number;
 }
 
-interface ExpiryAlert {
-  type: 'test' | 'insurance' | 'license';
+interface FleetAlertRow {
+  key: string;
   label: string;
-  entity: string;
-  date: string;
-  daysLeft: number;
+  count: number;
+  link: string;
 }
 
-const CHART_COLORS = [
-  'hsl(var(--primary))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-  'hsl(210, 60%, 55%)',
-  'hsl(340, 60%, 55%)',
-];
+interface CreateUserFormState {
+  email: string;
+  password: string;
+  fullName: string;
+  companyName: string;
+  role: AppRole;
+}
 
-const HEBREW_MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+const isOpenStatus = (status: string | null | undefined) =>
+  OPEN_TREATMENT_STATUSES.includes((status || '').toLowerCase()) ||
+  OPEN_TREATMENT_STATUSES.includes(status || '');
+
+const isClosedAccident = (status: string | null | undefined) => {
+  const normalized = (status || '').toLowerCase();
+  return normalized === 'closed' || status === 'סגור';
+};
+
+const daysUntil = (dateValue: string | null | undefined) => {
+  if (!dateValue) return null;
+  const diff = new Date(dateValue).getTime() - Date.now();
+  return Math.ceil(diff / 86400000);
+};
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  if (user?.role === 'driver') {
+  if (!user) return null;
+
+  if (user.role === 'driver') {
     return <DriverDashboard />;
   }
 
-  return <ManagerDashboard />;
+  if (user.role === 'super_admin') {
+    const isFleetMode = searchParams.get('mode') === 'fleet';
+
+    if (isFleetMode) {
+      return <FleetManagerDashboard isActingAsFleetManager />;
+    }
+
+    return <SuperAdminDashboard onEnterFleetMode={() => setSearchParams({ mode: 'fleet' })} />;
+  }
+
+  return <FleetManagerDashboard isActingAsFleetManager={false} />;
 }
 
-function ManagerDashboard() {
+function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: () => void }) {
   const { user } = useAuth();
-  const [stats, setStats] = useState<DashboardStats>({
-    vehiclesActive: 0, vehiclesTotal: 0, driversActive: 0, driversTotal: 0,
-    faultsOpen: 0, faultsTotal: 0, accidentsOpen: 0, accidentsTotal: 0,
-    todayTasks: 0, expensesMonth: 0,
-  });
-  const [recentFaults, setRecentFaults] = useState<RecentFault[]>([]);
-  const [upcomingTasks, setUpcomingTasks] = useState<UpcomingTask[]>([]);
-  const [alerts, setAlerts] = useState<ExpiryAlert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false);
+  const [stats, setStats] = useState<SuperAdminStats>({
+    companiesCount: 0,
+    usersCount: 0,
+    emergencyOpenCount: 0,
+    vehiclesInTreatmentCount: 0,
+  });
+  const [form, setForm] = useState<CreateUserFormState>({
+    email: '',
+    password: '',
+    fullName: '',
+    companyName: '',
+    role: 'fleet_manager',
+  });
 
-  // Chart data
-  const [monthlyExpenses, setMonthlyExpenses] = useState<{ name: string; amount: number }[]>([]);
-  const [faultsByType, setFaultsByType] = useState<{ name: string; value: number }[]>([]);
-  const [vehicleStatus, setVehicleStatus] = useState<{ name: string; value: number }[]>([]);
+  const loadSuperAdminStats = async () => {
+    setLoading(true);
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
-
-  const loadDashboard = async () => {
-    const today = new Date().toISOString().split('T')[0];
-    const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString();
-    const sixMonthsAgo = new Date(Date.now() - 180 * 86400000).toISOString();
-
-    const [vehiclesRes, driversRes, faultsRecentRes, allFaultsRes, accidentsRes, tasksRes, expensesMonthRes, expensesAllRes] = await Promise.all([
-      supabase.from('vehicles').select('id, status, test_expiry, insurance_expiry, license_plate, manufacturer, model'),
-      supabase.from('drivers').select('id, status, license_expiry, full_name'),
-      supabase.from('faults').select('id, fault_type, vehicle_plate, driver_name, urgency, status, created_at').order('created_at', { ascending: false }).limit(5),
-      supabase.from('faults').select('id, fault_type, status'),
-      supabase.from('accidents').select('id, status'),
-      supabase.from('service_orders').select('id, service_category, vehicle_plate, driver_name, service_date, service_time, treatment_status').order('service_date', { ascending: true }),
-      supabase.from('expenses').select('amount').gte('created_at', monthAgo),
-      supabase.from('expenses').select('amount, date').gte('date', sixMonthsAgo),
+    const [profilesRes, usersCountRes, emergencyRes, treatmentVehiclesRes] = await Promise.all([
+      supabase.from('profiles').select('company_name'),
+      supabase.from('profiles').select('*', { count: 'exact', head: true }),
+      supabase
+        .from('service_orders')
+        .select('id', { count: 'exact', head: true })
+        .ilike('vendor_name', '%דליה%')
+        .in('treatment_status', OPEN_TREATMENT_STATUSES)
+        .or('service_category.ilike.%חירום%,description.ilike.%חירום%'),
+      supabase
+        .from('service_orders')
+        .select('vehicle_plate')
+        .ilike('vendor_name', '%דליה%')
+        .in('treatment_status', OPEN_TREATMENT_STATUSES),
     ]);
 
-    const vehicles = vehiclesRes.data || [];
-    const drivers = driversRes.data || [];
-    const faultsRecent = faultsRecentRes.data || [];
-    const allFaults = allFaultsRes.data || [];
-    const accidents = accidentsRes.data || [];
-    const tasks = tasksRes.data || [];
-    const expensesMonth = expensesMonthRes.data || [];
-    const expensesAll = expensesAllRes.data || [];
-
-    // Stats
-    setStats({
-      vehiclesActive: vehicles.filter((v: any) => v.status === 'active').length,
-      vehiclesTotal: vehicles.length,
-      driversActive: drivers.filter((d: any) => d.status === 'active').length,
-      driversTotal: drivers.length,
-      faultsOpen: allFaults.filter((f: any) => f.status === 'new' || f.status === 'in_progress' || f.status === 'open' || f.status === 'חדש' || f.status === 'פתוח' || f.status === 'בטיפול').length,
-      faultsTotal: allFaults.length,
-      accidentsOpen: accidents.filter((a: any) => a.status !== 'closed').length,
-      accidentsTotal: accidents.length,
-      todayTasks: tasks.filter((t: any) => t.service_date === today).length,
-      expensesMonth: expensesMonth.reduce((sum: number, e: any) => sum + (e.amount || 0), 0),
-    });
-
-    setRecentFaults(faultsRecent as RecentFault[]);
-
-    setUpcomingTasks(
-      tasks.filter((t: any) => t.service_date >= today && t.treatment_status !== 'completed').slice(0, 5) as UpcomingTask[]
-    );
-
-    // === CHARTS DATA ===
-
-    // 1. Monthly expenses (last 6 months)
-    const now = new Date();
-    const monthlyMap: Record<string, number> = {};
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      monthlyMap[key] = 0;
+    if (profilesRes.error || usersCountRes.error || emergencyRes.error || treatmentVehiclesRes.error) {
+      toast({
+        title: 'שגיאה בטעינת נתונים',
+        description: 'לא הצלחנו לטעון את נתוני הדשבורד כרגע.',
+        variant: 'destructive',
+      });
+      setLoading(false);
+      return;
     }
-    expensesAll.forEach((e: any) => {
-      if (e.date) {
-        const d = new Date(e.date);
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        if (key in monthlyMap) {
-          monthlyMap[key] += e.amount || 0;
-        }
-      }
-    });
-    setMonthlyExpenses(
-      Object.entries(monthlyMap).map(([key, amount]) => ({
-        name: HEBREW_MONTHS[parseInt(key.split('-')[1]) - 1],
-        amount: Math.round(amount),
-      }))
+
+    const companies = new Set(
+      (profilesRes.data || [])
+        .map((row) => row.company_name?.trim())
+        .filter((company): company is string => Boolean(company))
     );
 
-    // 2. Faults by type
-    const typeMap: Record<string, number> = {};
-    allFaults.forEach((f: any) => {
-      const type = f.fault_type || 'אחר';
-      typeMap[type] = (typeMap[type] || 0) + 1;
-    });
-    setFaultsByType(
-      Object.entries(typeMap)
-        .map(([name, value]) => ({ name, value }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 6)
+    const vehiclesInTreatment = new Set(
+      (treatmentVehiclesRes.data || [])
+        .map((row) => row.vehicle_plate?.trim())
+        .filter((plate): plate is string => Boolean(plate))
     );
 
-    // 3. Vehicle status distribution
-    const statusMap: Record<string, number> = {};
-    const statusLabels: Record<string, string> = { active: 'פעיל', inactive: 'לא פעיל', maintenance: 'בתחזוקה', accident: 'תאונה' };
-    vehicles.forEach((v: any) => {
-      const label = statusLabels[v.status] || v.status || 'אחר';
-      statusMap[label] = (statusMap[label] || 0) + 1;
-    });
-    setVehicleStatus(Object.entries(statusMap).map(([name, value]) => ({ name, value })));
-
-    // Expiry alerts
-    const thirtyDays = new Date(Date.now() + 30 * 86400000);
-    const expiryAlerts: ExpiryAlert[] = [];
-
-    vehicles.forEach((v: any) => {
-      if (v.test_expiry && new Date(v.test_expiry) <= thirtyDays) {
-        const daysLeft = Math.ceil((new Date(v.test_expiry).getTime() - Date.now()) / 86400000);
-        expiryAlerts.push({ type: 'test', label: 'טסט', entity: `${v.license_plate} ${v.manufacturer || ''}`, date: v.test_expiry, daysLeft });
-      }
-      if (v.insurance_expiry && new Date(v.insurance_expiry) <= thirtyDays) {
-        const daysLeft = Math.ceil((new Date(v.insurance_expiry).getTime() - Date.now()) / 86400000);
-        expiryAlerts.push({ type: 'insurance', label: 'ביטוח', entity: `${v.license_plate} ${v.manufacturer || ''}`, date: v.insurance_expiry, daysLeft });
-      }
+    setStats({
+      companiesCount: companies.size,
+      usersCount: usersCountRes.count || 0,
+      emergencyOpenCount: emergencyRes.count || 0,
+      vehiclesInTreatmentCount: vehiclesInTreatment.size,
     });
 
-    drivers.forEach((d: any) => {
-      if (d.license_expiry && new Date(d.license_expiry) <= thirtyDays) {
-        const daysLeft = Math.ceil((new Date(d.license_expiry).getTime() - Date.now()) / 86400000);
-        expiryAlerts.push({ type: 'license', label: 'רישיון', entity: d.full_name, date: d.license_expiry, daysLeft });
-      }
-    });
-
-    expiryAlerts.sort((a, b) => a.daysLeft - b.daysLeft);
-    setAlerts(expiryAlerts);
     setLoading(false);
   };
 
-  const roleLabels: Record<string, string> = { driver: 'נהג', fleet_manager: 'מנהל צי', super_admin: 'מנהל על' };
+  useEffect(() => {
+    loadSuperAdminStats();
+  }, []);
 
-  const statCards = [
-    { label: 'רכבים פעילים', value: stats.vehiclesActive, sub: `מתוך ${stats.vehiclesTotal}`, icon: Car, colorCls: 'bg-primary text-primary-foreground', link: '/vehicles' },
-    { label: 'נהגים פעילים', value: stats.driversActive, sub: `מתוך ${stats.driversTotal}`, icon: Users, colorCls: 'bg-primary/80 text-primary-foreground', link: '/drivers' },
-    { label: 'תקלות פתוחות', value: stats.faultsOpen, sub: `סה"כ ${stats.faultsTotal}`, icon: Wrench, colorCls: 'bg-warning/15 text-warning border border-warning/30', link: '/faults' },
-    { label: 'תאונות פתוחות', value: stats.accidentsOpen, sub: `סה"כ ${stats.accidentsTotal}`, icon: AlertTriangle, colorCls: 'bg-destructive/15 text-destructive border border-destructive/30', link: '/accidents' },
-  ];
+  const submitCreateUser = async (event: React.FormEvent) => {
+    event.preventDefault();
 
-  const quickActions = [
-    { label: 'דיווח תקלה', icon: Wrench, link: '/faults', colorCls: 'border-2 border-warning/40' },
-    { label: 'דיווח תאונה', icon: AlertTriangle, link: '/accidents', colorCls: 'border-2 border-destructive/40' },
-    { label: 'הזמנת שירות', icon: ClipboardList, link: '/service-orders', colorCls: 'border-2 border-primary/40' },
-    { label: 'הצמדת רכב', icon: Car, link: '/attach-car', colorCls: 'border-2 border-primary/40' },
-  ];
-
-  if (loading) {
-    return (
-      <div className="animate-fade-in text-center py-12">
-        <Clock size={32} className="mx-auto mb-4 animate-spin text-primary" />
-        <p className="text-lg text-muted-foreground">טוען דשבורד...</p>
-      </div>
-    );
-  }
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload?.length) {
-      return (
-        <div className="bg-popover text-popover-foreground border border-border rounded-xl p-3 shadow-lg text-sm">
-          <p className="font-bold">{label}</p>
-          <p>₪{payload[0].value.toLocaleString()}</p>
-        </div>
-      );
+    if (!form.email || !form.password || !form.fullName || !form.companyName) {
+      toast({
+        title: 'חסרים פרטים',
+        description: 'יש למלא את כל השדות לפני יצירת המשתמש.',
+        variant: 'destructive',
+      });
+      return;
     }
-    return null;
+
+    setCreatingUser(true);
+    const { data, error } = await supabase.functions.invoke('create-admin-user', {
+      body: {
+        email: form.email,
+        password: form.password,
+        full_name: form.fullName,
+        company_name: form.companyName,
+        role: form.role,
+      },
+    });
+    setCreatingUser(false);
+
+    if (error || data?.error) {
+      toast({
+        title: 'יצירת משתמש נכשלה',
+        description: data?.error || error?.message || 'אירעה שגיאה לא צפויה.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({
+      title: 'המשתמש נוצר בהצלחה',
+      description: 'ניתן להתחבר עם הפרטים החדשים מיד.',
+    });
+
+    setForm({ email: '', password: '', fullName: '', companyName: '', role: 'fleet_manager' });
+    setShowCreateUserModal(false);
+    loadSuperAdminStats();
   };
 
+  const superAdminActions = [
+    { label: 'פתיחת משתמש חדש', icon: UserPlus, action: () => setShowCreateUserModal(true), type: 'button' as const },
+    { label: 'כניסה למנהל צי רכב', icon: ArrowRightLeft, action: onEnterFleetMode, type: 'button' as const },
+    { label: 'דוחות כל החברות', icon: BarChart3, href: '/reports', type: 'link' as const },
+    { label: 'ניהול הזמנות לקוחות', icon: ClipboardList, href: '/service-orders', type: 'link' as const },
+    { label: 'ניהול חירום כל החברות', icon: AlertTriangle, href: '/emergency', type: 'link' as const },
+  ];
+
   return (
-    <div className="animate-fade-in">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="page-header">שלום, {user?.full_name} 👋</h1>
-        <p className="text-lg text-muted-foreground">
-          {roleLabels[user?.role || '']} • {user?.company_name}
+    <div className="animate-fade-in space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-3xl font-black text-foreground">דשבורד מנהל על</h1>
+        <p className="text-muted-foreground text-base">{user?.full_name}</p>
+      </header>
+
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: 'חברות', value: stats.companiesCount, icon: Building2 },
+          { label: 'משתמשים', value: stats.usersCount, icon: Users },
+          { label: 'חירום פתוח (דליה)', value: stats.emergencyOpenCount, icon: AlertTriangle },
+          { label: 'רכבים בטיפול בדליה', value: stats.vehiclesInTreatmentCount, icon: Wrench },
+        ].map((card) => (
+          <div key={card.label} className="card-elevated p-4">
+            <div className="flex items-center justify-between">
+              <card.icon size={18} className="text-primary" />
+              <span className="text-2xl font-black text-foreground">{loading ? '...' : card.value}</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">{card.label}</p>
+          </div>
+        ))}
+      </section>
+
+      <section className="space-y-3">
+        {superAdminActions.map((item) =>
+          item.type === 'link' ? (
+            <Link key={item.label} to={item.href!} className="big-action-btn bg-card text-foreground border border-border">
+              <item.icon size={26} />
+              <span>{item.label}</span>
+            </Link>
+          ) : (
+            <button
+              key={item.label}
+              type="button"
+              onClick={item.action}
+              className="w-full big-action-btn bg-card text-foreground border border-border"
+            >
+              <item.icon size={26} />
+              <span>{item.label}</span>
+            </button>
+          )
+        )}
+      </section>
+
+      {showCreateUserModal && (
+        <div className="fixed inset-0 z-50 bg-foreground/50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-lg p-5">
+            <h2 className="text-xl font-bold mb-4">פתיחת משתמש חדש</h2>
+            <form onSubmit={submitCreateUser} className="space-y-3">
+              <input
+                value={form.fullName}
+                onChange={(event) => setForm((prev) => ({ ...prev, fullName: event.target.value }))}
+                placeholder="שם מלא"
+                className="w-full p-3 rounded-xl border border-input bg-background"
+                required
+              />
+              <input
+                type="email"
+                value={form.email}
+                onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
+                placeholder="אימייל"
+                className="w-full p-3 rounded-xl border border-input bg-background"
+                dir="ltr"
+                required
+              />
+              <input
+                type="password"
+                value={form.password}
+                onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
+                placeholder="סיסמה"
+                className="w-full p-3 rounded-xl border border-input bg-background"
+                required
+              />
+              <input
+                value={form.companyName}
+                onChange={(event) => setForm((prev) => ({ ...prev, companyName: event.target.value }))}
+                placeholder="שם חברה"
+                className="w-full p-3 rounded-xl border border-input bg-background"
+                required
+              />
+              <select
+                value={form.role}
+                onChange={(event) => setForm((prev) => ({ ...prev, role: event.target.value as AppRole }))}
+                className="w-full p-3 rounded-xl border border-input bg-background"
+              >
+                <option value="fleet_manager">מנהל צי</option>
+                <option value="driver">נהג</option>
+                <option value="super_admin">מנהל על</option>
+              </select>
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateUserModal(false)}
+                  className="flex-1 py-3 rounded-xl border border-input bg-background"
+                >
+                  ביטול
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingUser}
+                  className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-bold disabled:opacity-60"
+                >
+                  {creatingUser ? 'יוצר...' : 'צור משתמש'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FleetManagerDashboard({
+  isActingAsFleetManager,
+}: {
+  isActingAsFleetManager: boolean;
+}) {
+  const { user } = useAuth();
+  const isSuperAdminView = user?.role === 'super_admin' && isActingAsFleetManager;
+
+  const [loading, setLoading] = useState(true);
+  const [selectedCompany, setSelectedCompany] = useState(user?.company_name || '');
+  const [companyOptions, setCompanyOptions] = useState<string[]>([]);
+  const [stats, setStats] = useState<FleetStats>({ vehiclesCount: 0, driversCount: 0 });
+  const [vehiclePreview, setVehiclePreview] = useState<FleetVehiclePreview[]>([]);
+  const [alerts, setAlerts] = useState<FleetAlertRow[]>([]);
+
+  useEffect(() => {
+    if (!isSuperAdminView) {
+      setSelectedCompany(user?.company_name || '');
+      return;
+    }
+
+    const loadCompanies = async () => {
+      const { data } = await supabase.from('profiles').select('company_name');
+      const companies = Array.from(
+        new Set(
+          (data || [])
+            .map((row) => row.company_name?.trim())
+            .filter((company): company is string => Boolean(company))
+        )
+      );
+      setCompanyOptions(companies);
+      if (!selectedCompany && companies.length > 0) {
+        setSelectedCompany(companies[0]);
+      }
+    };
+
+    loadCompanies();
+  }, [isSuperAdminView, user?.company_name]);
+
+  useEffect(() => {
+    if (!user) return;
+    if (isSuperAdminView && !selectedCompany) return;
+
+    const loadFleetDashboard = async () => {
+      setLoading(true);
+
+      const withCompanyScope = (query: any) =>
+        isSuperAdminView ? query.eq('company_name', selectedCompany) : query;
+
+      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+
+      const [
+        vehiclesRes,
+        driversCountRes,
+        faultsRes,
+        accidentsRes,
+        serviceOrdersRes,
+        expensesRes,
+      ] = await Promise.all([
+        withCompanyScope(
+          supabase
+            .from('vehicles')
+            .select('id, manufacturer, model, year, odometer, status, test_expiry, insurance_expiry')
+        ),
+        withCompanyScope(supabase.from('drivers').select('*', { count: 'exact', head: true })),
+        withCompanyScope(supabase.from('faults').select('id, status')),
+        withCompanyScope(supabase.from('accidents').select('id, status')),
+        withCompanyScope(
+          supabase
+            .from('service_orders')
+            .select('id, service_category, treatment_status, service_date, vehicle_plate')
+        ),
+        withCompanyScope(supabase.from('expenses').select('id, amount').gte('date', monthStart)),
+      ]);
+
+      if (
+        vehiclesRes.error ||
+        driversCountRes.error ||
+        faultsRes.error ||
+        accidentsRes.error ||
+        serviceOrdersRes.error ||
+        expensesRes.error
+      ) {
+        toast({
+          title: 'שגיאה בטעינת נתונים',
+          description: 'לא הצלחנו לטעון את נתוני דשבורד מנהל הצי.',
+          variant: 'destructive',
+        });
+        setLoading(false);
+        return;
+      }
+
+      const vehicles = vehiclesRes.data || [];
+      const faults = faultsRes.data || [];
+      const accidents = accidentsRes.data || [];
+      const serviceOrders = serviceOrdersRes.data || [];
+      const expenses = expensesRes.data || [];
+
+      const insuranceDue = vehicles.filter((vehicle) => {
+        const days = daysUntil(vehicle.insurance_expiry);
+        return days !== null && days <= 30;
+      }).length;
+
+      const testDue = vehicles.filter((vehicle) => {
+        const days = daysUntil(vehicle.test_expiry);
+        return days !== null && days <= 30;
+      }).length;
+
+      const periodicServiceDue = serviceOrders.filter(
+        (order) =>
+          isOpenStatus(order.treatment_status) &&
+          (order.service_category || '').toLowerCase().includes('תקופ')
+      ).length;
+
+      const vehiclesInGarage = vehicles.filter((vehicle) =>
+        MAINTENANCE_STATUSES.includes((vehicle.status || '').toLowerCase()) ||
+        MAINTENANCE_STATUSES.includes(vehicle.status || '')
+      ).length;
+
+      const openFaults = faults.filter((fault) => isOpenStatus(fault.status)).length;
+      const openAccidents = accidents.filter((accident) => !isClosedAccident(accident.status)).length;
+
+      const expenseAmounts = expenses.map((item) => Number(item.amount) || 0).filter((value) => value > 0);
+      const averageExpense = expenseAmounts.length
+        ? expenseAmounts.reduce((sum, value) => sum + value, 0) / expenseAmounts.length
+        : 0;
+      const unusualExpenses = expenseAmounts.filter(
+        (value) => value > Math.max(averageExpense * 1.8, 3000)
+      ).length;
+
+      setStats({
+        vehiclesCount: vehicles.length,
+        driversCount: driversCountRes.count || 0,
+      });
+
+      setVehiclePreview(
+        vehicles.slice(0, 8).map((vehicle) => ({
+          id: vehicle.id,
+          manufacturer: vehicle.manufacturer || '-',
+          model: vehicle.model || '-',
+          year: vehicle.year,
+          odometer: Number(vehicle.odometer) || 0,
+        }))
+      );
+
+      setAlerts([
+        { key: 'insurance', label: 'ביטוח מתקרב', count: insuranceDue, link: '/alerts' },
+        { key: 'test', label: 'טסט מתקרב', count: testDue, link: '/alerts' },
+        { key: 'periodic', label: 'טיפול תקופתי מתקרב', count: periodicServiceDue, link: '/service-orders' },
+        { key: 'garage', label: 'רכב שנמצא כרגע במוסך', count: vehiclesInGarage, link: '/vehicles' },
+        { key: 'faults', label: 'תקלות פתוחות', count: openFaults, link: '/faults' },
+        { key: 'accidents', label: 'תאונות פתוחות', count: openAccidents, link: '/accidents' },
+        { key: 'expenses', label: 'הוצאות חריגות', count: unusualExpenses, link: '/expenses' },
+      ]);
+
+      setLoading(false);
+    };
+
+    loadFleetDashboard();
+  }, [user?.id, isSuperAdminView, selectedCompany]);
+
+  const fleetActions = useMemo(
+    () => [
+      { label: 'הצמדת נהג לרכב', icon: ArrowRightLeft, href: '/attach-car' },
+      { label: 'הזמנת שירותים / השוואת מחירים', icon: ClipboardList, href: '/service-orders' },
+      { label: 'דיווח תאונה', icon: AlertTriangle, href: '/accidents' },
+      { label: 'היסטוריה – כל הרכבים בחברה', icon: Car, href: '/history' },
+      { label: 'דוחות – של החברה בלבד', icon: BarChart3, href: '/reports' },
+      { label: 'ניהול מסלול וסידור עבודה לנהגים', icon: Route, href: '/routes' },
+      { label: 'צירוף לקוח חדש', icon: FilePlus2, href: '/customers' },
+      { label: 'הצמדת נהג ללקוח בתוך סידור עבודה', icon: Users, href: '/work-orders' },
+      { label: 'כניסה לדשבורד נהג', icon: Users, href: '/driver-view' },
+    ],
+    []
+  );
+
+  return (
+    <div className="animate-fade-in space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-3xl font-black text-foreground">דשבורד מנהל צי רכב</h1>
+        <p className="text-muted-foreground text-base">{user?.full_name}</p>
+        <p className="text-muted-foreground text-sm">
+          חברה: {isSuperAdminView ? selectedCompany || 'בחר חברה' : user?.company_name || '-'}
         </p>
-      </div>
+      </header>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        {statCards.map(s => (
-          <Link key={s.label} to={s.link} className={`stat-card ${s.colorCls} hover:scale-[1.02] transition-transform`}>
-            <s.icon size={28} />
-            <span className="text-3xl font-black">{s.value}</span>
-            <span className="text-sm font-medium opacity-90">{s.label}</span>
-            <span className="text-xs opacity-70">{s.sub}</span>
+      {isSuperAdminView && (
+        <section className="card-elevated p-4">
+          <label className="text-sm font-semibold text-muted-foreground block mb-2">בחירת חברה להצגת נתונים</label>
+          <select
+            value={selectedCompany}
+            onChange={(event) => setSelectedCompany(event.target.value)}
+            className="w-full p-3 rounded-xl border border-input bg-background"
+          >
+            {companyOptions.map((company) => (
+              <option key={company} value={company}>
+                {company}
+              </option>
+            ))}
+          </select>
+        </section>
+      )}
+
+      <section className="card-elevated overflow-x-auto">
+        <h2 className="text-lg font-bold mb-3">פרטי רכבים בצי</h2>
+        <table className="w-full text-sm min-w-[560px]">
+          <thead>
+            <tr className="text-muted-foreground border-b border-border">
+              <th className="py-2 text-right">יצרן</th>
+              <th className="py-2 text-right">דגם</th>
+              <th className="py-2 text-right">מודל</th>
+              <th className="py-2 text-right">קילומטראז'</th>
+            </tr>
+          </thead>
+          <tbody>
+            {vehiclePreview.length > 0 ? (
+              vehiclePreview.map((vehicle) => (
+                <tr key={vehicle.id} className="border-b border-border/60 last:border-0">
+                  <td className="py-2">{vehicle.manufacturer}</td>
+                  <td className="py-2">{vehicle.model}</td>
+                  <td className="py-2">{vehicle.year || '-'}</td>
+                  <td className="py-2">{vehicle.odometer.toLocaleString()}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={4} className="py-4 text-center text-muted-foreground">
+                  {loading ? 'טוען נתוני צי...' : 'אין נתוני רכבים להצגה'}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="card-elevated p-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm text-muted-foreground">כמות רכבים</p>
+            <p className="text-3xl font-black">{loading ? '...' : stats.vehiclesCount}</p>
+          </div>
+          <Link to="/vehicles" className="px-3 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold">
+            הוספת רכב
+          </Link>
+        </div>
+        <div className="card-elevated p-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm text-muted-foreground">כמות נהגים</p>
+            <p className="text-3xl font-black">{loading ? '...' : stats.driversCount}</p>
+          </div>
+          <Link to="/drivers" className="px-3 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold">
+            הוספת נהג
+          </Link>
+        </div>
+      </section>
+
+      <section className="card-elevated p-4">
+        <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
+          <Bell size={18} className="text-primary" />
+          התראות דשבורד
+        </h2>
+        <div className="space-y-2">
+          {alerts.map((alert) => (
+            <Link
+              key={alert.key}
+              to={alert.link}
+              className="flex items-center justify-between rounded-xl border border-border p-3 hover:bg-muted/50 transition-colors"
+            >
+              <span className="font-medium">{alert.label}</span>
+              <span className={`text-sm font-bold ${alert.count > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                {alert.count}
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {fleetActions.map((action) => (
+          <Link key={action.label} to={action.href} className="big-action-btn bg-card text-foreground border border-border">
+            <action.icon size={24} />
+            <span>{action.label}</span>
           </Link>
         ))}
-      </div>
-
-      {/* Summary row */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="card-elevated flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Calendar size={20} className="text-primary" />
-          </div>
-          <div>
-            <p className="text-2xl font-black">{stats.todayTasks}</p>
-            <p className="text-sm text-muted-foreground">משימות להיום</p>
-          </div>
-        </div>
-        <div className="card-elevated flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <TrendingUp size={20} className="text-primary" />
-          </div>
-          <div>
-            <p className="text-2xl font-black">₪{stats.expensesMonth.toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground">הוצאות החודש</p>
-          </div>
-        </div>
-      </div>
-
-      {/* === CHARTS SECTION === */}
-      <div className="space-y-6 mb-6">
-        {/* Monthly Expenses Bar Chart */}
-        <div className="card-elevated">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <TrendingUp size={20} className="text-primary" />
-            הוצאות חודשיות (6 חודשים אחרונים)
-          </h2>
-          <div className="h-64" dir="ltr">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyExpenses} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `₪${v}`} />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Two charts side by side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Faults by Type Pie Chart */}
-          <div className="card-elevated">
-            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <Wrench size={18} className="text-primary" />
-              התפלגות תקלות לפי סוג
-            </h2>
-            {faultsByType.length > 0 ? (
-              <div className="h-56" dir="ltr">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={faultsByType}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={45}
-                      outerRadius={75}
-                      paddingAngle={3}
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      labelLine={false}
-                    >
-                      {faultsByType.map((_, i) => (
-                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value: number) => [value, 'תקלות']} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-center py-8">אין נתוני תקלות</p>
-            )}
-          </div>
-
-          {/* Vehicle Status Donut Chart */}
-          <div className="card-elevated">
-            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <Car size={18} className="text-primary" />
-              סטטוס רכבים
-            </h2>
-            {vehicleStatus.length > 0 ? (
-              <div className="h-56" dir="ltr">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={vehicleStatus}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={75}
-                      paddingAngle={3}
-                      dataKey="value"
-                    >
-                      {vehicleStatus.map((_, i) => (
-                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Legend formatter={(value: string) => <span className="text-sm">{value}</span>} />
-                    <Tooltip formatter={(value: number) => [value, 'רכבים']} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-center py-8">אין נתוני רכבים</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Expiry Alerts */}
-      {alerts.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-xl font-bold mb-3 flex items-center gap-2">
-            <Shield size={20} className="text-warning" />
-            התראות תוקף ({alerts.length})
-          </h2>
-          <div className="space-y-2">
-            {alerts.slice(0, 4).map((a, i) => (
-              <div key={i} className={`card-elevated flex items-center gap-3 ${a.daysLeft <= 0 ? 'border-2 border-destructive/40' : a.daysLeft <= 7 ? 'border-2 border-warning/40' : ''}`}>
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${a.daysLeft <= 0 ? 'bg-destructive/10 text-destructive' : 'bg-warning/10 text-warning'}`}>
-                  {a.type === 'test' ? <Car size={20} /> : a.type === 'insurance' ? <Shield size={20} /> : <Users size={20} />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold">{a.label} - {a.entity}</p>
-                  <p className="text-sm text-muted-foreground">{new Date(a.date).toLocaleDateString('he-IL')}</p>
-                </div>
-                <span className={`text-sm font-bold ${a.daysLeft <= 0 ? 'text-destructive' : a.daysLeft <= 7 ? 'text-warning' : 'text-muted-foreground'}`}>
-                  {a.daysLeft <= 0 ? 'פג תוקף!' : `${a.daysLeft} ימים`}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Quick Actions */}
-      <h2 className="text-xl font-bold mb-3">פעולות מהירות</h2>
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        {quickActions.map(a => (
-          <Link key={a.label} to={a.link} className={`big-action-btn bg-card text-foreground ${a.colorCls}`}>
-            <a.icon size={32} />
-            <span>{a.label}</span>
-          </Link>
-        ))}
-      </div>
-
-      {/* Upcoming tasks */}
-      {upcomingTasks.length > 0 && (
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <ClipboardList size={20} />
-              משימות קרובות
-            </h2>
-            <Link to="/work-orders" className="text-primary text-sm font-medium flex items-center gap-1">
-              הכל <ChevronLeft size={14} />
-            </Link>
-          </div>
-          <div className="space-y-2">
-            {upcomingTasks.map(t => (
-              <div key={t.id} className="card-elevated">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="font-bold text-lg">{t.service_category}</p>
-                  <span className="text-sm text-muted-foreground">
-                    {t.service_date ? new Date(t.service_date).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' }) : ''} {t.service_time || ''}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  {t.vehicle_plate && <span>🚗 {t.vehicle_plate}</span>}
-                  {t.driver_name && <span>👤 {t.driver_name}</span>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Recent Faults */}
-      {recentFaults.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <Wrench size={20} />
-              תקלות אחרונות
-            </h2>
-            <Link to="/faults" className="text-primary text-sm font-medium flex items-center gap-1">
-              הכל <ChevronLeft size={14} />
-            </Link>
-          </div>
-          <div className="space-y-2">
-            {recentFaults.map(f => (
-              <div key={f.id} className="card-elevated flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full flex-shrink-0 ${f.urgency === 'critical' ? 'bg-destructive' : f.urgency === 'urgent' ? 'bg-warning' : 'bg-info'}`} />
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold truncate">{f.fault_type} - {f.vehicle_plate}</p>
-                  <p className="text-sm text-muted-foreground">{f.driver_name}</p>
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(f.created_at).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      </section>
     </div>
   );
 }
