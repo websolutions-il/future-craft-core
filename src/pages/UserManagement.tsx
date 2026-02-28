@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Search, Users, Shield, KeyRound, Loader2, Filter } from 'lucide-react';
+import { Search, Users, Shield, KeyRound, Loader2, Filter, Pencil } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -40,9 +40,23 @@ export default function UserManagement() {
   const [search, setSearch] = useState('');
   const [companyFilter, setCompanyFilter] = useState('all');
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<ManagedUser | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [resetting, setResetting] = useState(false);
+  const [editForm, setEditForm] = useState({ full_name: '', phone: '', company_name: '', role: '', is_active: true });
+  const [saving, setSaving] = useState(false);
+  const [companyOptions, setCompanyOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    loadCompanyOptions();
+  }, []);
+
+  const loadCompanyOptions = async () => {
+    const { data } = await supabase.from('profiles').select('company_name');
+    const set = new Set((data || []).map(p => p.company_name).filter(Boolean) as string[]);
+    setCompanyOptions(Array.from(set).sort());
+  };
 
   useEffect(() => {
     loadUsers();
@@ -93,6 +107,48 @@ export default function UserManagement() {
       return matchSearch && matchCompany;
     });
   }, [users, search, companyFilter]);
+
+  const openEditDialog = (u: ManagedUser) => {
+    setSelectedUser(u);
+    setEditForm({
+      full_name: u.full_name,
+      phone: u.phone,
+      company_name: u.company_name,
+      role: u.role,
+      is_active: u.is_active,
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedUser) return;
+    setSaving(true);
+    const { data, error } = await supabase.functions.invoke('create-admin-user', {
+      body: {
+        action: 'update-profile',
+        user_id: selectedUser.id,
+        full_name: editForm.full_name,
+        phone: editForm.phone,
+        company_name: editForm.company_name,
+        role: editForm.role,
+        is_active: editForm.is_active,
+      },
+    });
+    setSaving(false);
+    if (error || data?.error) {
+      toast({ title: 'שגיאה', description: data?.error || 'לא ניתן לעדכן משתמש', variant: 'destructive' });
+      return;
+    }
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === selectedUser.id
+          ? { ...u, full_name: editForm.full_name, phone: editForm.phone, company_name: editForm.company_name, role: editForm.role, is_active: editForm.is_active }
+          : u
+      )
+    );
+    toast({ title: '✅ משתמש עודכן', description: `${editForm.full_name} עודכן בהצלחה` });
+    setEditDialogOpen(false);
+  };
 
   const openResetDialog = (u: ManagedUser) => {
     setSelectedUser(u);
@@ -243,15 +299,26 @@ export default function UserManagement() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openResetDialog(u)}
-                        className="gap-1.5"
-                      >
-                        <KeyRound size={14} />
-                        איפוס סיסמה
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openEditDialog(u)}
+                          className="gap-1.5"
+                        >
+                          <Pencil size={14} />
+                          עריכה
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openResetDialog(u)}
+                          className="gap-1.5"
+                        >
+                          <KeyRound size={14} />
+                          איפוס סיסמה
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -287,6 +354,84 @@ export default function UserManagement() {
             <Button onClick={handleResetPassword} disabled={resetting || newPassword.length < 6}>
               {resetting ? <Loader2 size={14} className="animate-spin ml-2" /> : <KeyRound size={14} className="ml-2" />}
               אפס סיסמה
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil size={18} className="text-primary" />
+              עריכת משתמש – {selectedUser?.full_name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">שם מלא</label>
+              <Input
+                value={editForm.full_name}
+                onChange={(e) => setEditForm((f) => ({ ...f, full_name: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">טלפון</label>
+              <Input
+                value={editForm.phone}
+                onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
+                dir="ltr"
+                className="text-right"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">חברה</label>
+              <Select value={editForm.company_name} onValueChange={(val) => setEditForm((f) => ({ ...f, company_name: val }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר חברה" />
+                </SelectTrigger>
+                <SelectContent>
+                  {companyOptions.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">תפקיד</label>
+              <Select value={editForm.role} onValueChange={(val) => setEditForm((f) => ({ ...f, role: val }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="driver">{ROLE_LABELS.driver}</SelectItem>
+                  <SelectItem value="fleet_manager">{ROLE_LABELS.fleet_manager}</SelectItem>
+                  <SelectItem value="super_admin">{ROLE_LABELS.super_admin}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-foreground">משתמש פעיל</label>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={editForm.is_active}
+                  onCheckedChange={(val) => setEditForm((f) => ({ ...f, is_active: val }))}
+                />
+                <span className={`text-xs font-bold ${editForm.is_active ? 'text-green-600 dark:text-green-400' : 'text-destructive'}`}>
+                  {editForm.is_active ? 'כן' : 'לא'}
+                </span>
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              מזהה: <span dir="ltr" className="font-mono">{selectedUser?.id}</span>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>ביטול</Button>
+            <Button onClick={handleSaveEdit} disabled={saving || !editForm.full_name}>
+              {saving ? <Loader2 size={14} className="animate-spin ml-2" /> : <Pencil size={14} className="ml-2" />}
+              שמור שינויים
             </Button>
           </DialogFooter>
         </DialogContent>
