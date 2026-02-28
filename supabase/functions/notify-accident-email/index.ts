@@ -21,7 +21,8 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const { record } = await req.json();
+    const { record, type } = await req.json();
+    const eventType = type || 'accident'; // 'accident' | 'fault'
 
     if (!record || !record.company_name) {
       return new Response(JSON.stringify({ error: 'Missing record data' }), {
@@ -31,23 +32,19 @@ Deno.serve(async (req) => {
     }
 
     // Find fleet managers in the same company
-    const { data: managers, error: managersError } = await supabaseAdmin
+    const { data: managers } = await supabaseAdmin
       .from('user_roles')
       .select('user_id')
       .eq('role', 'fleet_manager');
 
-    if (managersError || !managers) {
-      throw new Error('Failed to fetch managers: ' + managersError?.message);
-    }
-
-    // Get profiles for these managers to filter by company and get emails
-    const managerIds = managers.map(m => m.user_id);
-    if (managerIds.length === 0) {
+    if (!managers || managers.length === 0) {
       return new Response(JSON.stringify({ sent: 0 }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    const managerIds = managers.map(m => m.user_id);
 
     const { data: profiles } = await supabaseAdmin
       .from('profiles')
@@ -62,14 +59,84 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get emails from auth.users via admin API
-    const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
-    if (usersError) throw new Error('Failed to list users: ' + usersError.message);
-
+    const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
     const profileIds = new Set(profiles.map(p => p.id));
     const targetUsers = users.filter(u => profileIds.has(u.id) && u.email);
 
-    // Send emails
+    const buildEmailHtml = (managerName: string) => {
+      if (eventType === 'fault') {
+        const urgencyText = record.urgency === 'critical' ? 'מיידי 🔴' : 'דחוף 🟠';
+        return `
+          <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; padding: 32px;">
+            <h1 style="color: #ea580c; font-size: 24px; margin-bottom: 16px;">⚠️ תקלה ${urgencyText} דווחה</h1>
+            <p style="color: #333; font-size: 16px;">שלום ${managerName},</p>
+            <p style="color: #333; font-size: 16px;">התקבל דיווח תקלה דחופה במערכת דליה:</p>
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+              <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 10px; font-weight: bold; color: #666;">נהג</td>
+                <td style="padding: 10px;">${record.driver_name || '—'}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 10px; font-weight: bold; color: #666;">רכב</td>
+                <td style="padding: 10px;">${record.vehicle_plate || '—'}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 10px; font-weight: bold; color: #666;">סוג תקלה</td>
+                <td style="padding: 10px;">${record.fault_type || '—'}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 10px; font-weight: bold; color: #666;">דחיפות</td>
+                <td style="padding: 10px; color: #dc2626; font-weight: bold;">${urgencyText}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 10px; font-weight: bold; color: #666;">תיאור</td>
+                <td style="padding: 10px;">${record.description || '—'}</td>
+              </tr>
+            </table>
+            <p style="color: #666; font-size: 14px;">היכנס למערכת לפרטים נוספים וטיפול.</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+            <p style="color: #999; font-size: 12px;">הודעה זו נשלחה אוטומטית ממערכת דליה לניהול ציי רכב.</p>
+          </div>`;
+      }
+
+      // Accident email
+      return `
+        <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; padding: 32px;">
+          <h1 style="color: #dc2626; font-size: 24px; margin-bottom: 16px;">🚨 דיווח תאונה חדש</h1>
+          <p style="color: #333; font-size: 16px;">שלום ${managerName},</p>
+          <p style="color: #333; font-size: 16px;">התקבל דיווח תאונה חדש במערכת דליה:</p>
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <tr style="border-bottom: 1px solid #eee;">
+              <td style="padding: 10px; font-weight: bold; color: #666;">נהג</td>
+              <td style="padding: 10px;">${record.driver_name || '—'}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #eee;">
+              <td style="padding: 10px; font-weight: bold; color: #666;">רכב</td>
+              <td style="padding: 10px;">${record.vehicle_plate || '—'}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #eee;">
+              <td style="padding: 10px; font-weight: bold; color: #666;">מיקום</td>
+              <td style="padding: 10px;">${record.location || '—'}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #eee;">
+              <td style="padding: 10px; font-weight: bold; color: #666;">תיאור</td>
+              <td style="padding: 10px;">${record.description || '—'}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #eee;">
+              <td style="padding: 10px; font-weight: bold; color: #666;">עלות משוערת</td>
+              <td style="padding: 10px;">₪${(record.estimated_cost || 0).toLocaleString()}</td>
+            </tr>
+          </table>
+          <p style="color: #666; font-size: 14px;">היכנס למערכת לפרטים נוספים וטיפול.</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+          <p style="color: #999; font-size: 12px;">הודעה זו נשלחה אוטומטית ממערכת דליה לניהול ציי רכב.</p>
+        </div>`;
+    };
+
+    const subject = eventType === 'fault'
+      ? `⚠️ תקלה דחופה - רכב ${record.vehicle_plate || ''}`
+      : `🚨 תאונה חדשה דווחה - רכב ${record.vehicle_plate || ''}`;
+
     const emailPromises = targetUsers.map(async (manager) => {
       const profile = profiles.find(p => p.id === manager.id);
       const res = await fetch('https://api.resend.com/emails', {
@@ -81,39 +148,8 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           from: 'דליה מערכות <onboarding@resend.dev>',
           to: [manager.email],
-          subject: `🚨 תאונה חדשה דווחה - רכב ${record.vehicle_plate || ''}`,
-          html: `
-            <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; padding: 32px;">
-              <h1 style="color: #dc2626; font-size: 24px; margin-bottom: 16px;">🚨 דיווח תאונה חדש</h1>
-              <p style="color: #333; font-size: 16px;">שלום ${profile?.full_name || 'מנהל'},</p>
-              <p style="color: #333; font-size: 16px;">התקבל דיווח תאונה חדש במערכת דליה:</p>
-              <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-                <tr style="border-bottom: 1px solid #eee;">
-                  <td style="padding: 10px; font-weight: bold; color: #666;">נהג</td>
-                  <td style="padding: 10px;">${record.driver_name || '—'}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #eee;">
-                  <td style="padding: 10px; font-weight: bold; color: #666;">רכב</td>
-                  <td style="padding: 10px;">${record.vehicle_plate || '—'}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #eee;">
-                  <td style="padding: 10px; font-weight: bold; color: #666;">מיקום</td>
-                  <td style="padding: 10px;">${record.location || '—'}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #eee;">
-                  <td style="padding: 10px; font-weight: bold; color: #666;">תיאור</td>
-                  <td style="padding: 10px;">${record.description || '—'}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #eee;">
-                  <td style="padding: 10px; font-weight: bold; color: #666;">עלות משוערת</td>
-                  <td style="padding: 10px;">₪${(record.estimated_cost || 0).toLocaleString()}</td>
-                </tr>
-              </table>
-              <p style="color: #666; font-size: 14px;">היכנס למערכת לפרטים נוספים וטיפול.</p>
-              <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-              <p style="color: #999; font-size: 12px;">הודעה זו נשלחה אוטומטית ממערכת דליה לניהול ציי רכב.</p>
-            </div>
-          `,
+          subject,
+          html: buildEmailHtml(profile?.full_name || 'מנהל'),
         }),
       });
 

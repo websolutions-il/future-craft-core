@@ -226,7 +226,12 @@ function FaultForm({ fault, onDone, onBack, user }: { fault: FaultRow | null; on
     if (isEdit) {
       ({ error } = await supabase.from('faults').update(payload).eq('id', fault!.id));
     } else {
-      ({ error } = await supabase.from('faults').insert({ ...payload, status: 'new', company_name: user?.company_name || '', created_by: user?.id }));
+      const insertPayload = { ...payload, status: 'new', company_name: user?.company_name || '', created_by: user?.id };
+      ({ error } = await supabase.from('faults').insert(insertPayload));
+      // Send email for urgent/critical faults
+      if (!error && (urgency === 'urgent' || urgency === 'critical')) {
+        supabase.functions.invoke('notify-accident-email', { body: { record: insertPayload, type: 'fault' } }).catch(console.error);
+      }
     }
     setLoading(false);
     if (error) { toast.error('שגיאה בשמירה'); console.error(error); }
