@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
-import { FileText, Plus, Search } from 'lucide-react';
+import { FileText, Plus, Search, ArrowRight, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import ExpenseForm from '@/components/ExpenseForm';
-import { Expense } from '@/data/demo-data';
 import { toast } from 'sonner';
 
 interface ExpenseRow {
@@ -19,63 +17,55 @@ interface ExpenseRow {
   notes: string;
 }
 
+const expenseCategories = ['דלק', 'שמן', 'צמיגים', 'שטיפה', 'חניה', 'כבישי אגרה', 'תחזוקה', 'אחר'];
+
 export default function Expenses() {
   const { user } = useAuth();
   const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [loading, setLoading] = useState(true);
 
   const loadExpenses = async () => {
+    setLoading(true);
     const { data } = await supabase.from('expenses').select('*').order('created_at', { ascending: false });
     if (data) setExpenses(data as ExpenseRow[]);
+    setLoading(false);
   };
 
   useEffect(() => { loadExpenses(); }, []);
 
-  const filtered = expenses.filter(e =>
-    e.driver_name?.includes(search) || e.vehicle_plate?.includes(search) || e.category?.includes(search)
-  );
+  const filtered = expenses.filter(e => {
+    const matchSearch = !search || e.driver_name?.includes(search) || e.vehicle_plate?.includes(search) || e.vendor?.includes(search);
+    const matchCat = !filterCategory || e.category === filterCategory;
+    return matchSearch && matchCat;
+  });
 
-  const handleNewExpense = async (expense: Expense) => {
-    const { error } = await supabase.from('expenses').insert({
-      driver_name: expense.driverName,
-      vehicle_plate: expense.vehiclePlate,
-      category: expense.category,
-      vendor: expense.vendor,
-      invoice_number: expense.invoiceNumber,
-      invoice_date: expense.invoiceDate,
-      amount: expense.amount,
-      odometer: expense.odometer,
-      notes: expense.notes || '',
-      company_name: user?.company_name || '',
-      created_by: user?.id,
-    });
-    if (error) {
-      toast.error('שגיאה בשמירת ההוצאה');
-      console.error(error);
-    } else {
-      toast.success('ההוצאה נשמרה בהצלחה');
-      setShowForm(false);
-      loadExpenses();
-    }
-  };
+  const totalFiltered = filtered.reduce((sum, e) => sum + (e.amount || 0), 0);
 
   if (showForm) {
-    return (
-      <div className="animate-fade-in">
-        <ExpenseForm onSubmit={handleNewExpense} onCancel={() => setShowForm(false)} />
-      </div>
-    );
+    return <ExpenseFormPage onDone={() => { setShowForm(false); loadExpenses(); }} onBack={() => setShowForm(false)} user={user} />;
   }
 
   return (
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="page-header mb-0">דלק וחשבוניות</h1>
+        <h1 className="page-header !mb-0 flex items-center gap-3"><FileText size={28} /> הוצאות</h1>
         <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]">
-          <Plus size={22} />
-          הוצאה חדשה
+          <Plus size={22} /> הוצאה חדשה
         </button>
+      </div>
+
+      {/* Total */}
+      <div className="card-elevated flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+          <TrendingUp size={20} className="text-primary" />
+        </div>
+        <div>
+          <p className="text-2xl font-black">₪{totalFiltered.toLocaleString()}</p>
+          <p className="text-sm text-muted-foreground">סה״כ {filtered.length} הוצאות</p>
+        </div>
       </div>
 
       <div className="relative mb-4">
@@ -83,30 +73,133 @@ export default function Expenses() {
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="חיפוש..." className="w-full pr-12 p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none" />
       </div>
 
-      <div className="space-y-3">
-        {filtered.map(e => (
-          <div key={e.id} className="card-elevated">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xl font-bold">{e.category}</p>
-              <span className="text-xl font-black text-primary">₪{(e.amount || 0).toLocaleString()}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-muted-foreground">
-              <span>🚗 {e.vehicle_plate}</span>
-              <span>👤 {e.driver_name}</span>
-              <span>📅 {new Date(e.date).toLocaleDateString('he-IL')}</span>
-              <span>🏪 {e.vendor}</span>
-            </div>
-            {e.notes && <p className="text-sm text-muted-foreground mt-2">{e.notes}</p>}
-          </div>
+      <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
+        <button onClick={() => setFilterCategory('')}
+          className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${!filterCategory ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+          הכל
+        </button>
+        {expenseCategories.map(cat => (
+          <button key={cat} onClick={() => setFilterCategory(filterCategory === cat ? '' : cat)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${filterCategory === cat ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+            {cat}
+          </button>
         ))}
       </div>
 
-      {filtered.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
-          <FileText size={48} className="mx-auto mb-4 opacity-50" />
-          <p className="text-xl">אין הוצאות רשומות</p>
+      {loading ? (
+        <div className="text-center py-12"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto" /></div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground"><FileText size={48} className="mx-auto mb-4 opacity-50" /><p className="text-xl">אין הוצאות</p></div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map(e => (
+            <div key={e.id} className="card-elevated">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xl font-bold">{e.category}</p>
+                <span className="text-xl font-black text-primary">₪{(e.amount || 0).toLocaleString()}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-muted-foreground text-sm">
+                <span>🚗 {e.vehicle_plate}</span>
+                <span>👤 {e.driver_name}</span>
+                <span>📅 {e.date ? new Date(e.date).toLocaleDateString('he-IL') : ''}</span>
+                <span>🏪 {e.vendor}</span>
+                {e.invoice_number && <span>🧾 {e.invoice_number}</span>}
+                {e.odometer > 0 && <span>📊 {e.odometer.toLocaleString()} ק"מ</span>}
+              </div>
+              {e.notes && <p className="text-sm text-muted-foreground mt-2 bg-muted p-2 rounded-lg">{e.notes}</p>}
+            </div>
+          ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function ExpenseFormPage({ onDone, onBack, user }: { onDone: () => void; onBack: () => void; user: any }) {
+  const [vehiclePlate, setVehiclePlate] = useState('');
+  const [driverName, setDriverName] = useState('');
+  const [category, setCategory] = useState('');
+  const [vendor, setVendor] = useState('');
+  const [invoiceNumber, setInvoiceNumber] = useState('');
+  const [amount, setAmount] = useState('');
+  const [odometer, setOdometer] = useState('');
+  const [notes, setNotes] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const [vehicles, setVehicles] = useState<{ license_plate: string; manufacturer: string; model: string }[]>([]);
+  const [drivers, setDrivers] = useState<{ full_name: string }[]>([]);
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from('vehicles').select('license_plate, manufacturer, model'),
+      supabase.from('drivers').select('full_name'),
+    ]).then(([v, d]) => {
+      if (v.data) setVehicles(v.data);
+      if (d.data) setDrivers(d.data);
+    });
+  }, []);
+
+  const isValid = category && amount;
+  const inputClass = "w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
+
+  const handleSubmit = async () => {
+    if (!isValid) return;
+    setLoading(true);
+    const { error } = await supabase.from('expenses').insert({
+      vehicle_plate: vehiclePlate, driver_name: driverName, category, vendor,
+      invoice_number: invoiceNumber, amount: parseFloat(amount) || 0,
+      odometer: parseInt(odometer) || 0, notes,
+      company_name: user?.company_name || '', created_by: user?.id,
+    });
+    setLoading(false);
+    if (error) { toast.error('שגיאה בשמירה'); } else { toast.success('ההוצאה נשמרה'); onDone(); }
+  };
+
+  return (
+    <div className="animate-fade-in">
+      <button onClick={onBack} className="flex items-center gap-2 text-primary text-lg font-medium mb-4 min-h-[48px]"><ArrowRight size={20} /> חזרה</button>
+      <h1 className="text-2xl font-bold mb-6">הוצאה חדשה</h1>
+      <div className="space-y-5">
+        <div><label className="block text-lg font-medium mb-2">קטגוריה *</label>
+          <select value={category} onChange={e => setCategory(e.target.value)} className={inputClass}>
+            <option value="">בחר...</option>
+            {expenseCategories.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        <div><label className="block text-lg font-medium mb-2">סכום (₪) *</label>
+          <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" className={inputClass} />
+        </div>
+        <div><label className="block text-lg font-medium mb-2">רכב</label>
+          <select value={vehiclePlate} onChange={e => setVehiclePlate(e.target.value)} className={inputClass}>
+            <option value="">בחר...</option>
+            {vehicles.map(v => <option key={v.license_plate} value={v.license_plate}>{v.license_plate} - {v.manufacturer} {v.model}</option>)}
+          </select>
+        </div>
+        <div><label className="block text-lg font-medium mb-2">נהג</label>
+          <select value={driverName} onChange={e => setDriverName(e.target.value)} className={inputClass}>
+            <option value="">בחר...</option>
+            {drivers.map(d => <option key={d.full_name} value={d.full_name}>{d.full_name}</option>)}
+          </select>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div><label className="block text-lg font-medium mb-2">ספק</label>
+            <input value={vendor} onChange={e => setVendor(e.target.value)} placeholder="שם הספק..." className={inputClass} />
+          </div>
+          <div><label className="block text-lg font-medium mb-2">מס׳ חשבונית</label>
+            <input value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} placeholder="מספר..." className={inputClass} />
+          </div>
+        </div>
+        <div><label className="block text-lg font-medium mb-2">ק"מ</label>
+          <input type="number" value={odometer} onChange={e => setOdometer(e.target.value)} placeholder="0" className={inputClass} />
+        </div>
+        <div><label className="block text-lg font-medium mb-2">הערות</label>
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="הערות..." className={`${inputClass} resize-none`} />
+        </div>
+        <button onClick={handleSubmit} disabled={!isValid || loading}
+          className={`w-full py-5 rounded-xl text-xl font-bold transition-colors ${isValid && !loading ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}>
+          {loading ? 'שומר...' : '💾 שמור הוצאה'}
+        </button>
+      </div>
     </div>
   );
 }

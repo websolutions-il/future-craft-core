@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { AlertTriangle, Plus, ArrowRight, Camera, X, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { AlertTriangle, Plus, ArrowRight, Search, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,173 +24,194 @@ const statusLabels: Record<string, { text: string; cls: string }> = {
   closed: { text: 'סגור', cls: 'status-active' },
 };
 
+type ViewMode = 'list' | 'detail' | 'form';
+
 export default function Accidents() {
   const { user } = useAuth();
   const [accidents, setAccidents] = useState<AccidentRow[]>([]);
-  const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [selected, setSelected] = useState<AccidentRow | null>(null);
+  const [editItem, setEditItem] = useState<AccidentRow | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const loadAccidents = async () => {
+    setLoading(true);
     const { data } = await supabase.from('accidents').select('*').order('created_at', { ascending: false });
     if (data) setAccidents(data as AccidentRow[]);
+    setLoading(false);
   };
 
   useEffect(() => { loadAccidents(); }, []);
 
-  const filtered = accidents.filter(a =>
-    a.driver_name?.includes(search) || a.vehicle_plate?.includes(search) || a.description?.includes(search)
-  );
+  const isManager = user?.role === 'fleet_manager' || user?.role === 'super_admin';
 
-  if (showForm) {
-    return <AccidentForm onDone={() => { setShowForm(false); loadAccidents(); }} />;
+  const filtered = accidents.filter(a => {
+    const matchSearch = !search || a.driver_name?.includes(search) || a.vehicle_plate?.includes(search) || a.description?.includes(search);
+    const matchStatus = !filterStatus || a.status === filterStatus;
+    return matchSearch && matchStatus;
+  });
+
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    const { error } = await supabase.from('accidents').update({ status: newStatus }).eq('id', id);
+    if (error) { toast.error('שגיאה'); } else { toast.success('סטטוס עודכן'); loadAccidents(); }
+  };
+
+  if (viewMode === 'form') {
+    return <AccidentForm accident={editItem} onDone={() => { setViewMode('list'); setEditItem(null); loadAccidents(); }} onBack={() => { setViewMode('list'); setEditItem(null); }} user={user} />;
+  }
+
+  if (viewMode === 'detail' && selected) {
+    const a = selected;
+    const st = statusLabels[a.status] || statusLabels.open;
+    return (
+      <div className="animate-fade-in">
+        <button onClick={() => { setViewMode('list'); setSelected(null); }} className="flex items-center gap-2 text-primary text-lg font-medium mb-4 min-h-[48px]">
+          <ArrowRight size={20} /> חזרה
+        </button>
+        <div className="card-elevated mb-4">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold">תאונה - {a.vehicle_plate}</h1>
+            <div className="flex items-center gap-2">
+              <span className={`status-badge ${st.cls}`}>{st.text}</span>
+              {isManager && <button onClick={() => { setEditItem(a); setViewMode('form'); }} className="p-2 rounded-xl bg-primary/10 text-primary"><Edit2 size={18} /></button>}
+            </div>
+          </div>
+          <p className="text-lg mb-4">{a.description}</p>
+          <div className="grid grid-cols-2 gap-4 text-lg">
+            <div><span className="text-muted-foreground text-sm">נהג</span><p className="font-bold">{a.driver_name}</p></div>
+            <div><span className="text-muted-foreground text-sm">מיקום</span><p className="font-bold">{a.location || '—'}</p></div>
+            <div><span className="text-muted-foreground text-sm">תאריך</span><p className="font-bold">{a.date ? new Date(a.date).toLocaleDateString('he-IL') : '—'}</p></div>
+            <div><span className="text-muted-foreground text-sm">עלות משוערת</span><p className="font-bold">₪{(a.estimated_cost || 0).toLocaleString()}</p></div>
+          </div>
+          <div className="flex gap-3 mt-4">
+            {a.has_insurance && <span className="status-badge status-active">ביטוח ✓</span>}
+            {a.third_party && <span className="status-badge status-pending">צד ג׳</span>}
+          </div>
+          {a.notes && <p className="mt-4 p-3 bg-muted rounded-xl text-muted-foreground">{a.notes}</p>}
+        </div>
+        {isManager && (
+          <div className="card-elevated">
+            <h2 className="text-lg font-bold mb-3">שנה סטטוס</h2>
+            <div className="flex gap-2 flex-wrap">
+              {Object.entries(statusLabels).map(([key, { text }]) => (
+                <button key={key} onClick={() => { handleStatusChange(a.id, key); setSelected({ ...a, status: key }); }}
+                  className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${a.status === key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                  {text}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="page-header mb-0">תאונות ואירועים</h1>
-        <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-destructive text-destructive-foreground text-lg font-bold min-h-[48px]">
-          <Plus size={22} />
-          דיווח תאונה
+        <h1 className="page-header !mb-0 flex items-center gap-3"><AlertTriangle size={28} /> תאונות</h1>
+        <button onClick={() => { setEditItem(null); setViewMode('form'); }} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-destructive text-destructive-foreground text-lg font-bold min-h-[48px]">
+          <Plus size={22} /> דיווח תאונה
         </button>
       </div>
-
       <div className="relative mb-4">
         <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="חיפוש..." className="w-full pr-12 p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none" />
       </div>
-
-      <div className="space-y-3">
-        {filtered.map(a => {
-          const st = statusLabels[a.status] || statusLabels.open;
-          return (
-            <div key={a.id} className="card-elevated">
-              <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-destructive/10 flex items-center justify-center flex-shrink-0">
-                  <AlertTriangle size={28} className="text-destructive" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-xl font-bold">תאונה - {a.vehicle_plate}</p>
-                    <span className={`status-badge ${st.cls}`}>{st.text}</span>
-                  </div>
-                  <p className="text-lg">{a.description}</p>
-                  <div className="grid grid-cols-2 gap-2 mt-3 text-muted-foreground">
-                    <span>📅 {new Date(a.date).toLocaleDateString('he-IL')}</span>
-                    <span>👤 {a.driver_name}</span>
-                    <span>📍 {a.location}</span>
-                    <span>💰 עלות משוערת: ₪{(a.estimated_cost || 0).toLocaleString()}</span>
-                  </div>
-                  <div className="flex gap-3 mt-3">
-                    {a.has_insurance && <span className="status-badge status-active">ביטוח ✓</span>}
-                    {a.third_party && <span className="status-badge status-pending">צד ג׳</span>}
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+      <div className="flex gap-2 mb-5 flex-wrap">
+        {(['', 'open', 'in_progress', 'closed'] as const).map(key => (
+          <button key={key} onClick={() => setFilterStatus(filterStatus === key ? '' : key)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${filterStatus === key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+            {key === '' ? 'הכל' : (statusLabels[key]?.text || key)}
+          </button>
+        ))}
       </div>
-
-      {filtered.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
-          <AlertTriangle size={48} className="mx-auto mb-4 opacity-50" />
-          <p className="text-xl">אין תאונות רשומות</p>
+      {loading ? (
+        <div className="text-center py-12"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto" /></div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground"><AlertTriangle size={48} className="mx-auto mb-4 opacity-50" /><p className="text-xl">אין תאונות</p></div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map(a => {
+            const st = statusLabels[a.status] || statusLabels.open;
+            return (
+              <button key={a.id} onClick={() => { setSelected(a); setViewMode('detail'); }} className="card-elevated w-full text-right hover:shadow-lg transition-shadow">
+                <div className="flex items-start gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-destructive/10 flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle size={28} className="text-destructive" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xl font-bold">{a.vehicle_plate}</p>
+                      <span className={`status-badge ${st.cls}`}>{st.text}</span>
+                    </div>
+                    <p className="text-muted-foreground line-clamp-1">{a.description}</p>
+                    <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
+                      <span>👤 {a.driver_name}</span>
+                      <span>📅 {a.date ? new Date(a.date).toLocaleDateString('he-IL') : ''}</span>
+                      <span>💰 ₪{(a.estimated_cost || 0).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
 
-function AccidentForm({ onDone }: { onDone: () => void }) {
-  const { user } = useAuth();
-  const [vehiclePlate, setVehiclePlate] = useState('');
-  const [driverName, setDriverName] = useState(user?.full_name || '');
-  const [location, setLocation] = useState('');
-  const [description, setDescription] = useState('');
-  const [hasInsurance, setHasInsurance] = useState(false);
-  const [thirdParty, setThirdParty] = useState(false);
-  const [estimatedCost, setEstimatedCost] = useState('');
-  const [notes, setNotes] = useState('');
+function AccidentForm({ accident, onDone, onBack, user }: { accident: AccidentRow | null; onDone: () => void; onBack: () => void; user: any }) {
+  const isEdit = !!accident;
+  const [vehiclePlate, setVehiclePlate] = useState(accident?.vehicle_plate || '');
+  const [driverName, setDriverName] = useState(accident?.driver_name || user?.full_name || '');
+  const [location, setLocation] = useState(accident?.location || '');
+  const [description, setDescription] = useState(accident?.description || '');
+  const [hasInsurance, setHasInsurance] = useState(accident?.has_insurance || false);
+  const [thirdParty, setThirdParty] = useState(accident?.third_party || false);
+  const [estimatedCost, setEstimatedCost] = useState(accident?.estimated_cost?.toString() || '');
+  const [notes, setNotes] = useState(accident?.notes || '');
   const [loading, setLoading] = useState(false);
 
-  // Load vehicles from DB
   const [vehicles, setVehicles] = useState<{ license_plate: string; manufacturer: string; model: string }[]>([]);
-  useEffect(() => {
-    supabase.from('vehicles').select('license_plate, manufacturer, model').then(({ data }) => {
-      if (data) setVehicles(data);
-    });
-  }, []);
+  useEffect(() => { supabase.from('vehicles').select('license_plate, manufacturer, model').then(({ data }) => { if (data) setVehicles(data); }); }, []);
 
   const isValid = vehiclePlate && driverName && description;
+  const inputClass = "w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
 
   const handleSubmit = async () => {
     if (!isValid) return;
     setLoading(true);
-    const { error } = await supabase.from('accidents').insert({
-      vehicle_plate: vehiclePlate,
-      driver_name: driverName,
-      location,
-      description,
-      has_insurance: hasInsurance,
-      third_party: thirdParty,
-      estimated_cost: parseFloat(estimatedCost) || 0,
-      notes,
-      company_name: user?.company_name || '',
-      created_by: user?.id,
-    });
+    const payload = { vehicle_plate: vehiclePlate, driver_name: driverName, location, description, has_insurance: hasInsurance, third_party: thirdParty, estimated_cost: parseFloat(estimatedCost) || 0, notes };
+    let error;
+    if (isEdit) { ({ error } = await supabase.from('accidents').update(payload).eq('id', accident!.id)); }
+    else { ({ error } = await supabase.from('accidents').insert({ ...payload, company_name: user?.company_name || '', created_by: user?.id })); }
     setLoading(false);
-    if (error) {
-      toast.error('שגיאה בשמירת הדיווח');
-      console.error(error);
-    } else {
-      toast.success('דיווח התאונה נשלח בהצלחה');
-      onDone();
-    }
+    if (error) { toast.error('שגיאה'); } else { toast.success(isEdit ? 'עודכן' : 'דיווח נשלח'); onDone(); }
   };
-
-  const inputClass = "w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
 
   return (
     <div className="animate-fade-in">
-      <button onClick={onDone} className="flex items-center gap-2 text-primary text-lg font-medium mb-4 min-h-[48px]">
-        <ArrowRight size={20} />
-        חזרה לרשימת תאונות
-      </button>
-
-      <h1 className="text-2xl font-bold mb-6">דיווח תאונה</h1>
-
+      <button onClick={onBack} className="flex items-center gap-2 text-primary text-lg font-medium mb-4 min-h-[48px]"><ArrowRight size={20} /> חזרה</button>
+      <h1 className="text-2xl font-bold mb-6">{isEdit ? 'עריכת תאונה' : 'דיווח תאונה'}</h1>
       <div className="space-y-5">
-        <div>
-          <label className="block text-lg font-medium mb-2">מספר רכב</label>
+        <div><label className="block text-lg font-medium mb-2">רכב *</label>
           <select value={vehiclePlate} onChange={e => setVehiclePlate(e.target.value)} className={inputClass}>
-            <option value="">בחר רכב...</option>
-            {vehicles.map(v => (
-              <option key={v.license_plate} value={v.license_plate}>{v.license_plate} - {v.manufacturer} {v.model}</option>
-            ))}
+            <option value="">בחר...</option>
+            {vehicles.map(v => <option key={v.license_plate} value={v.license_plate}>{v.license_plate} - {v.manufacturer} {v.model}</option>)}
           </select>
         </div>
-
-        <div>
-          <label className="block text-lg font-medium mb-2">שם הנהג</label>
-          <input type="text" value={driverName} onChange={e => setDriverName(e.target.value)} placeholder="שם הנהג..." className={inputClass} />
-        </div>
-
-        <div>
-          <label className="block text-lg font-medium mb-2">מיקום התאונה</label>
-          <input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="כתובת / צומת / כביש..." className={inputClass} />
-        </div>
-
-        <div>
-          <label className="block text-lg font-medium mb-2">תיאור האירוע</label>
-          <textarea value={description} onChange={e => setDescription(e.target.value)} rows={4} placeholder="תאר את האירוע בפירוט..." className={`${inputClass} resize-none`} />
-        </div>
-
-        <div>
-          <label className="block text-lg font-medium mb-2">עלות משוערת (₪)</label>
-          <input type="number" value={estimatedCost} onChange={e => setEstimatedCost(e.target.value)} placeholder="0" className={inputClass} />
-        </div>
-
+        <div><label className="block text-lg font-medium mb-2">נהג *</label>
+          <input value={driverName} onChange={e => setDriverName(e.target.value)} className={inputClass} /></div>
+        <div><label className="block text-lg font-medium mb-2">מיקום</label>
+          <input value={location} onChange={e => setLocation(e.target.value)} placeholder="כתובת / צומת..." className={inputClass} /></div>
+        <div><label className="block text-lg font-medium mb-2">תיאור *</label>
+          <textarea value={description} onChange={e => setDescription(e.target.value)} rows={4} placeholder="תאר את האירוע..." className={`${inputClass} resize-none`} /></div>
+        <div><label className="block text-lg font-medium mb-2">עלות משוערת (₪)</label>
+          <input type="number" value={estimatedCost} onChange={e => setEstimatedCost(e.target.value)} placeholder="0" className={inputClass} /></div>
         <div className="flex gap-4">
           <label className="flex items-center gap-3 flex-1 p-4 rounded-xl border-2 border-input cursor-pointer">
             <input type="checkbox" checked={hasInsurance} onChange={e => setHasInsurance(e.target.checked)} className="w-6 h-6 rounded" />
@@ -201,18 +222,11 @@ function AccidentForm({ onDone }: { onDone: () => void }) {
             <span className="text-lg font-medium">צד ג׳</span>
           </label>
         </div>
-
-        <div>
-          <label className="block text-lg font-medium mb-2">הערות</label>
-          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="הערות נוספות..." className={`${inputClass} resize-none`} />
-        </div>
-
-        <button
-          onClick={handleSubmit}
-          disabled={!isValid || loading}
-          className={`w-full py-5 rounded-xl text-xl font-bold transition-colors ${isValid && !loading ? 'bg-destructive text-destructive-foreground' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
-        >
-          {loading ? 'שולח...' : '🚨 שלח דיווח תאונה'}
+        <div><label className="block text-lg font-medium mb-2">הערות</label>
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={`${inputClass} resize-none`} /></div>
+        <button onClick={handleSubmit} disabled={!isValid || loading}
+          className={`w-full py-5 rounded-xl text-xl font-bold transition-colors ${isValid && !loading ? 'bg-destructive text-destructive-foreground' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}>
+          {loading ? 'שולח...' : isEdit ? '💾 עדכן' : '🚨 שלח דיווח'}
         </button>
       </div>
     </div>

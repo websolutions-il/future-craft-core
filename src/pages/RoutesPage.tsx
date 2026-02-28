@@ -1,61 +1,86 @@
-import { useState } from 'react';
-import { demoRoutes, Route as RouteType, serviceTypes } from '@/data/demo-data';
-import { Route as RouteIcon, Search, ArrowRight, MapPin, Clock, Calendar } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Route as RouteIcon, Search, ArrowRight, MapPin, Clock, Plus, Edit2, Trash2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
-export default function Routes() {
+interface RouteRow {
+  id: string;
+  name: string;
+  origin: string;
+  destination: string;
+  stops: string[];
+  distance_km: number;
+  start_time: string;
+  end_time: string;
+  days_of_week: string[];
+  service_type: string;
+  customer_name: string;
+  driver_name: string;
+  vehicle_plate: string;
+  status: string;
+  notes: string;
+}
+
+const serviceTypes: Record<string, string> = { regular: 'קו קבוע', charter: 'שכר', school: 'הסעות תלמידים', tourism: 'תיירות', delivery: 'משלוחים', other: 'אחר' };
+const daysOptions = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+
+type ViewMode = 'list' | 'detail' | 'form';
+
+export default function RoutesPage() {
+  const { user } = useAuth();
+  const [routes, setRoutes] = useState<RouteRow[]>([]);
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<RouteType | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [selected, setSelected] = useState<RouteRow | null>(null);
+  const [editItem, setEditItem] = useState<RouteRow | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = demoRoutes.filter(r =>
-    r.name.includes(search) || r.origin.includes(search) || r.destination.includes(search)
-  );
+  const loadData = async () => {
+    setLoading(true);
+    const { data } = await supabase.from('routes').select('*').order('created_at', { ascending: false });
+    if (data) setRoutes(data as RouteRow[]);
+    setLoading(false);
+  };
 
-  if (selected) {
+  useEffect(() => { loadData(); }, []);
+
+  const isManager = user?.role === 'fleet_manager' || user?.role === 'super_admin';
+  const filtered = routes.filter(r => !search || r.name?.includes(search) || r.origin?.includes(search) || r.destination?.includes(search));
+
+  if (viewMode === 'form') {
+    return <RouteForm route={editItem} onDone={() => { setViewMode('list'); setEditItem(null); loadData(); }} onBack={() => { setViewMode('list'); setEditItem(null); }} user={user} />;
+  }
+
+  if (viewMode === 'detail' && selected) {
     const r = selected;
     return (
       <div className="animate-fade-in">
-        <button onClick={() => setSelected(null)} className="flex items-center gap-2 text-primary text-lg font-medium mb-4 min-h-[48px]">
-          <ArrowRight size={20} />
-          חזרה לרשימה
-        </button>
+        <button onClick={() => { setViewMode('list'); setSelected(null); }} className="flex items-center gap-2 text-primary text-lg font-medium mb-4 min-h-[48px]"><ArrowRight size={20} /> חזרה</button>
         <div className="card-elevated">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold">{r.name}</h1>
-            <span className={`status-badge ${r.status === 'active' ? 'status-active' : 'status-inactive'}`}>
-              {r.status === 'active' ? 'פעיל' : 'לא פעיל'}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className={`status-badge ${r.status === 'active' ? 'status-active' : 'status-inactive'}`}>{r.status === 'active' ? 'פעיל' : 'לא פעיל'}</span>
+              {isManager && <button onClick={() => { setEditItem(r); setViewMode('form'); }} className="p-2 rounded-xl bg-primary/10 text-primary"><Edit2 size={18} /></button>}
+            </div>
           </div>
-
           <div className="bg-muted rounded-2xl p-4 mb-4">
-            <div className="flex items-start gap-3 mb-3">
-              <MapPin size={20} className="text-success mt-1 flex-shrink-0" />
-              <div><span className="text-sm text-muted-foreground">מוצא</span><p className="font-bold text-lg">{r.origin}</p></div>
-            </div>
-            {r.stops.length > 0 && (
-              <div className="mr-2 pr-6 border-r-2 border-dashed border-muted-foreground/30 py-2 space-y-1">
-                {r.stops.map((stop, i) => (
-                  <p key={i} className="text-muted-foreground">📍 {stop}</p>
-                ))}
-              </div>
-            )}
-            <div className="flex items-start gap-3 mt-3">
-              <MapPin size={20} className="text-destructive mt-1 flex-shrink-0" />
-              <div><span className="text-sm text-muted-foreground">יעד</span><p className="font-bold text-lg">{r.destination}</p></div>
-            </div>
+            <div className="flex items-start gap-3 mb-3"><MapPin size={20} className="text-primary mt-1 flex-shrink-0" /><div><span className="text-sm text-muted-foreground">מוצא</span><p className="font-bold text-lg">{r.origin}</p></div></div>
+            {r.stops?.length > 0 && <div className="mr-2 pr-6 border-r-2 border-dashed border-muted-foreground/30 py-2 space-y-1">{r.stops.map((s, i) => <p key={i} className="text-muted-foreground">📍 {s}</p>)}</div>}
+            <div className="flex items-start gap-3 mt-3"><MapPin size={20} className="text-destructive mt-1 flex-shrink-0" /><div><span className="text-sm text-muted-foreground">יעד</span><p className="font-bold text-lg">{r.destination}</p></div></div>
           </div>
-
           <div className="grid grid-cols-2 gap-4 text-lg">
-            <div><span className="text-muted-foreground">סוג שירות:</span><p className="font-bold">{serviceTypes[r.serviceType]}</p></div>
-            <div><span className="text-muted-foreground">מרחק:</span><p className="font-bold">{r.distanceKm} ק"מ</p></div>
-            <div><span className="text-muted-foreground">שעת יציאה:</span><p className="font-bold">{r.startTime}</p></div>
-            <div><span className="text-muted-foreground">שעת סיום:</span><p className="font-bold">{r.endTime}</p></div>
-            {r.daysOfWeek.length > 0 && (
-              <div className="col-span-2"><span className="text-muted-foreground">ימי פעילות:</span><p className="font-bold">{r.daysOfWeek.join(', ')}</p></div>
-            )}
-            {r.customerName && <div><span className="text-muted-foreground">לקוח:</span><p className="font-bold">{r.customerName}</p></div>}
-            {r.driverName && <div><span className="text-muted-foreground">נהג:</span><p className="font-bold">{r.driverName}</p></div>}
-            {r.vehiclePlate && <div><span className="text-muted-foreground">רכב:</span><p className="font-bold">{r.vehiclePlate}</p></div>}
+            <div><span className="text-muted-foreground text-sm">סוג שירות</span><p className="font-bold">{serviceTypes[r.service_type] || r.service_type}</p></div>
+            <div><span className="text-muted-foreground text-sm">מרחק</span><p className="font-bold">{r.distance_km} ק"מ</p></div>
+            <div><span className="text-muted-foreground text-sm">שעת יציאה</span><p className="font-bold">{r.start_time}</p></div>
+            <div><span className="text-muted-foreground text-sm">שעת סיום</span><p className="font-bold">{r.end_time}</p></div>
+            {r.days_of_week?.length > 0 && <div className="col-span-2"><span className="text-muted-foreground text-sm">ימי פעילות</span><p className="font-bold">{r.days_of_week.join(', ')}</p></div>}
+            {r.customer_name && <div><span className="text-muted-foreground text-sm">לקוח</span><p className="font-bold">{r.customer_name}</p></div>}
+            {r.driver_name && <div><span className="text-muted-foreground text-sm">נהג</span><p className="font-bold">{r.driver_name}</p></div>}
+            {r.vehicle_plate && <div><span className="text-muted-foreground text-sm">רכב</span><p className="font-bold">{r.vehicle_plate}</p></div>}
           </div>
+          {r.notes && <p className="mt-4 p-3 bg-muted rounded-xl text-muted-foreground">{r.notes}</p>}
         </div>
       </div>
     );
@@ -63,37 +88,128 @@ export default function Routes() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="page-header">ניהול מסלולים</h1>
-      <div className="relative mb-6">
-        <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="חיפוש לפי שם, מוצא או יעד..."
-          className="w-full pr-12 p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none"
-        />
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="page-header !mb-0 flex items-center gap-3"><RouteIcon size={28} /> מסלולים</h1>
+        {isManager && <button onClick={() => { setEditItem(null); setViewMode('form'); }} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]"><Plus size={22} /> מסלול חדש</button>}
       </div>
-      <div className="space-y-3">
-        {filtered.map(r => (
-          <button key={r.id} onClick={() => setSelected(r)} className="card-elevated w-full text-right hover:shadow-lg transition-shadow">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-success/10 flex items-center justify-center flex-shrink-0">
-                <RouteIcon size={28} className="text-success" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xl font-bold">{r.name}</p>
-                <p className="text-muted-foreground">{r.origin} → {r.destination}</p>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className="text-sm text-muted-foreground flex items-center gap-1"><Clock size={14} />{r.startTime}</span>
-                  <span className="text-sm text-muted-foreground">{serviceTypes[r.serviceType]}</span>
+      <div className="relative mb-5">
+        <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="חיפוש..." className="w-full pr-12 p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none" />
+      </div>
+      {loading ? (
+        <div className="text-center py-12"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto" /></div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground"><RouteIcon size={48} className="mx-auto mb-4 opacity-50" /><p className="text-xl">אין מסלולים</p></div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map(r => (
+            <button key={r.id} onClick={() => { setSelected(r); setViewMode('detail'); }} className="card-elevated w-full text-right hover:shadow-lg transition-shadow">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0"><RouteIcon size={28} className="text-primary" /></div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xl font-bold">{r.name}</p>
+                  <p className="text-muted-foreground">{r.origin} → {r.destination}</p>
+                  <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1"><Clock size={14} />{r.start_time}</span>
+                    <span>{serviceTypes[r.service_type] || r.service_type}</span>
+                    {r.distance_km > 0 && <span>{r.distance_km} ק"מ</span>}
+                  </div>
                 </div>
+                <span className={`status-badge ${r.status === 'active' ? 'status-active' : 'status-inactive'}`}>{r.status === 'active' ? 'פעיל' : 'לא פעיל'}</span>
               </div>
-              <span className={`status-badge ${r.status === 'active' ? 'status-active' : 'status-inactive'}`}>
-                {r.status === 'active' ? 'פעיל' : 'לא פעיל'}
-              </span>
-            </div>
-          </button>
-        ))}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RouteForm({ route, onDone, onBack, user }: { route: RouteRow | null; onDone: () => void; onBack: () => void; user: any }) {
+  const isEdit = !!route;
+  const [name, setName] = useState(route?.name || '');
+  const [origin, setOrigin] = useState(route?.origin || '');
+  const [destination, setDestination] = useState(route?.destination || '');
+  const [stopsText, setStopsText] = useState(route?.stops?.join(', ') || '');
+  const [distanceKm, setDistanceKm] = useState(route?.distance_km?.toString() || '');
+  const [startTime, setStartTime] = useState(route?.start_time || '');
+  const [endTime, setEndTime] = useState(route?.end_time || '');
+  const [selectedDays, setSelectedDays] = useState<string[]>(route?.days_of_week || []);
+  const [serviceType, setServiceType] = useState(route?.service_type || '');
+  const [customerName, setCustomerName] = useState(route?.customer_name || '');
+  const [driverName, setDriverName] = useState(route?.driver_name || '');
+  const [vehiclePlate, setVehiclePlate] = useState(route?.vehicle_plate || '');
+  const [status, setStatus] = useState(route?.status || 'active');
+  const [notes, setNotes] = useState(route?.notes || '');
+  const [loading, setLoading] = useState(false);
+
+  const [drivers, setDrivers] = useState<{ full_name: string }[]>([]);
+  const [vehicles, setVehicles] = useState<{ license_plate: string; manufacturer: string; model: string }[]>([]);
+
+  useEffect(() => {
+    Promise.all([supabase.from('drivers').select('full_name'), supabase.from('vehicles').select('license_plate, manufacturer, model')]).then(([d, v]) => {
+      if (d.data) setDrivers(d.data);
+      if (v.data) setVehicles(v.data);
+    });
+  }, []);
+
+  const toggleDay = (day: string) => setSelectedDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
+  const isValid = name && origin && destination;
+  const inputClass = "w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
+
+  const handleSubmit = async () => {
+    if (!isValid) return;
+    setLoading(true);
+    const payload = { name, origin, destination, stops: stopsText ? stopsText.split(',').map(s => s.trim()) : [], distance_km: parseFloat(distanceKm) || 0, start_time: startTime, end_time: endTime, days_of_week: selectedDays, service_type: serviceType, customer_name: customerName, driver_name: driverName, vehicle_plate: vehiclePlate, status, notes };
+    let error;
+    if (isEdit) { ({ error } = await supabase.from('routes').update(payload).eq('id', route!.id)); }
+    else { ({ error } = await supabase.from('routes').insert({ ...payload, company_name: user?.company_name || '', created_by: user?.id })); }
+    setLoading(false);
+    if (error) { toast.error('שגיאה'); console.error(error); } else { toast.success(isEdit ? 'עודכן' : 'נוסף'); onDone(); }
+  };
+
+  return (
+    <div className="animate-fade-in">
+      <button onClick={onBack} className="flex items-center gap-2 text-primary text-lg font-medium mb-4 min-h-[48px]"><ArrowRight size={20} /> חזרה</button>
+      <h1 className="text-2xl font-bold mb-6">{isEdit ? 'עריכת מסלול' : 'מסלול חדש'}</h1>
+      <div className="space-y-5">
+        <div><label className="block text-lg font-medium mb-2">שם מסלול *</label><input value={name} onChange={e => setName(e.target.value)} className={inputClass} /></div>
+        <div className="grid grid-cols-2 gap-4">
+          <div><label className="block text-lg font-medium mb-2">מוצא *</label><input value={origin} onChange={e => setOrigin(e.target.value)} className={inputClass} /></div>
+          <div><label className="block text-lg font-medium mb-2">יעד *</label><input value={destination} onChange={e => setDestination(e.target.value)} className={inputClass} /></div>
+        </div>
+        <div><label className="block text-lg font-medium mb-2">תחנות ביניים (מופרדות בפסיק)</label><input value={stopsText} onChange={e => setStopsText(e.target.value)} placeholder="תחנה 1, תחנה 2..." className={inputClass} /></div>
+        <div className="grid grid-cols-3 gap-4">
+          <div><label className="block text-lg font-medium mb-2">מרחק (ק"מ)</label><input type="number" value={distanceKm} onChange={e => setDistanceKm(e.target.value)} className={inputClass} /></div>
+          <div><label className="block text-lg font-medium mb-2">שעת יציאה</label><input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className={inputClass} /></div>
+          <div><label className="block text-lg font-medium mb-2">שעת סיום</label><input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className={inputClass} /></div>
+        </div>
+        <div><label className="block text-lg font-medium mb-2">ימי פעילות</label>
+          <div className="flex gap-2 flex-wrap">{daysOptions.map(day => (
+            <button key={day} type="button" onClick={() => toggleDay(day)}
+              className={`px-3 py-2 rounded-xl text-sm font-medium border-2 transition-all ${selectedDays.includes(day) ? 'border-primary bg-primary/10 text-primary' : 'border-transparent bg-muted text-muted-foreground'}`}>{day}</button>
+          ))}</div>
+        </div>
+        <div><label className="block text-lg font-medium mb-2">סוג שירות</label>
+          <select value={serviceType} onChange={e => setServiceType(e.target.value)} className={inputClass}>
+            <option value="">בחר...</option>{Object.entries(serviceTypes).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select></div>
+        <div className="grid grid-cols-2 gap-4">
+          <div><label className="block text-lg font-medium mb-2">נהג</label>
+            <select value={driverName} onChange={e => setDriverName(e.target.value)} className={inputClass}>
+              <option value="">בחר...</option>{drivers.map(d => <option key={d.full_name} value={d.full_name}>{d.full_name}</option>)}
+            </select></div>
+          <div><label className="block text-lg font-medium mb-2">רכב</label>
+            <select value={vehiclePlate} onChange={e => setVehiclePlate(e.target.value)} className={inputClass}>
+              <option value="">בחר...</option>{vehicles.map(v => <option key={v.license_plate} value={v.license_plate}>{v.license_plate}</option>)}
+            </select></div>
+        </div>
+        <div><label className="block text-lg font-medium mb-2">לקוח</label><input value={customerName} onChange={e => setCustomerName(e.target.value)} className={inputClass} /></div>
+        <div><label className="block text-lg font-medium mb-2">הערות</label><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={`${inputClass} resize-none`} /></div>
+        <button onClick={handleSubmit} disabled={!isValid || loading}
+          className={`w-full py-5 rounded-xl text-xl font-bold transition-colors ${isValid && !loading ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}>
+          {loading ? 'שומר...' : isEdit ? '💾 עדכן' : '💾 שמור'}
+        </button>
       </div>
     </div>
   );

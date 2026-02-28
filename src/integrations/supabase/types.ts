@@ -68,6 +68,54 @@ export type Database = {
         }
         Relationships: []
       }
+      customers: {
+        Row: {
+          address: string | null
+          company_name: string | null
+          contact_person: string | null
+          created_at: string | null
+          created_by: string | null
+          customer_type: string | null
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          company_name?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_type?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          company_name?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_type?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       drivers: {
         Row: {
           city: string | null
@@ -251,6 +299,72 @@ export type Database = {
           is_active?: boolean
           phone?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      routes: {
+        Row: {
+          company_name: string | null
+          created_at: string | null
+          created_by: string | null
+          customer_name: string | null
+          days_of_week: string[] | null
+          destination: string | null
+          distance_km: number | null
+          driver_name: string | null
+          end_time: string | null
+          id: string
+          name: string
+          notes: string | null
+          origin: string | null
+          service_type: string | null
+          start_time: string | null
+          status: string | null
+          stops: string[] | null
+          updated_at: string | null
+          vehicle_plate: string | null
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_name?: string | null
+          days_of_week?: string[] | null
+          destination?: string | null
+          distance_km?: number | null
+          driver_name?: string | null
+          end_time?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          origin?: string | null
+          service_type?: string | null
+          start_time?: string | null
+          status?: string | null
+          stops?: string[] | null
+          updated_at?: string | null
+          vehicle_plate?: string | null
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_name?: string | null
+          days_of_week?: string[] | null
+          destination?: string | null
+          distance_km?: number | null
+          driver_name?: string | null
+          end_time?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          origin?: string | null
+          service_type?: string | null
+          start_time?: string | null
+          status?: string | null
+          stops?: string[] | null
+          updated_at?: string | null
+          vehicle_plate?: string | null
         }
         Relationships: []
       }
