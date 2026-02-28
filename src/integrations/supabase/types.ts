@@ -267,6 +267,7 @@ export type Database = {
           driver_name: string | null
           fault_type: string | null
           id: string
+          images: string | null
           notes: string | null
           serial_id: string | null
           status: string | null
@@ -282,6 +283,7 @@ export type Database = {
           driver_name?: string | null
           fault_type?: string | null
           id?: string
+          images?: string | null
           notes?: string | null
           serial_id?: string | null
           status?: string | null
@@ -297,6 +299,7 @@ export type Database = {
           driver_name?: string | null
           fault_type?: string | null
           id?: string
+          images?: string | null
           notes?: string | null
           serial_id?: string | null
           status?: string | null

@@ -1,0 +1,1 @@
+ALTER TABLE public.faults ADD COLUMN IF NOT EXISTS images text DEFAULT '';
