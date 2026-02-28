@@ -31,6 +31,8 @@ import Emergency from "@/pages/Emergency";
 import DriverNotifications from "@/pages/DriverNotifications";
 import DriverWeeklySchedule from "@/pages/DriverWeeklySchedule";
 import UserManagement from "@/pages/UserManagement";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +54,8 @@ function AppRoutes() {
   if (!isAuthenticated) {
     return (
       <Routes>
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<Login />} />
       </Routes>
     );

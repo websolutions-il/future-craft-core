@@ -5,6 +5,7 @@ import logo from '@/assets/logo.png';
 
 export default function Login() {
   const { login, signup } = useAuth();
+  const navigate = useNavigate();
   const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -108,6 +109,13 @@ export default function Login() {
             className="w-full text-center text-primary font-medium text-lg py-2">
             {isSignup ? 'כבר יש לי חשבון - כניסה' : 'אין לי חשבון - הרשמה'}
           </button>
+
+          {!isSignup && (
+            <button type="button" onClick={() => navigate('/forgot-password')}
+              className="w-full text-center text-muted-foreground font-medium text-base py-1 hover:text-primary transition-colors">
+              שכחתי סיסמה
+            </button>
+          )}
         </form>
       </div>
     </div>
