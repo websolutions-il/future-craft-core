@@ -85,30 +85,35 @@ export default function DriverDashboard() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'faults' },
-        (payload) => {
+        async (payload) => {
           const row = payload.new as any;
           if (row?.driver_name !== driverName) return;
 
           if (payload.eventType === 'UPDATE') {
-            toast({
-              title: '🔔 עדכון תקלה',
-              description: `תקלה "${row.fault_type || 'ללא סוג'}" עודכנה לסטטוס: ${row.status}`,
+            const title = '🔔 עדכון תקלה';
+            const message = `תקלה "${row.fault_type || 'ללא סוג'}" עודכנה לסטטוס: ${row.status}`;
+            toast({ title, description: message });
+            // Save to DB
+            await supabase.from('driver_notifications').insert({
+              user_id: user!.id, title, message, type: 'fault_update', link: '/faults',
             });
           }
-          // Refresh data
           loadDriverData();
         }
       )
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'service_orders' },
-        (payload) => {
+        async (payload) => {
           const row = payload.new as any;
           if (row?.driver_name !== driverName) return;
 
-          toast({
-            title: '📋 משימה חדשה!',
-            description: `הזמנת שירות חדשה: ${row.service_category || row.description || 'משימה'}`,
+          const title = '📋 משימה חדשה!';
+          const message = `הזמנת שירות חדשה: ${row.service_category || row.description || 'משימה'}`;
+          toast({ title, description: message });
+          // Save to DB
+          await supabase.from('driver_notifications').insert({
+            user_id: user!.id, title, message, type: 'new_task', link: '/work-orders',
           });
           loadDriverData();
         }
@@ -346,15 +351,20 @@ export default function DriverDashboard() {
 
       {/* Alerts */}
       <div>
-        <h2 className="text-xl font-bold text-primary mb-3 flex items-center gap-2">
-          <Bell size={20} />
-          ההתראות שלך
-          {alerts.length > 0 && (
-            <span className="bg-destructive text-destructive-foreground text-xs font-bold px-2 py-0.5 rounded-full">
-              {alerts.length}
-            </span>
-          )}
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-primary flex items-center gap-2">
+            <Bell size={20} />
+            ההתראות שלך
+            {alerts.length > 0 && (
+              <span className="bg-destructive text-destructive-foreground text-xs font-bold px-2 py-0.5 rounded-full">
+                {alerts.length}
+              </span>
+            )}
+          </h2>
+          <Link to="/driver-notifications" className="text-sm text-primary font-semibold hover:underline">
+            היסטוריית התראות
+          </Link>
+        </div>
         {alerts.length > 0 ? (
           <div className="space-y-2">
             {alerts.map((alert, i) => (
