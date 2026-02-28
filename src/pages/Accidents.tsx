@@ -3,6 +3,7 @@ import { AlertTriangle, Plus, ArrowRight, Search, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import ImageUpload from '@/components/ImageUpload';
 
 interface AccidentRow {
   id: string;
@@ -16,6 +17,7 @@ interface AccidentRow {
   estimated_cost: number;
   status: string;
   notes: string;
+  images: string;
 }
 
 const statusLabels: Record<string, { text: string; cls: string }> = {
@@ -174,6 +176,7 @@ function AccidentForm({ accident, onDone, onBack, user }: { accident: AccidentRo
   const [thirdParty, setThirdParty] = useState(accident?.third_party || false);
   const [estimatedCost, setEstimatedCost] = useState(accident?.estimated_cost?.toString() || '');
   const [notes, setNotes] = useState(accident?.notes || '');
+  const [imageUrl, setImageUrl] = useState<string | null>(accident?.images || null);
   const [loading, setLoading] = useState(false);
 
   const [vehicles, setVehicles] = useState<{ license_plate: string; manufacturer: string; model: string }[]>([]);
@@ -185,7 +188,7 @@ function AccidentForm({ accident, onDone, onBack, user }: { accident: AccidentRo
   const handleSubmit = async () => {
     if (!isValid) return;
     setLoading(true);
-    const payload = { vehicle_plate: vehiclePlate, driver_name: driverName, location, description, has_insurance: hasInsurance, third_party: thirdParty, estimated_cost: parseFloat(estimatedCost) || 0, notes };
+    const payload = { vehicle_plate: vehiclePlate, driver_name: driverName, location, description, has_insurance: hasInsurance, third_party: thirdParty, estimated_cost: parseFloat(estimatedCost) || 0, notes, images: imageUrl || '' };
     let error;
     if (isEdit) { ({ error } = await supabase.from('accidents').update(payload).eq('id', accident!.id)); }
     else { ({ error } = await supabase.from('accidents').insert({ ...payload, company_name: user?.company_name || '', created_by: user?.id })); }
@@ -222,6 +225,7 @@ function AccidentForm({ accident, onDone, onBack, user }: { accident: AccidentRo
             <span className="text-lg font-medium">צד ג׳</span>
           </label>
         </div>
+        <ImageUpload label="תמונות מהתאונה" folder="accidents" imageUrl={imageUrl} onImageUploaded={setImageUrl} />
         <div><label className="block text-lg font-medium mb-2">הערות</label>
           <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={`${inputClass} resize-none`} /></div>
         <button onClick={handleSubmit} disabled={!isValid || loading}
