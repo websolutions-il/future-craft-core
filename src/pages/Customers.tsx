@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, User, Search, ArrowRight, Phone, Mail, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Building2, User, Search, ArrowRight, Phone, Mail, Plus, Edit2, Trash2, Hash, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -14,6 +14,9 @@ interface CustomerRow {
   address: string;
   notes: string;
   status: string;
+  customer_number: string;
+  business_id: string;
+  fax: string;
 }
 
 type ViewMode = 'list' | 'detail' | 'form';
@@ -30,14 +33,14 @@ export default function Customers() {
   const loadData = async () => {
     setLoading(true);
     const { data } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
-    if (data) setCustomers(data as CustomerRow[]);
+    if (data) setCustomers(data as unknown as CustomerRow[]);
     setLoading(false);
   };
 
   useEffect(() => { loadData(); }, []);
 
   const isManager = user?.role === 'fleet_manager' || user?.role === 'super_admin';
-  const filtered = customers.filter(c => !search || c.name?.includes(search) || c.contact_person?.includes(search) || c.phone?.includes(search));
+  const filtered = customers.filter(c => !search || c.name?.includes(search) || c.contact_person?.includes(search) || c.phone?.includes(search) || c.customer_number?.includes(search));
 
   const handleDelete = async (id: string) => {
     if (!confirm('למחוק לקוח זה?')) return;
@@ -56,25 +59,42 @@ export default function Customers() {
         <button onClick={() => { setViewMode('list'); setSelected(null); }} className="flex items-center gap-2 text-primary text-lg font-medium mb-4 min-h-[48px]"><ArrowRight size={20} /> חזרה</button>
         <div className="card-elevated">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">{c.name}</h1>
+            <div>
+              <h1 className="text-2xl font-bold">{c.name}</h1>
+              {c.customer_number && <p className="text-muted-foreground text-sm">מס׳ לקוח: {c.customer_number}</p>}
+            </div>
             <div className="flex items-center gap-2">
               <span className={`status-badge ${c.status === 'active' ? 'status-active' : 'status-inactive'}`}>{c.status === 'active' ? 'פעיל' : 'לא פעיל'}</span>
-              {isManager && <button onClick={() => { setEditItem(c); setViewMode('form'); }} className="p-2 rounded-xl bg-primary/10 text-primary"><Edit2 size={18} /></button>}
             </div>
           </div>
+
           <div className="grid grid-cols-2 gap-4 text-lg">
             <div><span className="text-muted-foreground text-sm">סוג</span><p className="font-bold">{c.customer_type === 'company' ? 'חברה' : 'פרטי'}</p></div>
+            {c.business_id && <div><span className="text-muted-foreground text-sm">עוסק מורשה / ח.פ</span><p className="font-bold">{c.business_id}</p></div>}
             <div><span className="text-muted-foreground text-sm">איש קשר</span><p className="font-bold">{c.contact_person}</p></div>
-            <div><span className="text-muted-foreground text-sm">טלפון</span><p className="font-bold">{c.phone}</p></div>
-            <div><span className="text-muted-foreground text-sm">אימייל</span><p className="font-bold">{c.email}</p></div>
+            <div><span className="text-muted-foreground text-sm">טלפון</span><p className="font-bold" dir="ltr">{c.phone}</p></div>
+            {c.fax && <div><span className="text-muted-foreground text-sm">פקס</span><p className="font-bold" dir="ltr">{c.fax}</p></div>}
+            <div><span className="text-muted-foreground text-sm">אימייל</span><p className="font-bold" dir="ltr">{c.email}</p></div>
             {c.address && <div className="col-span-2"><span className="text-muted-foreground text-sm">כתובת</span><p className="font-bold">{c.address}</p></div>}
           </div>
+
           {c.notes && <p className="mt-4 p-3 bg-muted rounded-xl text-muted-foreground">{c.notes}</p>}
+
           <div className="flex gap-3 mt-6">
             {c.phone && <a href={`tel:${c.phone}`} className="flex-1 bg-primary text-primary-foreground rounded-2xl p-4 flex items-center justify-center gap-2 text-lg font-bold"><Phone size={22} /> התקשר</a>}
             {c.email && <a href={`mailto:${c.email}`} className="flex-1 bg-muted text-foreground rounded-2xl p-4 flex items-center justify-center gap-2 text-lg font-bold"><Mail size={22} /> מייל</a>}
           </div>
-          {isManager && <button onClick={() => handleDelete(c.id)} className="w-full mt-4 py-4 rounded-xl border-2 border-destructive/30 text-destructive font-bold flex items-center justify-center gap-2"><Trash2 size={20} /> מחק לקוח</button>}
+
+          {isManager && (
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => { setEditItem(c); setViewMode('form'); }} className="flex-1 py-4 rounded-xl bg-primary/10 text-primary font-bold flex items-center justify-center gap-2 text-lg">
+                <Edit2 size={20} /> עריכת פרטי לקוח
+              </button>
+              <button onClick={() => handleDelete(c.id)} className="py-4 px-6 rounded-xl border-2 border-destructive/30 text-destructive font-bold flex items-center justify-center gap-2">
+                <Trash2 size={20} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -105,6 +125,7 @@ export default function Customers() {
                 <div className="flex-1 min-w-0">
                   <p className="text-xl font-bold">{c.name}</p>
                   <p className="text-muted-foreground">{c.contact_person} • {c.phone}</p>
+                  {c.customer_number && <p className="text-xs text-muted-foreground">מס׳ {c.customer_number}</p>}
                 </div>
                 <span className={`status-badge ${c.status === 'active' ? 'status-active' : 'status-inactive'}`}>{c.status === 'active' ? 'פעיל' : 'לא פעיל'}</span>
               </div>
@@ -126,6 +147,9 @@ function CustomerForm({ customer, onDone, onBack, user }: { customer: CustomerRo
   const [address, setAddress] = useState(customer?.address || '');
   const [status, setStatus] = useState(customer?.status || 'active');
   const [notes, setNotes] = useState(customer?.notes || '');
+  const [customerNumber, setCustomerNumber] = useState(customer?.customer_number || '');
+  const [businessId, setBusinessId] = useState(customer?.business_id || '');
+  const [fax, setFax] = useState(customer?.fax || '');
   const [loading, setLoading] = useState(false);
 
   const isValid = name && contactPerson;
@@ -134,12 +158,16 @@ function CustomerForm({ customer, onDone, onBack, user }: { customer: CustomerRo
   const handleSubmit = async () => {
     if (!isValid) return;
     setLoading(true);
-    const payload = { name, customer_type: customerType, contact_person: contactPerson, phone, email, address, status, notes };
+    const payload = {
+      name, customer_type: customerType, contact_person: contactPerson,
+      phone, email, address, status, notes,
+      customer_number: customerNumber, business_id: businessId, fax
+    } as any;
     let error;
     if (isEdit) { ({ error } = await supabase.from('customers').update(payload).eq('id', customer!.id)); }
     else { ({ error } = await supabase.from('customers').insert({ ...payload, company_name: user?.company_name || '', created_by: user?.id })); }
     setLoading(false);
-    if (error) { toast.error('שגיאה'); } else { toast.success(isEdit ? 'עודכן' : 'נוסף'); onDone(); }
+    if (error) { toast.error('שגיאה'); console.error(error); } else { toast.success(isEdit ? 'עודכן' : 'נוסף'); onDone(); }
   };
 
   return (
@@ -147,17 +175,22 @@ function CustomerForm({ customer, onDone, onBack, user }: { customer: CustomerRo
       <button onClick={onBack} className="flex items-center gap-2 text-primary text-lg font-medium mb-4 min-h-[48px]"><ArrowRight size={20} /> חזרה</button>
       <h1 className="text-2xl font-bold mb-6">{isEdit ? 'עריכת לקוח' : 'לקוח חדש'}</h1>
       <div className="space-y-5">
-        <div><label className="block text-lg font-medium mb-2">שם *</label><input value={name} onChange={e => setName(e.target.value)} className={inputClass} /></div>
+        <div className="grid grid-cols-2 gap-4">
+          <div><label className="block text-lg font-medium mb-2">שם *</label><input value={name} onChange={e => setName(e.target.value)} className={inputClass} /></div>
+          <div><label className="block text-lg font-medium mb-2">מספר לקוח</label><input value={customerNumber} onChange={e => setCustomerNumber(e.target.value)} className={inputClass} placeholder="מספר ייחודי" /></div>
+        </div>
         <div><label className="block text-lg font-medium mb-2">סוג</label>
           <select value={customerType} onChange={e => setCustomerType(e.target.value)} className={inputClass}>
             <option value="company">חברה</option><option value="private">פרטי</option>
           </select></div>
+        <div><label className="block text-lg font-medium mb-2">עוסק מורשה / ח.פ</label><input value={businessId} onChange={e => setBusinessId(e.target.value)} className={inputClass} /></div>
         <div><label className="block text-lg font-medium mb-2">איש קשר *</label><input value={contactPerson} onChange={e => setContactPerson(e.target.value)} className={inputClass} /></div>
+        <div><label className="block text-lg font-medium mb-2">כתובת מלאה</label><input value={address} onChange={e => setAddress(e.target.value)} className={inputClass} /></div>
         <div className="grid grid-cols-2 gap-4">
           <div><label className="block text-lg font-medium mb-2">טלפון</label><input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className={inputClass} dir="ltr" style={{ textAlign: 'right' }} /></div>
-          <div><label className="block text-lg font-medium mb-2">אימייל</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className={inputClass} dir="ltr" style={{ textAlign: 'right' }} /></div>
+          <div><label className="block text-lg font-medium mb-2">פקס</label><input type="tel" value={fax} onChange={e => setFax(e.target.value)} className={inputClass} dir="ltr" style={{ textAlign: 'right' }} /></div>
         </div>
-        <div><label className="block text-lg font-medium mb-2">כתובת</label><input value={address} onChange={e => setAddress(e.target.value)} className={inputClass} /></div>
+        <div><label className="block text-lg font-medium mb-2">אימייל</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className={inputClass} dir="ltr" style={{ textAlign: 'right' }} /></div>
         <div><label className="block text-lg font-medium mb-2">סטטוס</label>
           <select value={status} onChange={e => setStatus(e.target.value)} className={inputClass}><option value="active">פעיל</option><option value="inactive">לא פעיל</option></select></div>
         <div><label className="block text-lg font-medium mb-2">הערות</label><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={`${inputClass} resize-none`} /></div>

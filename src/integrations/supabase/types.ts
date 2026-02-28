@@ -71,12 +71,15 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
+          business_id: string | null
           company_name: string | null
           contact_person: string | null
           created_at: string | null
           created_by: string | null
+          customer_number: string | null
           customer_type: string | null
           email: string | null
+          fax: string | null
           id: string
           name: string
           notes: string | null
@@ -86,12 +89,15 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          business_id?: string | null
           company_name?: string | null
           contact_person?: string | null
           created_at?: string | null
           created_by?: string | null
+          customer_number?: string | null
           customer_type?: string | null
           email?: string | null
+          fax?: string | null
           id?: string
           name?: string
           notes?: string | null
@@ -101,12 +107,15 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          business_id?: string | null
           company_name?: string | null
           contact_person?: string | null
           created_at?: string | null
           created_by?: string | null
+          customer_number?: string | null
           customer_type?: string | null
           email?: string | null
+          fax?: string | null
           id?: string
           name?: string
           notes?: string | null
