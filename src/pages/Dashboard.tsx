@@ -13,11 +13,16 @@ import {
   Wrench,
   ArrowRightLeft,
   Bell,
+  Check,
+  ChevronsUpDown,
 } from 'lucide-react';
 import { useAuth, type AppRole } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import DriverDashboard from '@/components/DriverDashboard';
 import { toast } from '@/hooks/use-toast';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 
 const OPEN_TREATMENT_STATUSES = ['new', 'open', 'in_progress', 'pending', 'חדש', 'פתוח', 'בטיפול'];
 const MAINTENANCE_STATUSES = ['maintenance', 'in_service', 'בתחזוקה', 'בטיפול'];
@@ -345,7 +350,8 @@ function FleetManagerDashboard({
 
   const [loading, setLoading] = useState(true);
   const [selectedCompany, setSelectedCompany] = useState(user?.company_name || '');
-  const [companyOptions, setCompanyOptions] = useState<string[]>([]);
+  const [companyOptions, setCompanyOptions] = useState<{ name: string; businessId: string }[]>([]);
+  const [companyPickerOpen, setCompanyPickerOpen] = useState(false);
   const [stats, setStats] = useState<FleetStats>({ vehiclesCount: 0, driversCount: 0 });
   const [vehiclePreview, setVehiclePreview] = useState<FleetVehiclePreview[]>([]);
   const [alerts, setAlerts] = useState<FleetAlertRow[]>([]);
@@ -357,17 +363,34 @@ function FleetManagerDashboard({
     }
 
     const loadCompanies = async () => {
-      const { data } = await supabase.from('profiles').select('company_name');
-      const companies = Array.from(
+      const [profilesRes, customersRes] = await Promise.all([
+        supabase.from('profiles').select('company_name'),
+        supabase.from('customers').select('company_name, business_id'),
+      ]);
+
+      const companyNames = Array.from(
         new Set(
-          (data || [])
+          (profilesRes.data || [])
             .map((row) => row.company_name?.trim())
-            .filter((company): company is string => Boolean(company))
+            .filter((c): c is string => Boolean(c))
         )
       );
-      setCompanyOptions(companies);
-      if (!selectedCompany && companies.length > 0) {
-        setSelectedCompany(companies[0]);
+
+      const customerMap = new Map<string, string>();
+      (customersRes.data || []).forEach((c) => {
+        if (c.company_name?.trim()) {
+          customerMap.set(c.company_name.trim(), c.business_id?.trim() || '');
+        }
+      });
+
+      const options = companyNames.map((name) => ({
+        name,
+        businessId: customerMap.get(name) || '',
+      }));
+
+      setCompanyOptions(options);
+      if (!selectedCompany && options.length > 0) {
+        setSelectedCompany(options[0].name);
       }
     };
 
@@ -524,17 +547,48 @@ function FleetManagerDashboard({
       {isSuperAdminView && (
         <section className="card-elevated p-4">
           <label className="text-sm font-semibold text-muted-foreground block mb-2">בחירת חברה להצגת נתונים</label>
-          <select
-            value={selectedCompany}
-            onChange={(event) => setSelectedCompany(event.target.value)}
-            className="w-full p-3 rounded-xl border border-input bg-background"
-          >
-            {companyOptions.map((company) => (
-              <option key={company} value={company}>
-                {company}
-              </option>
-            ))}
-          </select>
+          <Popover open={companyPickerOpen} onOpenChange={setCompanyPickerOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="w-full p-3 rounded-xl border border-input bg-background flex items-center justify-between text-right"
+              >
+                <ChevronsUpDown size={16} className="text-muted-foreground shrink-0" />
+                <span className="flex-1 text-right">
+                  {selectedCompany || 'בחר חברה...'}
+                </span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+              <Command dir="rtl">
+                <CommandInput placeholder="חיפוש לפי שם חברה או מספר..." />
+                <CommandList>
+                  <CommandEmpty>לא נמצאו חברות</CommandEmpty>
+                  <CommandGroup>
+                    {companyOptions.map((option) => (
+                      <CommandItem
+                        key={option.name}
+                        value={`${option.name} ${option.businessId}`}
+                        onSelect={() => {
+                          setSelectedCompany(option.name);
+                          setCompanyPickerOpen(false);
+                        }}
+                        className="flex items-center justify-between"
+                      >
+                        <Check size={16} className={cn("shrink-0", selectedCompany === option.name ? "opacity-100" : "opacity-0")} />
+                        <div className="flex-1 text-right">
+                          <span className="font-medium">{option.name}</span>
+                          {option.businessId && (
+                            <span className="text-xs text-muted-foreground mr-2">({option.businessId})</span>
+                          )}
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </section>
       )}
 
