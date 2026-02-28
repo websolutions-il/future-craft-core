@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 import {
   Wrench, AlertTriangle, RefreshCw, FileText, ClipboardList,
   BookOpen, Phone, MessageCircle, Car, Bell, MapPin, Clock,
-  Fuel, Calendar, Shield, ChevronLeft
+  Fuel, Calendar, Shield, ChevronLeft, Pencil, Check, X
 } from 'lucide-react';
 
 interface AssignedVehicle {
@@ -66,6 +67,9 @@ export default function DriverDashboard() {
   const [alerts, setAlerts] = useState<DriverAlert[]>([]);
   const [recentFaults, setRecentFaults] = useState<RecentFault[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingOdometer, setEditingOdometer] = useState(false);
+  const [odometerInput, setOdometerInput] = useState('');
+  const [savingOdometer, setSavingOdometer] = useState(false);
 
   useEffect(() => {
     if (user) loadDriverData();
@@ -162,6 +166,28 @@ export default function DriverDashboard() {
     setLoading(false);
   };
 
+  const handleSaveOdometer = async () => {
+    const newValue = parseInt(odometerInput, 10);
+    if (!vehicle || isNaN(newValue) || newValue < 0 || newValue > 9999999) {
+      toast({ title: 'ערך לא תקין', description: 'הזן מספר ק"מ תקין (0-9,999,999)', variant: 'destructive' });
+      return;
+    }
+    if (newValue < vehicle.odometer) {
+      toast({ title: 'שגיאה', description: 'ק"מ חדש לא יכול להיות נמוך מהנוכחי', variant: 'destructive' });
+      return;
+    }
+    setSavingOdometer(true);
+    const { error } = await supabase.from('vehicles').update({ odometer: newValue }).eq('id', vehicle.id);
+    setSavingOdometer(false);
+    if (error) {
+      toast({ title: 'שגיאה בעדכון', description: error.message, variant: 'destructive' });
+    } else {
+      setVehicle({ ...vehicle, odometer: newValue });
+      setEditingOdometer(false);
+      toast({ title: 'עודכן בהצלחה', description: `ק"מ עודכן ל-${newValue.toLocaleString()}` });
+    }
+  };
+
   const statusLabels: Record<string, string> = {
     active: 'פעיל', inactive: 'לא פעיל', maintenance: 'בתחזוקה', accident: 'בתאונה',
   };
@@ -211,9 +237,46 @@ export default function DriverDashboard() {
               </span>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-muted rounded-xl p-3 text-center">
+              <div className="bg-muted rounded-xl p-3 text-center relative">
                 <Fuel size={18} className="mx-auto mb-1 text-primary" />
-                <p className="text-xl font-bold">{vehicle.odometer.toLocaleString()}</p>
+                {editingOdometer ? (
+                  <div className="space-y-2">
+                    <input
+                      type="number"
+                      value={odometerInput}
+                      onChange={e => setOdometerInput(e.target.value)}
+                      className="w-full text-center text-lg font-bold bg-background border border-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary"
+                      autoFocus
+                      min={vehicle.odometer}
+                      max={9999999}
+                    />
+                    <div className="flex gap-1 justify-center">
+                      <button
+                        onClick={handleSaveOdometer}
+                        disabled={savingOdometer}
+                        className="p-1.5 rounded-lg bg-success/15 text-success hover:bg-success/25 transition-colors"
+                      >
+                        <Check size={16} />
+                      </button>
+                      <button
+                        onClick={() => setEditingOdometer(false)}
+                        className="p-1.5 rounded-lg bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setOdometerInput(String(vehicle.odometer)); setEditingOdometer(true); }}
+                    className="w-full group"
+                  >
+                    <p className="text-xl font-bold group-hover:text-primary transition-colors">
+                      {vehicle.odometer.toLocaleString()}
+                      <Pencil size={12} className="inline mr-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </p>
+                  </button>
+                )}
                 <p className="text-xs text-muted-foreground">ק"מ</p>
               </div>
               <div className="bg-muted rounded-xl p-3 text-center">
