@@ -25,6 +25,7 @@ export default function Drivers() {
   const { user } = useAuth();
   const [drivers, setDrivers] = useState<DriverRow[]>([]);
   const [search, setSearch] = useState('');
+  const [filterCompany, setFilterCompany] = useState('');
   const [selected, setSelected] = useState<DriverRow | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingDriver, setEditingDriver] = useState<DriverRow | null>(null);
@@ -36,9 +37,13 @@ export default function Drivers() {
 
   useEffect(() => { loadDrivers(); }, []);
 
-  const filtered = drivers.filter(d =>
-    d.full_name?.includes(search) || d.phone?.includes(search) || d.license_number?.includes(search)
-  );
+  const companies = [...new Set(drivers.map(d => d.company_name).filter(Boolean))];
+
+  const filtered = drivers.filter(d => {
+    const matchSearch = !search || d.full_name?.includes(search) || d.phone?.includes(search) || d.license_number?.includes(search);
+    const matchCompany = !filterCompany || d.company_name === filterCompany;
+    return matchSearch && matchCompany;
+  });
 
   if (showForm || editingDriver) {
     return (
@@ -117,6 +122,17 @@ export default function Drivers() {
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="חיפוש לפי שם, טלפון או רישיון..."
           className="w-full pr-12 p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none" />
       </div>
+
+      {/* Company filter - visible to super_admin */}
+      {user?.role === 'super_admin' && companies.length > 1 && (
+        <div className="mb-4">
+          <select value={filterCompany} onChange={e => setFilterCompany(e.target.value)}
+            className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none">
+            <option value="">כל החברות</option>
+            {companies.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+      )}
 
       <div className="space-y-3">
         {filtered.map(d => (
