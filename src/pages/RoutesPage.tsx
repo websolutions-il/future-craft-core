@@ -103,21 +103,34 @@ export default function RoutesPage() {
       ) : (
         <div className="space-y-3">
           {filtered.map(r => (
-            <button key={r.id} onClick={() => { setSelected(r); setViewMode('detail'); }} className="card-elevated w-full text-right hover:shadow-lg transition-shadow">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0"><RouteIcon size={28} className="text-primary" /></div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xl font-bold">{r.name}</p>
-                  <p className="text-muted-foreground">{r.origin} → {r.destination}</p>
-                  <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1"><Clock size={14} />{r.start_time}</span>
-                    <span>{serviceTypes[r.service_type] || r.service_type}</span>
-                    {r.distance_km > 0 && <span>{r.distance_km} ק"מ</span>}
+            <div key={r.id} className="card-elevated hover:shadow-lg transition-shadow">
+              <button onClick={() => { setSelected(r); setViewMode('detail'); }} className="w-full text-right">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0"><RouteIcon size={28} className="text-primary" /></div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xl font-bold">{r.name}</p>
+                    <p className="text-muted-foreground">{r.origin} → {r.destination}</p>
+                    <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1"><Clock size={14} />{r.start_time}</span>
+                      <span>{serviceTypes[r.service_type] || r.service_type}</span>
+                      {r.distance_km > 0 && <span>{r.distance_km} ק"מ</span>}
+                    </div>
                   </div>
+                  <span className={`status-badge ${r.status === 'active' ? 'status-active' : 'status-inactive'}`}>{r.status === 'active' ? 'פעיל' : 'לא פעיל'}</span>
                 </div>
-                <span className={`status-badge ${r.status === 'active' ? 'status-active' : 'status-inactive'}`}>{r.status === 'active' ? 'פעיל' : 'לא פעיל'}</span>
-              </div>
-            </button>
+              </button>
+              {isManager && (
+                <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+                  <button onClick={() => { setEditItem(r); setViewMode('form'); }} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/10 text-primary font-bold text-sm min-h-[44px]">
+                    <Edit2 size={16} /> תיקון
+                  </button>
+                  <button onClick={async () => { if (!confirm('למחוק מסלול זה?')) return; await supabase.from('routes').delete().eq('id', r.id); toast.success('נמחק'); loadData(); }}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-destructive/10 text-destructive font-bold text-sm min-h-[44px]">
+                    <Trash2 size={16} /> מחיקה
+                  </button>
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}
