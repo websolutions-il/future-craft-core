@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Car, Users, Wrench, AlertTriangle, Route, FileText, ClipboardList, Clock, TrendingUp, Calendar, Shield, ChevronLeft } from 'lucide-react';
+import { Car, Users, Wrench, AlertTriangle, ClipboardList, Clock, TrendingUp, Calendar, Shield, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import DriverDashboard from '@/components/DriverDashboard';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 interface DashboardStats {
   vehiclesActive: number;
@@ -46,6 +47,18 @@ interface ExpiryAlert {
   daysLeft: number;
 }
 
+const CHART_COLORS = [
+  'hsl(var(--primary))',
+  'hsl(var(--chart-2))',
+  'hsl(var(--chart-3))',
+  'hsl(var(--chart-4))',
+  'hsl(var(--chart-5))',
+  'hsl(210, 60%, 55%)',
+  'hsl(340, 60%, 55%)',
+];
+
+const HEBREW_MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+
 export default function Dashboard() {
   const { user } = useAuth();
 
@@ -68,6 +81,11 @@ function ManagerDashboard() {
   const [alerts, setAlerts] = useState<ExpiryAlert[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Chart data
+  const [monthlyExpenses, setMonthlyExpenses] = useState<{ name: string; amount: number }[]>([]);
+  const [faultsByType, setFaultsByType] = useState<{ name: string; value: number }[]>([]);
+  const [vehicleStatus, setVehicleStatus] = useState<{ name: string; value: number }[]>([]);
+
   useEffect(() => {
     loadDashboard();
   }, []);
@@ -75,22 +93,27 @@ function ManagerDashboard() {
   const loadDashboard = async () => {
     const today = new Date().toISOString().split('T')[0];
     const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+    const sixMonthsAgo = new Date(Date.now() - 180 * 86400000).toISOString();
 
-    const [vehiclesRes, driversRes, faultsRes, accidentsRes, tasksRes, expensesRes] = await Promise.all([
+    const [vehiclesRes, driversRes, faultsRecentRes, allFaultsRes, accidentsRes, tasksRes, expensesMonthRes, expensesAllRes] = await Promise.all([
       supabase.from('vehicles').select('id, status, test_expiry, insurance_expiry, license_plate, manufacturer, model'),
       supabase.from('drivers').select('id, status, license_expiry, full_name'),
       supabase.from('faults').select('id, fault_type, vehicle_plate, driver_name, urgency, status, created_at').order('created_at', { ascending: false }).limit(5),
+      supabase.from('faults').select('id, fault_type, status'),
       supabase.from('accidents').select('id, status'),
       supabase.from('service_orders').select('id, service_category, vehicle_plate, driver_name, service_date, service_time, treatment_status').order('service_date', { ascending: true }),
       supabase.from('expenses').select('amount').gte('created_at', monthAgo),
+      supabase.from('expenses').select('amount, date').gte('date', sixMonthsAgo),
     ]);
 
     const vehicles = vehiclesRes.data || [];
     const drivers = driversRes.data || [];
-    const faults = faultsRes.data || [];
+    const faultsRecent = faultsRecentRes.data || [];
+    const allFaults = allFaultsRes.data || [];
     const accidents = accidentsRes.data || [];
     const tasks = tasksRes.data || [];
-    const expenses = expensesRes.data || [];
+    const expensesMonth = expensesMonthRes.data || [];
+    const expensesAll = expensesAllRes.data || [];
 
     // Stats
     setStats({
@@ -98,22 +121,69 @@ function ManagerDashboard() {
       vehiclesTotal: vehicles.length,
       driversActive: drivers.filter((d: any) => d.status === 'active').length,
       driversTotal: drivers.length,
-      faultsOpen: faults.filter((f: any) => f.status === 'new' || f.status === 'in_progress').length,
-      faultsTotal: faults.length,
+      faultsOpen: allFaults.filter((f: any) => f.status === 'new' || f.status === 'in_progress' || f.status === 'open' || f.status === 'חדש' || f.status === 'פתוח' || f.status === 'בטיפול').length,
+      faultsTotal: allFaults.length,
       accidentsOpen: accidents.filter((a: any) => a.status !== 'closed').length,
       accidentsTotal: accidents.length,
       todayTasks: tasks.filter((t: any) => t.service_date === today).length,
-      expensesMonth: expenses.reduce((sum: number, e: any) => sum + (e.amount || 0), 0),
+      expensesMonth: expensesMonth.reduce((sum: number, e: any) => sum + (e.amount || 0), 0),
     });
 
-    setRecentFaults(faults as RecentFault[]);
+    setRecentFaults(faultsRecent as RecentFault[]);
 
-    // Upcoming tasks (today + future, not completed)
     setUpcomingTasks(
       tasks.filter((t: any) => t.service_date >= today && t.treatment_status !== 'completed').slice(0, 5) as UpcomingTask[]
     );
 
-    // Expiry alerts (next 30 days)
+    // === CHARTS DATA ===
+
+    // 1. Monthly expenses (last 6 months)
+    const now = new Date();
+    const monthlyMap: Record<string, number> = {};
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      monthlyMap[key] = 0;
+    }
+    expensesAll.forEach((e: any) => {
+      if (e.date) {
+        const d = new Date(e.date);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (key in monthlyMap) {
+          monthlyMap[key] += e.amount || 0;
+        }
+      }
+    });
+    setMonthlyExpenses(
+      Object.entries(monthlyMap).map(([key, amount]) => ({
+        name: HEBREW_MONTHS[parseInt(key.split('-')[1]) - 1],
+        amount: Math.round(amount),
+      }))
+    );
+
+    // 2. Faults by type
+    const typeMap: Record<string, number> = {};
+    allFaults.forEach((f: any) => {
+      const type = f.fault_type || 'אחר';
+      typeMap[type] = (typeMap[type] || 0) + 1;
+    });
+    setFaultsByType(
+      Object.entries(typeMap)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 6)
+    );
+
+    // 3. Vehicle status distribution
+    const statusMap: Record<string, number> = {};
+    const statusLabels: Record<string, string> = { active: 'פעיל', inactive: 'לא פעיל', maintenance: 'בתחזוקה', accident: 'תאונה' };
+    vehicles.forEach((v: any) => {
+      const label = statusLabels[v.status] || v.status || 'אחר';
+      statusMap[label] = (statusMap[label] || 0) + 1;
+    });
+    setVehicleStatus(Object.entries(statusMap).map(([name, value]) => ({ name, value })));
+
+    // Expiry alerts
     const thirtyDays = new Date(Date.now() + 30 * 86400000);
     const expiryAlerts: ExpiryAlert[] = [];
 
@@ -165,6 +235,18 @@ function ManagerDashboard() {
     );
   }
 
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload?.length) {
+      return (
+        <div className="bg-popover text-popover-foreground border border-border rounded-xl p-3 shadow-lg text-sm">
+          <p className="font-bold">{label}</p>
+          <p>₪{payload[0].value.toLocaleString()}</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="animate-fade-in">
       {/* Header */}
@@ -205,6 +287,97 @@ function ManagerDashboard() {
           <div>
             <p className="text-2xl font-black">₪{stats.expensesMonth.toLocaleString()}</p>
             <p className="text-sm text-muted-foreground">הוצאות החודש</p>
+          </div>
+        </div>
+      </div>
+
+      {/* === CHARTS SECTION === */}
+      <div className="space-y-6 mb-6">
+        {/* Monthly Expenses Bar Chart */}
+        <div className="card-elevated">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <TrendingUp size={20} className="text-primary" />
+            הוצאות חודשיות (6 חודשים אחרונים)
+          </h2>
+          <div className="h-64" dir="ltr">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyExpenses} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `₪${v}`} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Two charts side by side */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Faults by Type Pie Chart */}
+          <div className="card-elevated">
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <Wrench size={18} className="text-primary" />
+              התפלגות תקלות לפי סוג
+            </h2>
+            {faultsByType.length > 0 ? (
+              <div className="h-56" dir="ltr">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={faultsByType}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={75}
+                      paddingAngle={3}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      labelLine={false}
+                    >
+                      {faultsByType.map((_, i) => (
+                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => [value, 'תקלות']} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-8">אין נתוני תקלות</p>
+            )}
+          </div>
+
+          {/* Vehicle Status Donut Chart */}
+          <div className="card-elevated">
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <Car size={18} className="text-primary" />
+              סטטוס רכבים
+            </h2>
+            {vehicleStatus.length > 0 ? (
+              <div className="h-56" dir="ltr">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={vehicleStatus}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={75}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {vehicleStatus.map((_, i) => (
+                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Legend formatter={(value: string) => <span className="text-sm">{value}</span>} />
+                    <Tooltip formatter={(value: number) => [value, 'רכבים']} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-8">אין נתוני רכבים</p>
+            )}
           </div>
         </div>
       </div>
