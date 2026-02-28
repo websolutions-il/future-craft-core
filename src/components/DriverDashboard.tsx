@@ -75,6 +75,51 @@ export default function DriverDashboard() {
     if (user) loadDriverData();
   }, [user]);
 
+  // Realtime subscriptions for faults & service_orders
+  useEffect(() => {
+    if (!user) return;
+    const driverName = user.full_name || '';
+
+    const channel = supabase
+      .channel('driver-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'faults' },
+        (payload) => {
+          const row = payload.new as any;
+          if (row?.driver_name !== driverName) return;
+
+          if (payload.eventType === 'UPDATE') {
+            toast({
+              title: '🔔 עדכון תקלה',
+              description: `תקלה "${row.fault_type || 'ללא סוג'}" עודכנה לסטטוס: ${row.status}`,
+            });
+          }
+          // Refresh data
+          loadDriverData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'service_orders' },
+        (payload) => {
+          const row = payload.new as any;
+          if (row?.driver_name !== driverName) return;
+
+          toast({
+            title: '📋 משימה חדשה!',
+            description: `הזמנת שירות חדשה: ${row.service_category || row.description || 'משימה'}`,
+          });
+          loadDriverData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const loadDriverData = async () => {
     const driverName = user?.full_name || '';
 
