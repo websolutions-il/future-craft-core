@@ -31,6 +31,8 @@ export default function Vehicles() {
   const [drivers, setDrivers] = useState<DriverRow[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [filterCompany, setFilterCompany] = useState('');
+  const [filterDriver, setFilterDriver] = useState('');
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleRow | null>(null);
   const [editVehicle, setEditVehicle] = useState<VehicleRow | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -54,10 +56,14 @@ export default function Vehicles() {
     return drivers.find(d => d.id === id)?.full_name || 'לא ידוע';
   };
 
+  const companies = [...new Set(vehicles.map(v => v.company_name).filter(Boolean))];
+
   const filtered = vehicles.filter(v => {
     const matchSearch = !search || v.license_plate.includes(search) || v.manufacturer?.includes(search) || v.model?.includes(search);
     const matchStatus = statusFilter === 'all' || v.status === statusFilter;
-    return matchSearch && matchStatus;
+    const matchCompany = !filterCompany || v.company_name === filterCompany;
+    const matchDriver = !filterDriver || v.assigned_driver_id === filterDriver;
+    return matchSearch && matchStatus && matchCompany && matchDriver;
   });
 
   const statusLabel = (s: string) => {
@@ -220,6 +226,22 @@ export default function Vehicles() {
         <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="חיפוש לפי מספר, יצרן או דגם..."
           className="w-full pr-12 p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none" />
+      </div>
+
+      {/* Advanced Filters */}
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        {user?.role === 'super_admin' && companies.length > 1 && (
+          <select value={filterCompany} onChange={e => setFilterCompany(e.target.value)}
+            className="p-3 text-base rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none col-span-2">
+            <option value="">כל החברות</option>
+            {companies.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        )}
+        <select value={filterDriver} onChange={e => setFilterDriver(e.target.value)}
+          className="p-3 text-base rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none col-span-2">
+          <option value="">כל הנהגים</option>
+          {drivers.map(d => <option key={d.id} value={d.id}>{d.full_name}</option>)}
+        </select>
       </div>
 
       {/* Status filter tabs */}
