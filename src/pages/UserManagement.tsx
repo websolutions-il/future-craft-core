@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 
 interface ManagedUser {
   id: string;
@@ -33,7 +34,7 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 export default function UserManagement() {
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -49,8 +50,6 @@ export default function UserManagement() {
 
   const loadUsers = async () => {
     setLoading(true);
-
-    // Fetch profiles (super_admin can see all via RLS)
     const { data: profiles, error: profErr } = await supabase
       .from('profiles')
       .select('id, full_name, phone, company_name, is_active');
@@ -61,16 +60,13 @@ export default function UserManagement() {
       return;
     }
 
-    // Fetch all roles (super_admin can see all via RLS)
     const { data: roles } = await supabase.from('user_roles').select('user_id, role');
     const roleMap = new Map((roles || []).map((r) => [r.user_id, r.role]));
 
-    // We don't have direct access to auth.users emails from client,
-    // so we'll show what we have. Email can be stored in metadata or we show profile data.
     const mapped: ManagedUser[] = (profiles || []).map((p) => ({
       id: p.id,
       full_name: p.full_name || '',
-      email: '', // Will be populated if available
+      email: '',
       company_name: p.company_name || '',
       phone: p.phone || '',
       is_active: p.is_active ?? true,
@@ -109,29 +105,42 @@ export default function UserManagement() {
       toast({ title: 'שגיאה', description: 'סיסמה חייבת להכיל לפחות 6 תווים', variant: 'destructive' });
       return;
     }
-
     setResetting(true);
-
-    // We need to find the user's email. Since we don't store it in profiles,
-    // we'll use the edge function which has admin access.
-    // We need to pass user_id instead - let's update the edge function to support that.
     const { data, error } = await supabase.functions.invoke('create-admin-user', {
-      body: {
-        action: 'reset-password-by-id',
-        user_id: selectedUser.id,
-        password: newPassword,
-      },
+      body: { action: 'reset-password-by-id', user_id: selectedUser.id, password: newPassword },
     });
-
     setResetting(false);
-
     if (error || data?.error) {
       toast({ title: 'שגיאה', description: data?.error || 'לא ניתן לאפס סיסמה', variant: 'destructive' });
       return;
     }
-
     toast({ title: '✅ סיסמה אופסה', description: `הסיסמה של ${selectedUser.full_name} עודכנה בהצלחה` });
     setResetDialogOpen(false);
+  };
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    const { data, error } = await supabase.functions.invoke('create-admin-user', {
+      body: { action: 'update-role', user_id: userId, role: newRole },
+    });
+    if (error || data?.error) {
+      toast({ title: 'שגיאה', description: data?.error || 'לא ניתן לעדכן תפקיד', variant: 'destructive' });
+      return;
+    }
+    setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
+    toast({ title: '✅ תפקיד עודכן', description: `התפקיד שונה ל${ROLE_LABELS[newRole] || newRole}` });
+  };
+
+  const handleToggleActive = async (userId: string, currentActive: boolean) => {
+    const newActive = !currentActive;
+    const { data, error } = await supabase.functions.invoke('create-admin-user', {
+      body: { action: 'toggle-active', user_id: userId, is_active: newActive },
+    });
+    if (error || data?.error) {
+      toast({ title: 'שגיאה', description: data?.error || 'לא ניתן לעדכן סטטוס', variant: 'destructive' });
+      return;
+    }
+    setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, is_active: newActive } : u)));
+    toast({ title: newActive ? '✅ חשבון הופעל' : '⛔ חשבון הושבת', description: `המשתמש ${newActive ? 'הופעל' : 'הושבת'} בהצלחה` });
   };
 
   if (user?.role !== 'super_admin') {
@@ -211,14 +220,27 @@ export default function UserManagement() {
                     <TableCell>{u.company_name || '—'}</TableCell>
                     <TableCell dir="ltr" className="text-right">{u.phone || '—'}</TableCell>
                     <TableCell>
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold border ${ROLE_COLORS[u.role] || ''}`}>
-                        {ROLE_LABELS[u.role] || u.role}
-                      </span>
+                      <Select value={u.role} onValueChange={(val) => handleRoleChange(u.id, val)}>
+                        <SelectTrigger className="h-8 w-[120px] text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="driver">{ROLE_LABELS.driver}</SelectItem>
+                          <SelectItem value="fleet_manager">{ROLE_LABELS.fleet_manager}</SelectItem>
+                          <SelectItem value="super_admin">{ROLE_LABELS.super_admin}</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell>
-                      <span className={`text-xs font-bold ${u.is_active ? 'text-success' : 'text-destructive'}`}>
-                        {u.is_active ? 'פעיל' : 'לא פעיל'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={u.is_active}
+                          onCheckedChange={() => handleToggleActive(u.id, u.is_active)}
+                        />
+                        <span className={`text-xs font-bold ${u.is_active ? 'text-green-600 dark:text-green-400' : 'text-destructive'}`}>
+                          {u.is_active ? 'פעיל' : 'מושבת'}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Button

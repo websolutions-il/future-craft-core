@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { email, password, full_name, role, company_name, action, user_id } = await req.json();
+    const { email, password, full_name, role, company_name, action, user_id, is_active } = await req.json();
 
     if (action === 'update-password') {
       if (!email || !password) {
@@ -104,6 +104,53 @@ Deno.serve(async (req) => {
       }
 
       const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, { password });
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Update user role
+    if (action === 'update-role') {
+      if (!user_id || !role) {
+        return new Response(JSON.stringify({ error: 'user_id and role are required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      await supabaseAdmin.from('user_roles').delete().eq('user_id', user_id);
+      const { error } = await supabaseAdmin.from('user_roles').insert({ user_id, role });
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Toggle user active status
+    if (action === 'toggle-active') {
+      if (!user_id || typeof is_active !== 'boolean') {
+        return new Response(JSON.stringify({ error: 'user_id and is_active are required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { error } = await supabaseAdmin.from('profiles').update({ is_active }).eq('id', user_id);
       if (error) {
         return new Response(JSON.stringify({ error: error.message }), {
           status: 400,
