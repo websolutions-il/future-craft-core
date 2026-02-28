@@ -482,6 +482,60 @@ export type Database = {
         }
         Relationships: []
       }
+      trip_logs: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          driver_id: string
+          end_address: string | null
+          end_lat: number | null
+          end_lng: number | null
+          ended_at: string | null
+          id: string
+          notes: string | null
+          route_id: string
+          start_address: string | null
+          start_lat: number | null
+          start_lng: number | null
+          started_at: string | null
+          trip_date: string
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          driver_id: string
+          end_address?: string | null
+          end_lat?: number | null
+          end_lng?: number | null
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          route_id: string
+          start_address?: string | null
+          start_lat?: number | null
+          start_lng?: number | null
+          started_at?: string | null
+          trip_date?: string
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          driver_id?: string
+          end_address?: string | null
+          end_lat?: number | null
+          end_lng?: number | null
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          route_id?: string
+          start_address?: string | null
+          start_lat?: number | null
+          start_lng?: number | null
+          started_at?: string | null
+          trip_date?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
