@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Users, Search, ArrowRight, Phone, Mail, Plus, Save, Edit2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { toast } from 'sonner';
 
 interface DriverRow {
@@ -23,6 +24,7 @@ const licenseOptions = ['A', 'A1', 'A2', 'B', 'C', 'C1', 'D', 'D1', 'E'];
 
 export default function Drivers() {
   const { user } = useAuth();
+  const companyFilter = useCompanyFilter();
   const [drivers, setDrivers] = useState<DriverRow[]>([]);
   const [search, setSearch] = useState('');
   const [filterCompany, setFilterCompany] = useState('');
@@ -31,7 +33,7 @@ export default function Drivers() {
   const [editingDriver, setEditingDriver] = useState<DriverRow | null>(null);
 
   const loadDrivers = async () => {
-    const { data } = await supabase.from('drivers').select('*').order('created_at', { ascending: false });
+    const { data } = await applyCompanyScope(supabase.from('drivers').select('*'), companyFilter).order('created_at', { ascending: false });
     if (data) setDrivers(data as DriverRow[]);
   };
 

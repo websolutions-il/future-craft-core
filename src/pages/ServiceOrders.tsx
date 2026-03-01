@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Briefcase, Plus, Search, ArrowRight, Clock, CheckCircle, MessageSquareReply, Filter } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -37,6 +38,7 @@ const serviceCategories = ['טיפול תקופתי', 'תיקון', 'צמיגי�
 
 export default function ServiceOrders() {
   const { user } = useAuth();
+  const companyFilter = useCompanyFilter();
   const [orders, setOrders] = useState<ServiceRow[]>([]);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -48,7 +50,7 @@ export default function ServiceOrders() {
   const [selectedOrder, setSelectedOrder] = useState<ServiceRow | null>(null);
 
   const loadOrders = async () => {
-    const { data } = await supabase.from('service_orders').select('*').order('created_at', { ascending: false });
+    const { data } = await applyCompanyScope(supabase.from('service_orders').select('*'), companyFilter).order('created_at', { ascending: false });
     if (data) setOrders(data as unknown as ServiceRow[]);
   };
 

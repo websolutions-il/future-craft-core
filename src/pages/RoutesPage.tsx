@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Route as RouteIcon, Search, ArrowRight, MapPin, Clock, Plus, Edit2, Trash2, UserRoundCog } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -30,6 +31,7 @@ type ViewMode = 'list' | 'detail' | 'form';
 
 export default function RoutesPage() {
   const { user } = useAuth();
+  const companyFilter = useCompanyFilter();
   const [routes, setRoutes] = useState<RouteRow[]>([]);
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -45,7 +47,7 @@ export default function RoutesPage() {
 
   const loadData = async () => {
     setLoading(true);
-    const { data } = await supabase.from('routes').select('*').order('created_at', { ascending: false });
+    const { data } = await applyCompanyScope(supabase.from('routes').select('*'), companyFilter).order('created_at', { ascending: false });
     if (data) setRoutes(data as RouteRow[]);
     setLoading(false);
   };

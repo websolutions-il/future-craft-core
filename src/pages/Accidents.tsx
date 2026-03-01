@@ -3,6 +3,7 @@ import { AlertTriangle, Plus, ArrowRight, Search, Edit2, Mail, Share2, Download,
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import MultiImageUpload from '@/components/MultiImageUpload';
 
 interface AccidentRow {
@@ -30,6 +31,7 @@ type ViewMode = 'list' | 'detail' | 'form';
 
 export default function Accidents() {
   const { user } = useAuth();
+  const companyFilter = useCompanyFilter();
   const [accidents, setAccidents] = useState<AccidentRow[]>([]);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -40,7 +42,7 @@ export default function Accidents() {
 
   const loadAccidents = async () => {
     setLoading(true);
-    const { data } = await supabase.from('accidents').select('*').order('created_at', { ascending: false });
+    const { data } = await applyCompanyScope(supabase.from('accidents').select('*'), companyFilter).order('created_at', { ascending: false });
     if (data) setAccidents(data as AccidentRow[]);
     setLoading(false);
   };

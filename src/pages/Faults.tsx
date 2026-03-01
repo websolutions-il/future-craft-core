@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Wrench, Search, AlertTriangle, Plus, ArrowRight, Edit2, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { toast } from 'sonner';
 import MultiImageUpload from '@/components/MultiImageUpload';
 
@@ -50,6 +51,7 @@ function parseImages(images: string | null): string[] {
 
 export default function Faults() {
   const { user } = useAuth();
+  const companyFilter = useCompanyFilter();
   const [faults, setFaults] = useState<FaultRow[]>([]);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -61,7 +63,7 @@ export default function Faults() {
 
   const loadFaults = async () => {
     setLoading(true);
-    const { data } = await supabase.from('faults').select('*').order('created_at', { ascending: false });
+    const { data } = await applyCompanyScope(supabase.from('faults').select('*'), companyFilter).order('created_at', { ascending: false });
     if (data) setFaults(data as FaultRow[]);
     setLoading(false);
   };

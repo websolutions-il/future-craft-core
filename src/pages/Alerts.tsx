@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { Bell, ShieldAlert, Car, IdCard, Wrench, Clock, CheckCircle2 } from 'lucide-react';
 
 type AlertSeverity = 'critical' | 'warning' | 'info';
@@ -60,20 +61,21 @@ function getSeverity(daysLeft: number | null): AlertSeverity {
 
 export default function Alerts() {
   const { user } = useAuth();
+  const companyFilter = useCompanyFilter();
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<AlertCategory | 'all'>('all');
 
   useEffect(() => {
     if (user) loadAlerts();
-  }, [user]);
+  }, [user, companyFilter]);
 
   const loadAlerts = async () => {
     setLoading(true);
     const allAlerts: AlertItem[] = [];
 
     // 1. Vehicle expiries (test, insurance, comprehensive)
-    const { data: vehicles } = await supabase.from('vehicles').select('*');
+    const { data: vehicles } = await applyCompanyScope(supabase.from('vehicles').select('*'), companyFilter);
     if (vehicles) {
       for (const v of vehicles) {
         const plate = v.license_plate;
@@ -124,7 +126,7 @@ export default function Alerts() {
     }
 
     // 2. Driver license expiries
-    const { data: drivers } = await supabase.from('drivers').select('*');
+    const { data: drivers } = await applyCompanyScope(supabase.from('drivers').select('*'), companyFilter);
     if (drivers) {
       for (const d of drivers) {
         const licDays = getDaysLeft(d.license_expiry);
