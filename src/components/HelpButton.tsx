@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { HelpCircle, X, Car, AlertTriangle, RefreshCw, FileText, Phone, Shield, Users, BarChart3, Truck, ClipboardList, MapPin, Settings, Bell } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -185,7 +185,24 @@ function getSuperAdminHelp(): HelpSection[] {
 
 export default function HelpButton() {
   const [open, setOpen] = useState(false);
+  const [showPulse, setShowPulse] = useState(false);
   const { user } = useAuth();
+
+  useEffect(() => {
+    const key = `help_seen_${user?.id || 'guest'}`;
+    if (!localStorage.getItem(key)) {
+      setShowPulse(true);
+    }
+  }, [user?.id]);
+
+  const handleOpen = () => {
+    setOpen(true);
+    if (showPulse) {
+      setShowPulse(false);
+      const key = `help_seen_${user?.id || 'guest'}`;
+      localStorage.setItem(key, 'true');
+    }
+  };
 
   const role = user?.role || 'driver';
 
@@ -209,11 +226,14 @@ export default function HelpButton() {
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-28 left-4 md:bottom-6 md:left-6 z-50 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-xl ring-4 ring-primary/30 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
+        onClick={handleOpen}
+        className={`fixed bottom-28 left-4 md:bottom-6 md:left-6 z-50 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-xl ring-4 ring-primary/30 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform ${showPulse ? 'animate-[help-bounce_1.5s_ease-in-out_infinite]' : ''}`}
         aria-label="עזרה"
       >
         <HelpCircle className="h-6 w-6" />
+        {showPulse && (
+          <span className="absolute inset-0 rounded-full bg-primary/40 animate-ping" />
+        )}
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
