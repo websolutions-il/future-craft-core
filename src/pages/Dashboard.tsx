@@ -133,18 +133,28 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
     isActive: true,
     userNumber: '',
   });
-  const [createCompanyOptions, setCreateCompanyOptions] = useState<string[]>([]);
+  const [createCompanyOptions, setCreateCompanyOptions] = useState<{ name: string; businessId: string }[]>([]);
   const [createCompanyPickerOpen, setCreateCompanyPickerOpen] = useState(false);
+  
 
   useEffect(() => {
     const loadCompaniesForCreate = async () => {
-      const { data } = await supabase.from('profiles').select('company_name');
+      const [profilesRes, customersRes] = await Promise.all([
+        supabase.from('profiles').select('company_name'),
+        supabase.from('customers').select('company_name, business_id'),
+      ]);
       const companies = Array.from(
         new Set(
-          (data || []).map(r => r.company_name?.trim()).filter((c): c is string => Boolean(c))
+          (profilesRes.data || []).map(r => r.company_name?.trim()).filter((c): c is string => Boolean(c))
         )
       );
-      setCreateCompanyOptions(companies);
+      const customerMap = new Map<string, string>();
+      (customersRes.data || []).forEach((c) => {
+        if (c.company_name?.trim()) {
+          customerMap.set(c.company_name.trim(), c.business_id?.trim() || '');
+        }
+      });
+      setCreateCompanyOptions(companies.map(name => ({ name, businessId: customerMap.get(name) || '' })));
     };
     loadCompaniesForCreate();
   }, []);
@@ -393,18 +403,23 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
                     <CommandList>
                       <CommandEmpty>לא נמצאו חברות</CommandEmpty>
                       <CommandGroup>
-                        {createCompanyOptions.map((company) => (
+                        {createCompanyOptions.map((option) => (
                           <CommandItem
-                            key={company}
-                            value={company}
+                            key={option.name}
+                            value={`${option.name} ${option.businessId}`}
                             onSelect={() => {
-                              setForm((prev) => ({ ...prev, companyName: company }));
+                              setForm((prev) => ({ ...prev, companyName: option.name }));
                               setCreateCompanyPickerOpen(false);
                             }}
                             className="flex items-center justify-between"
                           >
-                            <Check size={16} className={cn("shrink-0", form.companyName === company ? "opacity-100" : "opacity-0")} />
-                            <span className="flex-1 text-right font-medium">{company}</span>
+                            <Check size={16} className={cn("shrink-0", form.companyName === option.name ? "opacity-100" : "opacity-0")} />
+                            <div className="flex-1 text-right">
+                              <span className="font-medium">{option.name}</span>
+                              {option.businessId && (
+                                <span className="text-xs text-muted-foreground mr-2">({option.businessId})</span>
+                              )}
+                            </div>
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -481,17 +496,22 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
                   <CommandList>
                     <CommandEmpty>לא נמצאו חברות</CommandEmpty>
                     <CommandGroup>
-                      {createCompanyOptions.map((company) => (
+                      {createCompanyOptions.map((option) => (
                         <CommandItem
-                          key={company}
-                          value={company}
+                          key={option.name}
+                          value={`${option.name} ${option.businessId}`}
                           onSelect={() => {
                             setShowFleetCompanyPicker(false);
-                            onEnterFleetMode(company);
+                            onEnterFleetMode(option.name);
                           }}
                           className="flex items-center justify-between"
                         >
-                          <span className="flex-1 text-right font-medium">{company}</span>
+                          <div className="flex-1 text-right">
+                            <span className="font-medium">{option.name}</span>
+                            {option.businessId && (
+                              <span className="text-xs text-muted-foreground mr-2">({option.businessId})</span>
+                            )}
+                          </div>
                         </CommandItem>
                       ))}
                     </CommandGroup>
