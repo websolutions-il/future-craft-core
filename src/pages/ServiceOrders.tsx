@@ -43,6 +43,11 @@ export default function ServiceOrders() {
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [filterStatus, setFilterStatus] = useState('');
+  const [filterName, setFilterName] = useState('');
+  const [filterCompany, setFilterCompany] = useState('');
+  const [filterVehicle, setFilterVehicle] = useState('');
+  const [filterRef, setFilterRef] = useState('');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [replyOrder, setReplyOrder] = useState<ServiceRow | null>(null);
   const [replyText, setReplyText] = useState('');
   const [replyStatus, setReplyStatus] = useState('');
@@ -68,8 +73,14 @@ export default function ServiceOrders() {
       o.ordering_user?.includes(search) ||
       o.reference_number?.includes(search);
     const matchStatus = !filterStatus || o.treatment_status === filterStatus;
-    return matchSearch && matchStatus;
+    const matchName = !filterName || o.driver_name?.includes(filterName) || o.ordering_user?.includes(filterName);
+    const matchCompany = !filterCompany || o.company_name?.includes(filterCompany);
+    const matchVehicle = !filterVehicle || o.vehicle_plate?.includes(filterVehicle);
+    const matchRef = !filterRef || o.reference_number?.includes(filterRef);
+    return matchSearch && matchStatus && matchName && matchCompany && matchVehicle && matchRef;
   });
+
+  const activeFilterCount = [filterName, filterCompany, filterVehicle, filterRef].filter(Boolean).length;
 
   const handleReply = async () => {
     if (!replyOrder) return;
@@ -193,10 +204,72 @@ export default function ServiceOrders() {
         )}
       </div>
 
-      <div className="relative mb-3">
-        <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="חיפוש לפי שם, חברה, רכב, מספר..."
-          className="w-full pr-12 p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none" />
+      <div className="flex gap-2 mb-3">
+        <div className="relative flex-1">
+          <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="חיפוש..."
+            className="w-full pr-12 p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none" />
+        </div>
+        {isManager && (
+          <button onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className={`relative flex items-center gap-1 px-4 py-3 rounded-xl border-2 font-bold transition-colors ${showAdvancedFilters ? 'border-primary bg-primary/10 text-primary' : 'border-input text-foreground'}`}>
+            <Filter size={20} />
+            {activeFilterCount > 0 && (
+              <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">{activeFilterCount}</span>
+            )}
+          </button>
+        )}
+      </div>
+
+      {/* Advanced Filters */}
+      {isManager && showAdvancedFilters && (
+        <div className="card-elevated mb-4 space-y-3">
+          <h3 className="font-bold text-sm text-muted-foreground">סינון מתקדם</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">שם</label>
+              <input value={filterName} onChange={e => setFilterName(e.target.value)}
+                className="w-full p-3 text-base rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none" placeholder="שם נהג / מזמין..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">שם חברה</label>
+              <input value={filterCompany} onChange={e => setFilterCompany(e.target.value)}
+                className="w-full p-3 text-base rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none" placeholder="חברה..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">מספר רכב</label>
+              <input value={filterVehicle} onChange={e => setFilterVehicle(e.target.value)}
+                className="w-full p-3 text-base rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none" placeholder="לוחית רישוי..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">מספר אסמכתא</label>
+              <input value={filterRef} onChange={e => setFilterRef(e.target.value)}
+                className="w-full p-3 text-base rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none" placeholder="מספר..." />
+            </div>
+          </div>
+          {activeFilterCount > 0 && (
+            <button onClick={() => { setFilterName(''); setFilterCompany(''); setFilterVehicle(''); setFilterRef(''); }} className="text-sm text-primary font-medium">
+              ✕ נקה סינון
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Status filter */}
+      <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
+        <button onClick={() => setFilterStatus('')}
+          className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${!filterStatus ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+          הכל ({orders.length})
+        </button>
+        {Object.entries(statusLabels).map(([key, val]) => {
+          const count = orders.filter(o => o.treatment_status === key).length;
+          return (
+            <button key={key} onClick={() => setFilterStatus(filterStatus === key ? '' : key)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${filterStatus === key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+              {val.text} ({count})
+            </button>
+          );
+        })}
       </div>
 
       {/* Status filter */}
