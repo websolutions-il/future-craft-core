@@ -15,6 +15,8 @@ import {
   Bell,
   Check,
   ChevronsUpDown,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { useAuth, type AppRole } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -107,6 +109,7 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: () => voi
   const [loading, setLoading] = useState(true);
   const [creatingUser, setCreatingUser] = useState(false);
   const [showCreateUserModal, setShowCreateUserModal] = useState(false);
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
   const [stats, setStats] = useState<SuperAdminStats>({
     companiesCount: 0,
     usersCount: 0,
@@ -312,14 +315,20 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: () => voi
                 dir="ltr"
                 required
               />
-              <input
-                type="password"
-                value={form.password}
-                onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
-                placeholder="סיסמה"
-                className="w-full p-3 rounded-xl border border-input bg-background"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showCreatePassword ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
+                  placeholder="סיסמה"
+                  className="w-full p-3 rounded-xl border border-input bg-background pl-10"
+                  required
+                />
+                <button type="button" onClick={() => setShowCreatePassword(!showCreatePassword)}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                  {showCreatePassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
               <input
                 value={form.phone}
                 onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
