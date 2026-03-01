@@ -38,7 +38,7 @@ const managerCategories = [
       { path: '/reports', label: 'דוחות', icon: BarChart3 },
       { path: '/accidents', label: 'דיווח תאונה', icon: AlertTriangle },
       { path: '/routes', label: 'ניהול מסלולים', icon: Route },
-      { path: '/driver-view', label: 'כניסה לדשבורד נהג', icon: UserCheck },
+      
       { path: '/customers', label: 'לקוחות שלי', icon: Users },
     ],
   },

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ClipboardList, Plus, Search, Calendar, Clock, Car, User, MapPin, CheckCircle2, Circle, AlertCircle, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { toast } from 'sonner';
 
 interface WorkOrder {
@@ -38,6 +39,7 @@ const statusConfig: Record<string, { text: string; cls: string; icon: typeof Cir
 
 export default function WorkOrders() {
   const { user } = useAuth();
+  const companyFilter = useCompanyFilter();
   const [orders, setOrders] = useState<WorkOrder[]>([]);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -45,10 +47,10 @@ export default function WorkOrders() {
   const [selectedDate, setSelectedDate] = useState('');
 
   const loadOrders = async () => {
-    const { data } = await supabase
-      .from('service_orders')
-      .select('*')
-      .order('service_date', { ascending: true });
+    const { data } = await applyCompanyScope(
+      supabase.from('service_orders').select('*').order('service_date', { ascending: true }),
+      companyFilter
+    );
 
     if (data) {
       setOrders(data.map((d: any) => ({
@@ -69,7 +71,7 @@ export default function WorkOrders() {
     }
   };
 
-  useEffect(() => { loadOrders(); }, []);
+  useEffect(() => { loadOrders(); }, [companyFilter]);
 
   // Group by date
   const filtered = orders.filter(o => {

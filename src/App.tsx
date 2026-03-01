@@ -24,7 +24,7 @@ import AttachCar from "@/pages/AttachCar";
 import Alerts from "@/pages/Alerts";
 import HistoryPage from "@/pages/History";
 import ServiceOrders from "@/pages/ServiceOrders";
-import DriverView from "@/pages/DriverView";
+
 import Expenses from "@/pages/Expenses";
 import WorkOrders from "@/pages/WorkOrders";
 import Emergency from "@/pages/Emergency";
@@ -82,7 +82,7 @@ function AppRoutes() {
         <Route path="/alerts" element={<Alerts />} />
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/service-orders" element={<ServiceOrders />} />
-        <Route path="/driver-view" element={<DriverView />} />
+        
         <Route path="/expenses" element={<Expenses />} />
         <Route path="/work-orders" element={<WorkOrders />} />
         <Route path="/emergency" element={<Emergency />} />

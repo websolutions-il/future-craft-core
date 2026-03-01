@@ -146,11 +146,13 @@ export default function Alerts() {
     }
 
     // 3. Urgent faults
-    const { data: faults } = await supabase
-      .from('faults')
-      .select('*')
-      .in('urgency', ['urgent', 'high', 'דחוף', 'גבוהה'])
-      .in('status', ['new', 'open', 'חדש', 'פתוח', 'בטיפול']);
+    const faultsQuery = applyCompanyScope(
+      supabase.from('faults').select('*')
+        .in('urgency', ['urgent', 'high', 'דחוף', 'גבוהה'])
+        .in('status', ['new', 'open', 'חדש', 'פתוח', 'בטיפול']),
+      companyFilter
+    );
+    const { data: faults } = await faultsQuery;
     if (faults) {
       for (const f of faults) {
         allAlerts.push({
