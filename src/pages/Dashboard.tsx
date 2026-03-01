@@ -223,9 +223,16 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: () => voi
     setCreatingUser(false);
 
     if (error || data?.error) {
+      const errMsg = data?.error || error?.message || '';
+      let hebrewMsg = 'אירעה שגיאה לא צפויה.';
+      if (errMsg.toLowerCase().includes('already registered') || errMsg.toLowerCase().includes('already been registered') || errMsg.toLowerCase().includes('unique')) {
+        hebrewMsg = 'כתובת האימייל כבר קיימת במערכת. נסה כתובת אחרת.';
+      } else if (errMsg) {
+        hebrewMsg = errMsg;
+      }
       toast({
         title: 'יצירת משתמש נכשלה',
-        description: data?.error || error?.message || 'אירעה שגיאה לא צפויה.',
+        description: hebrewMsg,
         variant: 'destructive',
       });
       return;
