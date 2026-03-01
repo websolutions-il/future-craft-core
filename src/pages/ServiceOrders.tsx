@@ -139,6 +139,39 @@ export default function ServiceOrders() {
             </button>
           )}
         </div>
+
+        {/* Reply Dialog - must be inside this return block */}
+        <Dialog open={!!replyOrder} onOpenChange={(open) => { if (!open) setReplyOrder(null); }}>
+          <DialogContent className="max-w-md" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="text-xl">מענה להזמנת שירות</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="p-3 bg-muted rounded-xl">
+                <p className="text-sm text-muted-foreground">הזמנה</p>
+                <p className="font-bold">{replyOrder?.service_category} - רכב {replyOrder?.vehicle_plate}</p>
+                {replyOrder?.ordering_user && <p className="text-sm text-muted-foreground">מזמין: {replyOrder.ordering_user}</p>}
+              </div>
+              <div>
+                <label className="block font-medium mb-2">עדכון סטטוס</label>
+                <select value={replyStatus} onChange={e => setReplyStatus(e.target.value)}
+                  className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none">
+                  {Object.entries(statusLabels).map(([k, v]) => <option key={k} value={k}>{v.text}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block font-medium mb-2">תגובה / מענה</label>
+                <textarea value={replyText} onChange={e => setReplyText(e.target.value)} rows={3}
+                  className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none resize-none"
+                  placeholder="כתוב מענה ללקוח..." />
+              </div>
+              <button onClick={handleReply} disabled={sendingReply || (!replyText && !replyStatus)}
+                className="w-full py-4 rounded-xl text-lg font-bold bg-primary text-primary-foreground disabled:opacity-50">
+                {sendingReply ? 'שולח...' : '📨 שלח מענה'}
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
@@ -219,38 +252,6 @@ export default function ServiceOrders() {
         </div>
       )}
 
-      {/* Reply Dialog */}
-      <Dialog open={!!replyOrder} onOpenChange={(open) => { if (!open) setReplyOrder(null); }}>
-        <DialogContent className="max-w-md" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="text-xl">מענה להזמנת שירות</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="p-3 bg-muted rounded-xl">
-              <p className="text-sm text-muted-foreground">הזמנה</p>
-              <p className="font-bold">{replyOrder?.service_category} - רכב {replyOrder?.vehicle_plate}</p>
-              {replyOrder?.ordering_user && <p className="text-sm text-muted-foreground">מזמין: {replyOrder.ordering_user}</p>}
-            </div>
-            <div>
-              <label className="block font-medium mb-2">עדכון סטטוס</label>
-              <select value={replyStatus} onChange={e => setReplyStatus(e.target.value)}
-                className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none">
-                {Object.entries(statusLabels).map(([k, v]) => <option key={k} value={k}>{v.text}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block font-medium mb-2">תגובה / מענה</label>
-              <textarea value={replyText} onChange={e => setReplyText(e.target.value)} rows={3}
-                className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none resize-none"
-                placeholder="כתוב מענה ללקוח..." />
-            </div>
-            <button onClick={handleReply} disabled={sendingReply || (!replyText && !replyStatus)}
-              className="w-full py-4 rounded-xl text-lg font-bold bg-primary text-primary-foreground disabled:opacity-50">
-              {sendingReply ? 'שולח...' : '📨 שלח מענה'}
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -16,12 +16,6 @@ interface RawData {
   serviceOrders: any[];
 }
 
-const paymentMethods = [
-  { value: 'cash', label: 'מזומן' },
-  { value: 'credit_card', label: 'כרטיס אשראי' },
-  { value: 'check', label: "צ'ק" },
-  { value: 'transfer', label: 'העברה' },
-];
 
 const reportTypes = [
   { value: 'vehicles', label: 'סיכום רכבים' },
@@ -47,7 +41,7 @@ export default function Reports() {
   const [filterDateTo, setFilterDateTo] = useState<Date | undefined>();
   const [filterReportTypes, setFilterReportTypes] = useState<string[]>([]);
   const [filterVendor, setFilterVendor] = useState('');
-  const [filterPayment, setFilterPayment] = useState('');
+  
   const [filterVehicle, setFilterVehicle] = useState('');
   const [filterDriver, setFilterDriver] = useState('');
 
@@ -104,7 +98,7 @@ export default function Reports() {
       expenses: raw.expenses.filter(e => matchCompany(e.company_name) && matchVehicle(e.vehicle_plate) && matchDriver(e.driver_name) && inDateRange(e.date) && (!filterVendor || e.vendor === filterVendor)),
       serviceOrders: raw.serviceOrders.filter(s => matchCompany(s.company_name) && matchVehicle(s.vehicle_plate) && matchDriver(s.driver_name) && inDateRange(s.created_at) && (!filterVendor || s.vendor_name === filterVendor)),
     };
-  }, [raw, filterCompany, filterDateFrom, filterDateTo, filterVendor, filterPayment, filterVehicle, filterDriver]);
+  }, [raw, filterCompany, filterDateFrom, filterDateTo, filterVendor, filterVehicle, filterDriver]);
 
   const showReport = (type: string) => filterReportTypes.length === 0 || filterReportTypes.includes(type);
   const toggleReportType = (type: string) => setFilterReportTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]);
@@ -115,12 +109,11 @@ export default function Reports() {
     setFilterDateTo(undefined);
     setFilterReportTypes([]);
     setFilterVendor('');
-    setFilterPayment('');
     setFilterVehicle('');
     setFilterDriver('');
   };
 
-  const hasActiveFilters = filterCompany || filterDateFrom || filterDateTo || filterReportTypes.length > 0 || filterVendor || filterPayment || filterVehicle || filterDriver;
+  const hasActiveFilters = filterCompany || filterDateFrom || filterDateTo || filterReportTypes.length > 0 || filterVendor || filterVehicle || filterDriver;
 
   // Stats
   const totalExpenses = filtered.expenses.reduce((s, e) => s + (e.amount || 0), 0);
@@ -317,14 +310,6 @@ export default function Reports() {
             </select>
           </div>
 
-          {/* Payment Method */}
-          <div>
-            <label className="block text-sm font-medium mb-1">אופן תשלום</label>
-            <select value={filterPayment} onChange={e => setFilterPayment(e.target.value)} className={selectClass}>
-              <option value="">הכל</option>
-              {paymentMethods.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-            </select>
-          </div>
 
           {/* Vehicle & Driver */}
           <div className="grid grid-cols-2 gap-3">
