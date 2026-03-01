@@ -3,6 +3,7 @@ import BottomNav, { DesktopSidebar } from '@/components/BottomNav';
 import { useAuth } from '@/contexts/AuthContext';
 import logo from '@/assets/logo.png';
 import { LogOut } from 'lucide-react';
+import HelpButton from '@/components/HelpButton';
 
 export default function Layout() {
   const { user, logout } = useAuth();
@@ -32,6 +33,7 @@ export default function Layout() {
       </main>
 
       <BottomNav />
+      <HelpButton />
     </div>
   );
 }
