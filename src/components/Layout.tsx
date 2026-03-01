@@ -1,13 +1,16 @@
 import { Outlet, useNavigate } from 'react-router-dom';
 import BottomNav, { DesktopSidebar } from '@/components/BottomNav';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompanyScope } from '@/contexts/CompanyScopeContext';
 import logo from '@/assets/logo.png';
-import { LogOut, X, Eye } from 'lucide-react';
+import { LogOut, X, Eye, Building2 } from 'lucide-react';
 import HelpButton from '@/components/HelpButton';
 
 export default function Layout() {
   const { user, realUser, isImpersonating, stopImpersonation, logout } = useAuth();
+  const { selectedCompany, setSelectedCompany } = useCompanyScope();
   const navigate = useNavigate();
+  const isSuperAdmin = realUser?.role === 'super_admin' && !isImpersonating;
 
   return (
     <div className="min-h-screen bg-background">
@@ -47,6 +50,23 @@ export default function Layout() {
           <span className="text-sm font-medium">יציאה</span>
         </button>
       </header>
+
+      {/* Company scope banner for super_admin */}
+      {isSuperAdmin && selectedCompany && (
+        <div className="hidden md:flex bg-accent text-accent-foreground px-4 py-2 items-center justify-between text-sm font-medium sticky top-0 z-40 mr-64 border-b border-border">
+          <div className="flex items-center gap-2">
+            <Building2 size={16} />
+            <span>מציג נתוני חברה: <strong>{selectedCompany}</strong></span>
+          </div>
+          <button
+            onClick={() => setSelectedCompany(null)}
+            className="flex items-center gap-1 bg-background/50 rounded-lg px-3 py-1 hover:bg-background/80 transition-colors text-xs"
+          >
+            <X size={12} />
+            הצג הכל
+          </button>
+        </div>
+      )}
 
       {/* Main content */}
       <main className="md:mr-64 pb-24 md:pb-8 p-4 md:p-8">
