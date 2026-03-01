@@ -16,12 +16,16 @@ export interface UserProfile {
 
 interface AuthContextType {
   user: UserProfile | null;
+  realUser: UserProfile | null;
   session: Session | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
   signup: (email: string, password: string, metadata: { full_name: string; phone: string; company_name: string; role?: AppRole }) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
+  isImpersonating: boolean;
+  impersonate: (targetUser: UserProfile) => void;
+  stopImpersonation: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -41,7 +45,6 @@ async function fetchUserProfile(userId: string, email: string, retries = 3): Pro
       .single();
 
     if (profileError || !profile) {
-      // Profile might not be created yet (trigger delay), wait and retry
       if (i < retries - 1) {
         await new Promise(r => setTimeout(r, 500));
         continue;
@@ -70,30 +73,32 @@ async function fetchUserProfile(userId: string, email: string, retries = 3): Pro
 }
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [realUser, setRealUser] = useState<UserProfile | null>(null);
+  const [impersonatedUser, setImpersonatedUser] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const user = impersonatedUser || realUser;
+  const isImpersonating = !!impersonatedUser;
 
   const loadProfile = useCallback(async (sess: Session | null) => {
     if (sess?.user) {
       const profile = await fetchUserProfile(sess.user.id, sess.user.email || '');
-      setUser(profile);
+      setRealUser(profile);
       setSession(sess);
     } else {
-      setUser(null);
+      setRealUser(null);
       setSession(null);
+      setImpersonatedUser(null);
     }
     setLoading(false);
   }, []);
 
   useEffect(() => {
-    // Set up listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      // Defer profile loading to avoid Supabase client deadlock
       setTimeout(() => loadProfile(newSession), 0);
     });
 
-    // THEN get initial session
     supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
       loadProfile(initialSession);
     });
@@ -104,7 +109,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
-    // Manually load profile immediately after successful login
     if (data.session) {
       await loadProfile(data.session);
     }
@@ -121,7 +125,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       },
     });
     if (error) return { error: error.message };
-    // If auto-confirm is on, session is returned immediately
     if (data.session) {
       await loadProfile(data.session);
     }
@@ -130,12 +133,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     await supabase.auth.signOut();
-    setUser(null);
+    setRealUser(null);
+    setImpersonatedUser(null);
     setSession(null);
   };
 
+  const impersonate = (targetUser: UserProfile) => {
+    setImpersonatedUser(targetUser);
+  };
+
+  const stopImpersonation = () => {
+    setImpersonatedUser(null);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, login, signup, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, realUser, session, loading, login, signup, logout, isAuthenticated: !!realUser, isImpersonating, impersonate, stopImpersonation }}>
       {children}
     </AuthContext.Provider>
   );
