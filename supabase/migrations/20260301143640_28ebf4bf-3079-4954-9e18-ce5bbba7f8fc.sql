@@ -1,0 +1,2 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS user_number text DEFAULT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS profiles_user_number_unique ON public.profiles (user_number) WHERE user_number IS NOT NULL AND user_number != '';

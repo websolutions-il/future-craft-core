@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { email, password, full_name, role, company_name, phone, action, user_id, is_active } = await req.json();
+    const { email, password, full_name, role, company_name, phone, action, user_id, is_active, user_number } = await req.json();
 
     if (action === 'update-password') {
       if (!email || !password) {
@@ -155,6 +155,7 @@ Deno.serve(async (req) => {
       if (phone !== undefined) updates.phone = phone;
       if (company_name !== undefined) updates.company_name = company_name;
       if (typeof is_active === 'boolean') updates.is_active = is_active;
+      if (user_number !== undefined) updates.user_number = user_number;
 
       if (Object.keys(updates).length === 0) {
         return new Response(JSON.stringify({ error: 'No fields to update' }), {
@@ -239,6 +240,7 @@ Deno.serve(async (req) => {
           company_name,
           phone: phone || '',
           is_active: typeof is_active === 'boolean' ? is_active : true,
+          user_number: user_number || null,
         },
         { onConflict: 'id' }
       );
