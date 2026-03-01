@@ -137,6 +137,48 @@ export type Database = {
         }
         Relationships: []
       }
+      document_metadata: {
+        Row: {
+          category: string
+          company_name: string | null
+          created_at: string | null
+          driver_name: string | null
+          file_path: string
+          id: string
+          manufacturer: string | null
+          model: string | null
+          original_name: string | null
+          uploaded_by: string | null
+          vehicle_plate: string | null
+        }
+        Insert: {
+          category?: string
+          company_name?: string | null
+          created_at?: string | null
+          driver_name?: string | null
+          file_path: string
+          id?: string
+          manufacturer?: string | null
+          model?: string | null
+          original_name?: string | null
+          uploaded_by?: string | null
+          vehicle_plate?: string | null
+        }
+        Update: {
+          category?: string
+          company_name?: string | null
+          created_at?: string | null
+          driver_name?: string | null
+          file_path?: string
+          id?: string
+          manufacturer?: string | null
+          model?: string | null
+          original_name?: string | null
+          uploaded_by?: string | null
+          vehicle_plate?: string | null
+        }
+        Relationships: []
+      }
       driver_notifications: {
         Row: {
           created_at: string
