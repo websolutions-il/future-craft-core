@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { FaultAttachment } from '@/data/demo-data';
-import { ArrowRight, Camera, MapPin, Navigation, X, Plus, Car, RefreshCw, MessageCircle, UserPlus } from 'lucide-react';
+import { ArrowRight, Camera, MapPin, Navigation, X, Plus, Car, RefreshCw, MessageCircle, UserPlus, Clock, CheckCircle2, XCircle, History } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 
 type ActionType = 'pickup' | 'return';
 
@@ -33,8 +34,28 @@ const conditionStatusLabels: Record<string, { text: string; cls: string }> = {
   missing: { text: 'חסר', cls: 'bg-destructive/15 text-destructive border-destructive/30' },
 };
 
+const approvalStatusConfig: Record<string, { text: string; icon: typeof Clock; cls: string }> = {
+  pending: { text: 'ממתין לאישור', icon: Clock, cls: 'bg-warning/15 text-warning border-warning/30' },
+  approved: { text: 'מאושר', icon: CheckCircle2, cls: 'bg-success/15 text-success border-success/30' },
+  rejected: { text: 'נדחה', icon: XCircle, cls: 'bg-destructive/15 text-destructive border-destructive/30' },
+};
+
+interface HandoverRecord {
+  id: string;
+  vehicle_plate: string;
+  manufacturer: string;
+  model: string;
+  giving_driver_name: string;
+  receiving_driver_name: string;
+  pickup_date: string;
+  driver_approval_status: string;
+  approval_updated_at: string | null;
+  created_at: string;
+}
+
 export default function VehicleHandover() {
   const { user } = useAuth();
+  const companyFilter = useCompanyFilter();
   const [action, setAction] = useState<ActionType>('pickup');
   const [vehiclePlate, setVehiclePlate] = useState('');
   const [odometer, setOdometer] = useState('');
@@ -66,10 +87,20 @@ export default function VehicleHandover() {
   const [conditionNotes, setConditionNotes] = useState('');
   const [photos, setPhotos] = useState<FaultAttachment[]>([]);
   const cameraRef = useRef<HTMLInputElement>(null);
+  const [activeTab, setActiveTab] = useState<'form' | 'history'>('form');
+  const [handoverRecords, setHandoverRecords] = useState<HandoverRecord[]>([]);
 
   // Load from DB
   const [dbVehicles, setDbVehicles] = useState<{ license_plate: string; manufacturer: string; model: string; year: number; vehicle_type: string }[]>([]);
   const [dbDrivers, setDbDrivers] = useState<{ full_name: string; phone: string }[]>([]);
+
+  const loadHandoverHistory = async () => {
+    const { data } = await applyCompanyScope(
+      supabase.from('vehicle_handovers').select('id, vehicle_plate, manufacturer, model, giving_driver_name, receiving_driver_name, pickup_date, driver_approval_status, approval_updated_at, created_at').order('created_at', { ascending: false }),
+      companyFilter
+    ) as any;
+    if (data) setHandoverRecords(data);
+  };
 
   useEffect(() => {
     supabase.from('vehicles').select('license_plate, manufacturer, model, year, vehicle_type').then(({ data }) => {
@@ -78,7 +109,8 @@ export default function VehicleHandover() {
     supabase.from('drivers').select('full_name, phone').then(({ data }) => {
       if (data) setDbDrivers(data);
     });
-  }, []);
+    loadHandoverHistory();
+  }, [companyFilter]);
 
   const selectedVehicle = dbVehicles.find(v => v.license_plate === vehiclePlate);
 
@@ -232,6 +264,20 @@ export default function VehicleHandover() {
         await Promise.all(tempDriverPromises);
       }
       toast.success('טופס החלפת רכב נשלח בהצלחה');
+      loadHandoverHistory();
+    }
+  };
+
+  const handleApprovalChange = async (handoverId: string, newStatus: string) => {
+    const { error } = await supabase
+      .from('vehicle_handovers')
+      .update({ driver_approval_status: newStatus, approval_updated_at: new Date().toISOString() } as any)
+      .eq('id', handoverId);
+    if (error) {
+      toast.error('שגיאה בעדכון הסטטוס');
+    } else {
+      toast.success(newStatus === 'approved' ? 'ההחלפה אושרה' : newStatus === 'rejected' ? 'ההחלפה נדחתה' : 'הסטטוס עודכן');
+      loadHandoverHistory();
     }
   };
 
@@ -241,6 +287,67 @@ export default function VehicleHandover() {
     <div className="animate-fade-in">
       <h1 className="page-header">טופס החלפת רכב</h1>
 
+      {/* Tabs */}
+      <div className="flex gap-3 mb-5">
+        <button onClick={() => setActiveTab('form')}
+          className={`flex-1 py-3 rounded-xl text-lg font-bold transition-colors ${activeTab === 'form' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+          <RefreshCw size={18} className="inline ml-2" /> טופס חדש
+        </button>
+        <button onClick={() => setActiveTab('history')}
+          className={`flex-1 py-3 rounded-xl text-lg font-bold transition-colors ${activeTab === 'history' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+          <History size={18} className="inline ml-2" /> היסטוריה ({handoverRecords.length})
+        </button>
+      </div>
+
+      {activeTab === 'history' ? (
+        <div className="space-y-3">
+          {handoverRecords.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <RefreshCw size={48} className="mx-auto mb-4 opacity-50" />
+              <p className="text-xl">אין החלפות רכב</p>
+            </div>
+          ) : handoverRecords.map(record => {
+            const status = approvalStatusConfig[record.driver_approval_status] || approvalStatusConfig.pending;
+            const StatusIcon = status.icon;
+            return (
+              <div key={record.id} className="card-elevated">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="text-lg font-bold">{record.vehicle_plate}</p>
+                    <p className="text-sm text-muted-foreground">{record.manufacturer} {record.model}</p>
+                  </div>
+                  <span className={`px-3 py-1.5 rounded-full text-sm font-bold border flex items-center gap-1.5 ${status.cls}`}>
+                    <StatusIcon size={14} />
+                    {status.text}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                  <span>{record.giving_driver_name}</span>
+                  <span>←</span>
+                  <span>{record.receiving_driver_name}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  {record.pickup_date ? new Date(record.pickup_date).toLocaleDateString('he-IL') : ''}
+                  {record.approval_updated_at && ` • עודכן: ${new Date(record.approval_updated_at).toLocaleDateString('he-IL')}`}
+                </p>
+                {(user?.role === 'fleet_manager' || user?.role === 'super_admin') && record.driver_approval_status === 'pending' && (
+                  <div className="flex gap-2">
+                    <button onClick={() => handleApprovalChange(record.id, 'approved')}
+                      className="flex-1 py-2.5 rounded-xl bg-success/15 text-success font-bold text-sm flex items-center justify-center gap-1.5 border border-success/30">
+                      <CheckCircle2 size={16} /> אשר
+                    </button>
+                    <button onClick={() => handleApprovalChange(record.id, 'rejected')}
+                      className="flex-1 py-2.5 rounded-xl bg-destructive/15 text-destructive font-bold text-sm flex items-center justify-center gap-1.5 border border-destructive/30">
+                      <XCircle size={16} /> דחה
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <>
       {/* Action Type */}
       <div className="card-elevated mb-5">
         <h2 className="text-lg font-bold mb-3 text-primary">פעולת רכב</h2>
@@ -470,6 +577,8 @@ export default function VehicleHandover() {
         <RefreshCw size={24} className="inline ml-2" />
         שלח טופס {action === 'pickup' ? 'לקיחה' : 'החזרה'}
       </button>
+      </>
+      )}
     </div>
   );
 }

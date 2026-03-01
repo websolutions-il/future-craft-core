@@ -665,12 +665,14 @@ export type Database = {
       vehicle_handovers: {
         Row: {
           action_type: string | null
+          approval_updated_at: string | null
           company_name: string | null
           condition_checklist: Json | null
           created_at: string | null
           created_by: string | null
           damage_summary: string | null
           date_time: string | null
+          driver_approval_status: string
           giving_driver_name: string | null
           giving_driver_phone: string | null
           id: string
@@ -693,12 +695,14 @@ export type Database = {
         }
         Insert: {
           action_type?: string | null
+          approval_updated_at?: string | null
           company_name?: string | null
           condition_checklist?: Json | null
           created_at?: string | null
           created_by?: string | null
           damage_summary?: string | null
           date_time?: string | null
+          driver_approval_status?: string
           giving_driver_name?: string | null
           giving_driver_phone?: string | null
           id?: string
@@ -721,12 +725,14 @@ export type Database = {
         }
         Update: {
           action_type?: string | null
+          approval_updated_at?: string | null
           company_name?: string | null
           condition_checklist?: Json | null
           created_at?: string | null
           created_by?: string | null
           damage_summary?: string | null
           date_time?: string | null
+          driver_approval_status?: string
           giving_driver_name?: string | null
           giving_driver_phone?: string | null
           id?: string
