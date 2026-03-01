@@ -1,9 +1,13 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Car, Users, Route, Wrench, FileText, AlertTriangle, BarChart3, RefreshCw, Menu, X, LogOut, Settings, Bell, Briefcase, ClipboardList, History, UserCheck, Phone } from 'lucide-react';
+import { Home, Car, Users, Route, Wrench, FileText, AlertTriangle, BarChart3, RefreshCw, Menu, X, LogOut, Settings, Bell, Briefcase, ClipboardList, History, UserCheck, Phone, Building2, ChevronsUpDown, Check } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompanyScope } from '@/contexts/CompanyScopeContext';
 import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 import logo from '@/assets/white-logo.png';
 import { useState } from 'react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 
 interface NavItem {
   path: string;
@@ -162,10 +166,13 @@ export default function BottomNav() {
 
 export function DesktopSidebar() {
   const { user, logout } = useAuth();
+  const { selectedCompany, setSelectedCompany, companyOptions } = useCompanyScope();
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({ 'בית': true });
+  const [companyPickerOpen, setCompanyPickerOpen] = useState(false);
   const unreadCount = useUnreadNotifications();
 
   const isDriver = user?.role === 'driver';
+  const isSuperAdmin = user?.role === 'super_admin';
 
   const toggleCategory = (title: string) => {
     setOpenCategories(prev => ({ ...prev, [title]: !prev[title] }));
@@ -195,6 +202,65 @@ export function DesktopSidebar() {
           {user?.role === 'super_admin' ? 'מנהל על' : user?.role === 'fleet_manager' ? 'מנהל צי' : 'נהג'}
         </span>
       </div>
+
+      {/* Company scope selector - super_admin only */}
+      {isSuperAdmin && (
+        <div className="px-4 py-3 border-b border-primary-foreground/20">
+          <Popover open={companyPickerOpen} onOpenChange={setCompanyPickerOpen}>
+            <PopoverTrigger asChild>
+              <button
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors text-sm"
+              >
+                <Building2 size={16} className="shrink-0" />
+                <span className="flex-1 text-right truncate">
+                  {selectedCompany || 'כל החברות'}
+                </span>
+                <ChevronsUpDown size={14} className="shrink-0 opacity-60" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[60]" align="start">
+              <Command dir="rtl">
+                <CommandInput placeholder="חיפוש חברה..." />
+                <CommandList>
+                  <CommandEmpty>לא נמצאו חברות</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem
+                      value="__all__"
+                      onSelect={() => {
+                        setSelectedCompany(null);
+                        setCompanyPickerOpen(false);
+                      }}
+                      className="flex items-center justify-between"
+                    >
+                      <Check size={16} className={cn("shrink-0", !selectedCompany ? "opacity-100" : "opacity-0")} />
+                      <span className="flex-1 text-right font-medium">כל החברות</span>
+                    </CommandItem>
+                    {companyOptions.map((option) => (
+                      <CommandItem
+                        key={option.name}
+                        value={`${option.name} ${option.businessId}`}
+                        onSelect={() => {
+                          setSelectedCompany(option.name);
+                          setCompanyPickerOpen(false);
+                        }}
+                        className="flex items-center justify-between"
+                      >
+                        <Check size={16} className={cn("shrink-0", selectedCompany === option.name ? "opacity-100" : "opacity-0")} />
+                        <div className="flex-1 text-right">
+                          <span className="font-medium">{option.name}</span>
+                          {option.businessId && (
+                            <span className="text-xs opacity-60 mr-2">({option.businessId})</span>
+                          )}
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
 
       <nav className="flex-1 py-4 overflow-y-auto">
         {isDriver ? (
