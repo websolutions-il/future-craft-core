@@ -14,11 +14,11 @@ interface EmergencyService {
 }
 
 const emergencyServices: EmergencyService[] = [
-  { id: 'tow', title: 'גרר', description: 'שירות גרירה לרכב תקוע', icon: Car, phone: '1-800-123-456', colorCls: 'bg-destructive/10 text-destructive' },
-  { id: 'tire', title: 'פנצ׳ר / צמיגים', description: 'החלפת צמיג בדרך', icon: Shield, phone: '1-800-123-456', colorCls: 'bg-warning/10 text-warning' },
-  { id: 'battery', title: 'מצבר / התנעה', description: 'שירות התנעה או החלפת מצבר', icon: Battery, phone: '1-800-123-456', colorCls: 'bg-info/10 text-info' },
-  { id: 'fuel', title: 'דלק', description: 'מילוי דלק חירום בדרך', icon: Fuel, phone: '1-800-123-456', colorCls: 'bg-primary/10 text-primary' },
-  { id: 'lockout', title: 'נעילת רכב', description: 'פתיחת רכב נעול / מפתח שבור', icon: Key, phone: '1-800-123-456', colorCls: 'bg-accent/10 text-accent-foreground' },
+  { id: 'tow', title: 'גרר', description: 'שירות גרירה לרכב תקוע', icon: Car, phone: '*8888', colorCls: 'bg-destructive/10 text-destructive' },
+  { id: 'tire', title: 'פנצ׳ר / צמיגים', description: 'החלפת צמיג בדרך', icon: Shield, phone: '*8888', colorCls: 'bg-warning/10 text-warning' },
+  { id: 'battery', title: 'מצבר / התנעה', description: 'שירות התנעה או החלפת מצבר', icon: Battery, phone: '*8888', colorCls: 'bg-info/10 text-info' },
+  { id: 'fuel', title: 'דלק', description: 'מילוי דלק חירום בדרך', icon: Fuel, phone: '*8888', colorCls: 'bg-primary/10 text-primary' },
+  { id: 'lockout', title: 'נעילת רכב', description: 'פתיחת רכב נעול / מפתח שבור', icon: Key, phone: '*8888', colorCls: 'bg-accent/10 text-accent-foreground' },
   { id: 'accident', title: 'תאונה', description: 'דיווח וסיוע בתאונת דרכים', icon: AlertTriangle, phone: '100', colorCls: 'bg-destructive/10 text-destructive' },
 ];
 
@@ -192,7 +192,7 @@ export default function Emergency() {
       </div>
 
       {/* Quick call */}
-      <button onClick={() => handleCall('1-800-123-456')}
+      <button onClick={() => handleCall('*8888')}
         className="w-full py-5 rounded-xl bg-destructive text-destructive-foreground text-xl font-bold flex items-center justify-center gap-3">
         <Phone size={24} />
         חייג למוקד חירום

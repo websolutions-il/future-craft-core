@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { NavLink } from 'react-router-dom';
 import { UserCheck, Car, Save, UserPlus, Send } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -141,9 +142,9 @@ export default function AttachCar() {
               </button>
             )}
             {isSuperAdmin && (
-              <a href="/user-management" className="mt-2 flex items-center gap-2 text-sm text-primary font-medium hover:underline">
+              <NavLink to="/user-management" className="mt-2 flex items-center gap-2 text-sm text-primary font-medium hover:underline">
                 <UserPlus size={16} /> פתח משתמש חדש
-              </a>
+              </NavLink>
             )}
           </div>
           <button
