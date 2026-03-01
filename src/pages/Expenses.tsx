@@ -3,6 +3,7 @@ import { FileText, Plus, Search, ArrowRight, TrendingUp } from 'lucide-react';
 import ExpenseCard from '@/components/ExpenseCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { toast } from 'sonner';
 import ImageUpload from '@/components/ImageUpload';
 
@@ -23,6 +24,7 @@ const expenseCategories = ['דלק', 'שמן', 'צמיגים', 'שטיפה', 'ח
 
 export default function Expenses() {
   const { user } = useAuth();
+  const companyFilter = useCompanyFilter();
   const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
@@ -31,7 +33,7 @@ export default function Expenses() {
 
   const loadExpenses = async () => {
     setLoading(true);
-    const { data } = await supabase.from('expenses').select('*').order('created_at', { ascending: false });
+    const { data } = await applyCompanyScope(supabase.from('expenses').select('*'), companyFilter).order('created_at', { ascending: false });
     if (data) setExpenses(data as ExpenseRow[]);
     setLoading(false);
   };

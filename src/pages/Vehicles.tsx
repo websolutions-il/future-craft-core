@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Car, Search, Plus, ArrowRight, Edit2, Phone, Mail, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { toast } from 'sonner';
 
 interface VehicleRow {
@@ -27,6 +28,7 @@ type ViewMode = 'list' | 'detail' | 'form';
 
 export default function Vehicles() {
   const { user } = useAuth();
+  const companyFilter = useCompanyFilter();
   const [vehicles, setVehicles] = useState<VehicleRow[]>([]);
   const [drivers, setDrivers] = useState<DriverRow[]>([]);
   const [search, setSearch] = useState('');
@@ -41,8 +43,8 @@ export default function Vehicles() {
   const loadData = async () => {
     setLoading(true);
     const [vRes, dRes] = await Promise.all([
-      supabase.from('vehicles').select('*').order('created_at', { ascending: false }),
-      supabase.from('drivers').select('id, full_name, phone'),
+      applyCompanyScope(supabase.from('vehicles').select('*'), companyFilter).order('created_at', { ascending: false }),
+      applyCompanyScope(supabase.from('drivers').select('id, full_name, phone'), companyFilter),
     ]);
     if (vRes.data) setVehicles(vRes.data as VehicleRow[]);
     if (dRes.data) setDrivers(dRes.data as DriverRow[]);

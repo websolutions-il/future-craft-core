@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { UserCheck, Car, Save, UserPlus, Send } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -11,6 +12,7 @@ interface ProfileRow { id: string; full_name: string; phone: string; company_nam
 
 export default function AttachCar() {
   const { user } = useAuth();
+  const companyFilter = useCompanyFilter();
   const [vehicles, setVehicles] = useState<VehicleRow[]>([]);
   const [drivers, setDrivers] = useState<DriverRow[]>([]);
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
@@ -28,9 +30,9 @@ export default function AttachCar() {
 
   const loadData = async () => {
     const [vRes, dRes, pRes] = await Promise.all([
-      supabase.from('vehicles').select('id, license_plate, manufacturer, model, assigned_driver_id'),
-      supabase.from('drivers').select('id, full_name, email, phone'),
-      supabase.from('profiles').select('id, full_name, phone, company_name'),
+      applyCompanyScope(supabase.from('vehicles').select('id, license_plate, manufacturer, model, assigned_driver_id'), companyFilter),
+      applyCompanyScope(supabase.from('drivers').select('id, full_name, email, phone'), companyFilter),
+      applyCompanyScope(supabase.from('profiles').select('id, full_name, phone, company_name'), companyFilter),
     ]);
     if (vRes.data) setVehicles(vRes.data as VehicleRow[]);
     if (dRes.data) setDrivers(dRes.data as DriverRow[]);

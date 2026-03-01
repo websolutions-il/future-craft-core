@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { History as HistoryIcon, Wrench, AlertTriangle, Car, FileText, RefreshCw, Filter, Search, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 
 type EventType = 'fault' | 'accident' | 'handover' | 'service' | 'expense';
 
@@ -27,6 +28,7 @@ const typeConfig: Record<EventType, { label: string; icon: typeof Wrench; colorC
 
 export default function HistoryPage() {
   const navigate = useNavigate();
+  const companyFilter = useCompanyFilter();
   const [events, setEvents] = useState<HistoryEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -40,11 +42,11 @@ export default function HistoryPage() {
     setLoading(true);
 
     const [faultsRes, accidentsRes, handoversRes, servicesRes, expensesRes] = await Promise.all([
-      supabase.from('faults').select('*').order('created_at', { ascending: false }),
-      supabase.from('accidents').select('*').order('created_at', { ascending: false }),
-      supabase.from('vehicle_handovers').select('*').order('created_at', { ascending: false }),
-      supabase.from('service_orders').select('*').order('created_at', { ascending: false }),
-      supabase.from('expenses').select('*').order('created_at', { ascending: false }),
+      applyCompanyScope(supabase.from('faults').select('*'), companyFilter).order('created_at', { ascending: false }),
+      applyCompanyScope(supabase.from('accidents').select('*'), companyFilter).order('created_at', { ascending: false }),
+      applyCompanyScope(supabase.from('vehicle_handovers').select('*'), companyFilter).order('created_at', { ascending: false }),
+      applyCompanyScope(supabase.from('service_orders').select('*'), companyFilter).order('created_at', { ascending: false }),
+      applyCompanyScope(supabase.from('expenses').select('*'), companyFilter).order('created_at', { ascending: false }),
     ]);
 
     const all: HistoryEvent[] = [];
