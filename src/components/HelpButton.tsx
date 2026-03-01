@@ -225,19 +225,29 @@ export default function HelpButton() {
 
   return (
     <>
-      <button
-        onClick={handleOpen}
-        className={`fixed bottom-28 left-4 md:bottom-6 md:left-6 z-50 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-xl ring-4 ring-primary/30 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform ${showPulse ? 'animate-[help-bounce_1.5s_ease-in-out_infinite]' : ''}`}
-        aria-label="עזרה"
-      >
-        <HelpCircle className="h-6 w-6" />
-        {showPulse && (
-          <span className="absolute inset-0 rounded-full bg-primary/40 animate-ping" />
-        )}
-      </button>
+      <div className="fixed bottom-28 left-4 md:bottom-6 md:left-6 z-50">
+        <button
+          onClick={handleOpen}
+          className={`relative h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-lg ring-2 ring-primary/20 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform ${showPulse ? 'animate-[help-bounce_1.5s_ease-in-out_infinite]' : ''}`}
+          aria-label="עזרה"
+        >
+          <HelpCircle className="h-5 w-5" />
+          {showPulse && (
+            <span className="absolute inset-0 rounded-full bg-primary/40 animate-ping" />
+          )}
+        </button>
+      </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg max-h-[85vh] p-0 overflow-hidden">
+        <DialogContent className="max-w-lg max-h-[85vh] p-0 overflow-hidden relative">
+          {/* Close X circle */}
+          <button
+            onClick={() => setOpen(false)}
+            className="absolute -top-3 -right-3 z-10 h-8 w-8 rounded-full bg-destructive text-destructive-foreground shadow-md flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
+            aria-label="סגור"
+          >
+            <X className="h-4 w-4" />
+          </button>
           <DialogHeader className="p-6 pb-2 bg-primary text-primary-foreground rounded-t-lg">
             <DialogTitle className="text-xl text-primary-foreground">מרכז עזרה</DialogTitle>
             <DialogDescription className="text-primary-foreground/80">
