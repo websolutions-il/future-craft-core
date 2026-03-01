@@ -239,7 +239,7 @@ export default function HelpButton() {
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg max-h-[85vh] p-0 overflow-hidden relative">
+        <DialogContent className="max-w-lg max-h-[85vh] p-0 overflow-visible [&>button:last-child]:hidden">
           {/* Close X circle */}
           <button
             onClick={() => setOpen(false)}
@@ -255,6 +255,7 @@ export default function HelpButton() {
             </DialogDescription>
           </DialogHeader>
 
+          <div className="overflow-hidden rounded-b-lg">
           <ScrollArea className="max-h-[65vh] p-4">
             <Accordion type="multiple" className="space-y-2">
               {sections.map((section, idx) => (
@@ -279,6 +280,7 @@ export default function HelpButton() {
               ))}
             </Accordion>
           </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
     </>
