@@ -71,6 +71,10 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
+          agreement_amount_before_vat: number | null
+          agreement_amount_with_vat: number | null
+          agreement_description: string | null
+          agreement_serial_number: string | null
           business_id: string | null
           company_name: string | null
           contact_person: string | null
@@ -89,6 +93,10 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          agreement_amount_before_vat?: number | null
+          agreement_amount_with_vat?: number | null
+          agreement_description?: string | null
+          agreement_serial_number?: string | null
           business_id?: string | null
           company_name?: string | null
           contact_person?: string | null
@@ -107,6 +115,10 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          agreement_amount_before_vat?: number | null
+          agreement_amount_with_vat?: number | null
+          agreement_description?: string | null
+          agreement_serial_number?: string | null
           business_id?: string | null
           company_name?: string | null
           contact_person?: string | null

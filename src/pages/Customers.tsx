@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, User, Search, ArrowRight, Phone, Mail, Plus, Edit2, Trash2, Hash, FileText } from 'lucide-react';
+import { Building2, User, Search, ArrowRight, Phone, Mail, Plus, Edit2, Trash2, Hash, FileText, Printer } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -17,6 +17,10 @@ interface CustomerRow {
   customer_number: string;
   business_id: string;
   fax: string;
+  agreement_description: string;
+  agreement_amount_before_vat: number | null;
+  agreement_amount_with_vat: number | null;
+  agreement_serial_number: string;
 }
 
 type ViewMode = 'list' | 'detail' | 'form';
@@ -150,6 +154,10 @@ function CustomerForm({ customer, onDone, onBack, user }: { customer: CustomerRo
   const [customerNumber, setCustomerNumber] = useState(customer?.customer_number || '');
   const [businessId, setBusinessId] = useState(customer?.business_id || '');
   const [fax, setFax] = useState(customer?.fax || '');
+  const [agreementDesc, setAgreementDesc] = useState(customer?.agreement_description || '');
+  const [agreementBeforeVat, setAgreementBeforeVat] = useState(customer?.agreement_amount_before_vat?.toString() || '');
+  const [agreementWithVat, setAgreementWithVat] = useState(customer?.agreement_amount_with_vat?.toString() || '');
+  const [agreementSerial, setAgreementSerial] = useState(customer?.agreement_serial_number || '');
   const [loading, setLoading] = useState(false);
 
   const isValid = name && contactPerson;
@@ -161,13 +169,79 @@ function CustomerForm({ customer, onDone, onBack, user }: { customer: CustomerRo
     const payload = {
       name, customer_type: customerType, contact_person: contactPerson,
       phone, email, address, status, notes,
-      customer_number: customerNumber, business_id: businessId, fax
+      customer_number: customerNumber, business_id: businessId, fax,
+      agreement_description: agreementDesc || null,
+      agreement_amount_before_vat: agreementBeforeVat ? parseFloat(agreementBeforeVat) : null,
+      agreement_amount_with_vat: agreementWithVat ? parseFloat(agreementWithVat) : null,
+      agreement_serial_number: agreementSerial || null,
     } as any;
     let error;
     if (isEdit) { ({ error } = await supabase.from('customers').update(payload).eq('id', customer!.id)); }
     else { ({ error } = await supabase.from('customers').insert({ ...payload, company_name: user?.company_name || '', created_by: user?.id })); }
     setLoading(false);
     if (error) { toast.error('שגיאה'); console.error(error); } else { toast.success(isEdit ? 'עודכן' : 'נוסף'); onDone(); }
+  };
+
+  const handlePrintAgreement = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    const today = new Date().toLocaleDateString('he-IL');
+    printWindow.document.write(`
+      <html dir="rtl">
+      <head>
+        <title>הסכם עבודה - ${name}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; color: #222; }
+          h1 { text-align: center; font-size: 24px; margin-bottom: 4px; }
+          .subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 30px; }
+          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+          .info-item label { font-size: 12px; color: #888; display: block; margin-bottom: 2px; }
+          .info-item p { font-size: 16px; font-weight: bold; margin: 0; }
+          .section { border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+          .section-title { font-size: 18px; font-weight: bold; margin-bottom: 12px; border-bottom: 2px solid #333; padding-bottom: 6px; }
+          .amount-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 16px; }
+          .amount-row:last-child { border-bottom: none; font-weight: bold; font-size: 18px; }
+          .note { background: #f9f9f9; padding: 12px; border-radius: 6px; margin-top: 16px; font-size: 13px; color: #666; text-align: center; }
+          .signatures { display: flex; justify-content: space-between; margin-top: 60px; }
+          .sig-block { text-align: center; width: 200px; }
+          .sig-line { border-top: 1px solid #333; margin-top: 60px; padding-top: 8px; }
+          @media print { body { padding: 20px; } }
+        </style>
+      </head>
+      <body>
+        <h1>הסכם עבודה</h1>
+        <p class="subtitle">מסמך פתיחת לקוח • תאריך: ${today}</p>
+        <p class="subtitle" style="font-size:12px; color:#999;">מסמך זה אינו מהווה חשבונית</p>
+        <div class="section">
+          <div class="section-title">פרטי לקוח</div>
+          <div class="info-grid">
+            <div class="info-item"><label>שם</label><p>${name}</p></div>
+            <div class="info-item"><label>מספר לקוח</label><p>${customerNumber || '—'}</p></div>
+            <div class="info-item"><label>סוג</label><p>${customerType === 'company' ? 'חברה' : 'פרטי'}</p></div>
+            <div class="info-item"><label>עוסק מורשה / ח.פ</label><p>${businessId || '—'}</p></div>
+            <div class="info-item"><label>איש קשר</label><p>${contactPerson}</p></div>
+            <div class="info-item"><label>טלפון</label><p>${phone || '—'}</p></div>
+            <div class="info-item"><label>אימייל</label><p>${email || '—'}</p></div>
+            <div class="info-item"><label>כתובת</label><p>${address || '—'}</p></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">פרטי הסכם</div>
+          ${agreementSerial ? `<div class="info-item" style="margin-bottom:12px"><label>מספר סידורי</label><p>${agreementSerial}</p></div>` : ''}
+          ${agreementDesc ? `<div class="info-item" style="margin-bottom:16px"><label>פירוט</label><p>${agreementDesc}</p></div>` : ''}
+          <div class="amount-row"><span>סכום לפני מע״מ</span><span>₪${agreementBeforeVat ? parseFloat(agreementBeforeVat).toLocaleString('he-IL') : '—'}</span></div>
+          <div class="amount-row"><span>סכום כולל מע״מ</span><span>₪${agreementWithVat ? parseFloat(agreementWithVat).toLocaleString('he-IL') : '—'}</span></div>
+        </div>
+        <div class="note">מסמך זה מהווה הסכם עבודה בלבד ואינו מהווה חשבונית מס</div>
+        <div class="signatures">
+          <div class="sig-block"><div class="sig-line">חתימת הלקוח</div></div>
+          <div class="sig-block"><div class="sig-line">חתימת החברה</div></div>
+        </div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
   };
 
   return (
@@ -194,10 +268,32 @@ function CustomerForm({ customer, onDone, onBack, user }: { customer: CustomerRo
         <div><label className="block text-lg font-medium mb-2">סטטוס</label>
           <select value={status} onChange={e => setStatus(e.target.value)} className={inputClass}><option value="active">פעיל</option><option value="inactive">לא פעיל</option></select></div>
         <div><label className="block text-lg font-medium mb-2">הערות</label><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={`${inputClass} resize-none`} /></div>
+
+        {/* הסכם עבודה */}
+        <div className="border-2 border-primary/20 rounded-2xl p-5 space-y-4">
+          <div className="flex items-center gap-2 text-primary">
+            <FileText size={22} />
+            <h2 className="text-xl font-bold">הסכם עבודה</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">מסמך פתיחת לקוח — אינו מהווה חשבונית</p>
+          <div><label className="block text-lg font-medium mb-2">מספר סידורי</label><input value={agreementSerial} onChange={e => setAgreementSerial(e.target.value)} className={inputClass} placeholder="מספר סידורי להסכם" /></div>
+          <div><label className="block text-lg font-medium mb-2">פירוט קצר</label><textarea value={agreementDesc} onChange={e => setAgreementDesc(e.target.value)} rows={2} className={`${inputClass} resize-none`} placeholder="תיאור השירות / ההסכם" /></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className="block text-lg font-medium mb-2">סכום לפני מע״מ</label><input type="number" value={agreementBeforeVat} onChange={e => setAgreementBeforeVat(e.target.value)} className={inputClass} dir="ltr" style={{ textAlign: 'right' }} placeholder="₪" /></div>
+            <div><label className="block text-lg font-medium mb-2">סכום כולל מע״מ</label><input type="number" value={agreementWithVat} onChange={e => setAgreementWithVat(e.target.value)} className={inputClass} dir="ltr" style={{ textAlign: 'right' }} placeholder="₪" /></div>
+          </div>
+        </div>
+
         <button onClick={handleSubmit} disabled={!isValid || loading}
           className={`w-full py-5 rounded-xl text-xl font-bold transition-colors ${isValid && !loading ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}>
           {loading ? 'שומר...' : isEdit ? '💾 עדכן' : '💾 שמור'}
         </button>
+
+        {isEdit && (agreementDesc || agreementBeforeVat || agreementWithVat) && (
+          <button onClick={handlePrintAgreement} className="w-full py-4 rounded-xl border-2 border-primary/30 text-primary text-lg font-bold flex items-center justify-center gap-2">
+            <Printer size={20} /> הדפסת הסכם עבודה
+          </button>
+        )}
       </div>
     </div>
   );
