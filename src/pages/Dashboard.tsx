@@ -208,6 +208,21 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: () => voi
       return;
     }
 
+    // Check if phone already exists (warn but don't block)
+    if (form.phone) {
+      const { data: existingPhone } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('phone', form.phone)
+        .limit(1);
+      if (existingPhone && existingPhone.length > 0) {
+        toast({
+          title: '⚠️ מספר טלפון קיים',
+          description: `מספר הטלפון כבר משויך ל-${existingPhone[0].full_name}. המשתמש ייווצר בכל זאת.`,
+        });
+      }
+    }
+
     setCreatingUser(true);
     const { data, error } = await supabase.functions.invoke('create-admin-user', {
       body: {
