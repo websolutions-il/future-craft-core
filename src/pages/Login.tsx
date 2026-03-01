@@ -31,7 +31,7 @@ export default function Login() {
       } else {
         // If auto-confirm is on, isAuthenticated will become true and redirect happens
         // Otherwise show message
-        setSuccess('נרשמת בהצלחה! בדוק את האימייל לאישור.');
+        setSuccess('נרשמת בהצלחה! החשבון ממתין לאישור מנהל המערכת.');
       }
     } else {
       const { error } = await login(email, password);

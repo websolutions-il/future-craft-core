@@ -110,7 +110,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
     if (data.session) {
-      await loadProfile(data.session);
+      const profile = await fetchUserProfile(data.session.user.id, data.session.user.email || '');
+      if (profile && !profile.is_active) {
+        await supabase.auth.signOut();
+        return { error: 'החשבון שלך ממתין לאישור מנהל. פנה למנהל המערכת.' };
+      }
+      setRealUser(profile);
+      setSession(data.session);
     }
     return { error: null };
   };
