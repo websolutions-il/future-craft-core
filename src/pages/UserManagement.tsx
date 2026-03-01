@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Search, Users, Shield, KeyRound, Loader2, Filter, Pencil } from 'lucide-react';
+import { Search, Users, Shield, KeyRound, Loader2, Filter, Pencil, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -34,7 +35,8 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 export default function UserManagement() {
-  const { user } = useAuth();
+  const { user, impersonate } = useAuth();
+  const navigate = useNavigate();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -299,7 +301,7 @@ export default function UserManagement() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         <Button
                           size="sm"
                           variant="outline"
@@ -316,8 +318,30 @@ export default function UserManagement() {
                           className="gap-1.5"
                         >
                           <KeyRound size={14} />
-                          איפוס סיסמה
+                          סיסמה
                         </Button>
+                        {u.role === 'driver' && u.id !== user?.id && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => {
+                              impersonate({
+                                id: u.id,
+                                email: '',
+                                full_name: u.full_name,
+                                phone: u.phone,
+                                company_name: u.company_name,
+                                is_active: u.is_active,
+                                role: 'driver',
+                              });
+                              navigate('/dashboard');
+                            }}
+                            className="gap-1.5"
+                          >
+                            <Eye size={14} />
+                            צפייה כנהג
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
