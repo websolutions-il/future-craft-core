@@ -64,6 +64,7 @@ interface CreateUserFormState {
   companyName: string;
   role: AppRole;
   isActive: boolean;
+  userNumber: string;
 }
 
 const isOpenStatus = (status: string | null | undefined) =>
@@ -130,6 +131,7 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
     companyName: '',
     role: 'fleet_manager',
     isActive: true,
+    userNumber: '',
   });
   const [createCompanyOptions, setCreateCompanyOptions] = useState<string[]>([]);
   const [createCompanyPickerOpen, setCreateCompanyPickerOpen] = useState(false);
@@ -239,6 +241,7 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
         company_name: form.companyName,
         role: form.role,
         is_active: form.isActive,
+        user_number: form.userNumber || null,
       },
     });
     setCreatingUser(false);
@@ -264,7 +267,7 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
       description: `מזהה משתמש: ${data?.user_id?.slice(0, 8) || '-'} | ניתן להתחבר עם הפרטים החדשים מיד.`,
     });
 
-    setForm({ email: '', password: '', fullName: '', phone: '', companyName: '', role: 'fleet_manager', isActive: true });
+    setForm({ email: '', password: '', fullName: '', phone: '', companyName: '', role: 'fleet_manager', isActive: true, userNumber: '' });
     setShowCreateUserModal(false);
     loadSuperAdminStats();
   };
@@ -327,6 +330,12 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
           <div className="bg-card rounded-2xl shadow-2xl w-full max-w-lg p-5">
             <h2 className="text-xl font-bold mb-4">פתיחת משתמש חדש</h2>
             <form onSubmit={submitCreateUser} className="space-y-3 max-h-[70vh] overflow-y-auto">
+              <input
+                value={form.userNumber}
+                onChange={(event) => setForm((prev) => ({ ...prev, userNumber: event.target.value }))}
+                placeholder="מספר משתמש (מזהה ייחודי)"
+                className="w-full p-3 rounded-xl border border-input bg-background"
+              />
               <input
                 value={form.fullName}
                 onChange={(event) => setForm((prev) => ({ ...prev, fullName: event.target.value }))}

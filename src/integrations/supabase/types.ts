@@ -380,6 +380,7 @@ export type Database = {
           is_active: boolean
           phone: string | null
           updated_at: string
+          user_number: string | null
         }
         Insert: {
           company_name?: string | null
@@ -389,6 +390,7 @@ export type Database = {
           is_active?: boolean
           phone?: string | null
           updated_at?: string
+          user_number?: string | null
         }
         Update: {
           company_name?: string | null
@@ -398,6 +400,7 @@ export type Database = {
           is_active?: boolean
           phone?: string | null
           updated_at?: string
+          user_number?: string | null
         }
         Relationships: []
       }
