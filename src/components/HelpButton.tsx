@@ -186,6 +186,7 @@ function getSuperAdminHelp(): HelpSection[] {
 export default function HelpButton() {
   const [open, setOpen] = useState(false);
   const [showPulse, setShowPulse] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -225,18 +226,27 @@ export default function HelpButton() {
 
   return (
     <>
-      <div className="fixed bottom-28 left-4 md:bottom-6 md:left-6 z-50">
-        <button
-          onClick={handleOpen}
-          className={`relative h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-lg ring-2 ring-primary/20 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform ${showPulse ? 'animate-[help-bounce_1.5s_ease-in-out_infinite]' : ''}`}
-          aria-label="עזרה"
-        >
-          <HelpCircle className="h-5 w-5" />
-          {showPulse && (
-            <span className="absolute inset-0 rounded-full bg-primary/40 animate-ping" />
-          )}
-        </button>
-      </div>
+      {!dismissed && (
+        <div className="fixed bottom-28 left-4 md:bottom-6 md:left-6 z-50">
+          <button
+            onClick={handleOpen}
+            className={`relative h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-lg ring-2 ring-primary/20 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform ${showPulse ? 'animate-[help-bounce_1.5s_ease-in-out_infinite]' : ''}`}
+            aria-label="עזרה"
+          >
+            <HelpCircle className="h-5 w-5" />
+            {showPulse && (
+              <span className="absolute inset-0 rounded-full bg-primary/40 animate-ping" />
+            )}
+          </button>
+          <button
+            onClick={() => setDismissed(true)}
+            className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-muted text-muted-foreground shadow flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-colors"
+            aria-label="הסתר עזרה"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg max-h-[85vh] p-0 overflow-visible [&>button:last-child]:hidden">
@@ -256,7 +266,7 @@ export default function HelpButton() {
           </DialogHeader>
 
           <div className="overflow-hidden rounded-b-lg">
-          <ScrollArea className="max-h-[65vh] p-4">
+          <ScrollArea className="max-h-[65vh] p-4" dir="rtl">
             <Accordion type="multiple" className="space-y-2">
               {sections.map((section, idx) => (
                 <AccordionItem key={idx} value={`section-${idx}`} className="border rounded-xl px-4 bg-card">
