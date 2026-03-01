@@ -16,15 +16,23 @@ export default function ForgotPassword() {
     setError('');
     setLoading(true);
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('send-password-reset', {
+        body: {
+          email,
+          redirect_url: `${window.location.origin}/reset-password`,
+        },
+      });
 
-    setLoading(false);
-    if (error) {
+      setLoading(false);
+      if (fnError || data?.error) {
+        setError('שגיאה בשליחת הקישור. נסה שוב.');
+      } else {
+        setSent(true);
+      }
+    } catch {
+      setLoading(false);
       setError('שגיאה בשליחת הקישור. נסה שוב.');
-    } else {
-      setSent(true);
     }
   };
 
