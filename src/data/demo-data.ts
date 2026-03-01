@@ -1,4 +1,4 @@
-// Demo data for Dalia Fleet Management System
+// Demo data for Dalia Fleet Management System - Simple test data
 
 export interface User {
   id: string;
@@ -127,53 +127,53 @@ export interface Accident {
 
 export const demoUsers: User[] = [
   { id: '1', username: 'orin1607@gmail.com', name: 'יוני אטיאס', phone: '0534338601', email: 'orin1607@gmail.com', role: 'super_admin', companyName: 'מוסך יוני', isActive: true },
-  { id: '2', username: 'ilanayoni22@gmail.com', name: 'אילנה אטיאס', phone: '0508420210', email: 'ilanayoni22@gmail.com', role: 'driver', companyName: 'מוסך יוני', isActive: true },
-  { id: '3', username: 'yoni191177@gmail.com', name: 'יוסף כהן', phone: '0508420210', email: 'yoni191177@gmail.com', role: 'fleet_manager', companyName: 'מוסך יוני', isActive: true },
-  { id: '4', username: 'yomi122222@gmail.com', name: 'משה לוי', phone: '0555555555', email: 'yomi122222@gmail.com', role: 'driver', companyName: 'מוסך יוני', isActive: true },
+  { id: '2', username: 'menahel1.hevra1@gmail.com', name: 'מנהל 1', phone: '0100000001', email: 'menahel1.hevra1@gmail.com', role: 'fleet_manager', companyName: 'חברה 1', isActive: true },
+  { id: '3', username: 'menahel1.hevra2@gmail.com', name: 'מנהל 2', phone: '0200000001', email: 'menahel1.hevra2@gmail.com', role: 'fleet_manager', companyName: 'חברה 2', isActive: true },
+  { id: '4', username: 'nahag1.hevra1@gmail.com', name: 'נהג 1', phone: '0100000011', email: 'nahag1.hevra1@gmail.com', role: 'driver', companyName: 'חברה 1', isActive: true },
+  { id: '5', username: 'nahag2.hevra1@gmail.com', name: 'נהג 2', phone: '0100000012', email: 'nahag2.hevra1@gmail.com', role: 'driver', companyName: 'חברה 1', isActive: true },
+  { id: '6', username: 'nahag1.hevra2@gmail.com', name: 'נהג 3', phone: '0200000011', email: 'nahag1.hevra2@gmail.com', role: 'driver', companyName: 'חברה 2', isActive: true },
+  { id: '7', username: 'nahag2.hevra2@gmail.com', name: 'נהג 4', phone: '0200000012', email: 'nahag2.hevra2@gmail.com', role: 'driver', companyName: 'חברה 2', isActive: true },
 ];
 
 export const demoVehicles: Vehicle[] = [
-  { id: '1', licensePlate: '1212121', manufacturer: 'יונדאי', model: 'I20', year: 2024, vehicleType: 'פרטי', odometer: 15230, status: 'active', assignedDriverId: '2', assignedDriverName: 'אילנה אטיאס', companyName: 'מוסך יוני', testExpiry: '2026-06-15', insuranceExpiry: '2026-08-20', notes: '' },
-  { id: '2', licensePlate: '3334455', manufacturer: 'טויוטה', model: 'קורולה', year: 2025, vehicleType: 'פרטי', odometer: 5100, status: 'active', assignedDriverId: '4', assignedDriverName: 'משה לוי', companyName: 'מוסך יוני', testExpiry: '2026-09-01', insuranceExpiry: '2026-11-15' },
-  { id: '3', licensePlate: '8888888', manufacturer: 'מזדה', model: '3', year: 2023, vehicleType: 'פרטי', odometer: 42000, status: 'in_service', companyName: 'מוסך יוני', testExpiry: '2026-03-10', notes: 'בטיפול תקופתי' },
-  { id: '4', licensePlate: '5555555', manufacturer: 'קיה', model: 'ספורטאז\'', year: 2022, vehicleType: 'SUV', odometer: 68500, status: 'active', assignedDriverId: '3', assignedDriverName: 'יוסף כהן', companyName: 'מוסך יוני' },
+  { id: '1', licensePlate: '1000001', manufacturer: 'יצרן 1', model: 'דגם א', year: 2024, vehicleType: 'פרטי', odometer: 10000, status: 'active', assignedDriverName: 'נהג 1', companyName: 'חברה 1', testExpiry: '2026-01-01', insuranceExpiry: '2026-01-01', notes: 'רכב 1 - חברה 1' },
+  { id: '2', licensePlate: '1000002', manufacturer: 'יצרן 1', model: 'דגם ב', year: 2023, vehicleType: 'פרטי', odometer: 20000, status: 'active', assignedDriverName: 'נהג 2', companyName: 'חברה 1', testExpiry: '2026-06-01', insuranceExpiry: '2026-06-01', notes: 'רכב 2 - חברה 1' },
+  { id: '3', licensePlate: '2000001', manufacturer: 'יצרן 2', model: 'דגם א', year: 2025, vehicleType: 'מסחרי', odometer: 5000, status: 'active', assignedDriverName: 'נהג 3', companyName: 'חברה 2', testExpiry: '2026-01-01', insuranceExpiry: '2026-01-01', notes: 'רכב 3 - חברה 2' },
+  { id: '4', licensePlate: '2000002', manufacturer: 'יצרן 2', model: 'דגם ב', year: 2024, vehicleType: 'מסחרי', odometer: 15000, status: 'in_service', companyName: 'חברה 2', testExpiry: '2026-03-01', insuranceExpiry: '2026-03-01', notes: 'רכב 4 - חברה 2' },
 ];
 
 export const demoDrivers: Driver[] = [
-  { id: '1', fullName: 'יוני אטיאס', licenseNumber: '8966', licenseExpiry: '2028-12-01', licenseTypes: ['C משאית', 'D אוטובוס'], email: 'orin1607@gmail.com', phone: '0534338601', city: 'חולון', street: 'גרינברג 9', status: 'active' },
-  { id: '2', fullName: 'אילנה אטיאס', licenseNumber: '555555', licenseExpiry: '2027-05-25', licenseTypes: ['A אופנוע'], email: 'ilanayoni22@gmail.com', phone: '0508420210', city: 'חולון', street: 'רחוב הנרקיסים 3', status: 'active', assignedVehicleId: '1' },
-  { id: '3', fullName: 'יוסף כהן', licenseNumber: '123456', licenseExpiry: '2027-10-15', licenseTypes: ['B פרטי', 'C משאית'], email: 'yoni191177@gmail.com', phone: '0508420210', city: 'רחובות', street: 'הרצל 45', status: 'active', assignedVehicleId: '4' },
-  { id: '4', fullName: 'משה לוי', licenseNumber: '789012', licenseExpiry: '2028-03-20', licenseTypes: ['B פרטי'], email: 'yomi122222@gmail.com', phone: '0555555555', city: 'תל אביב', street: 'דיזנגוף 100', status: 'active', assignedVehicleId: '2' },
+  { id: '1', fullName: 'נהג 1', licenseNumber: '100001', licenseExpiry: '2026-01-01', licenseTypes: ['B פרטי'], email: 'nahag1.hevra1@gmail.com', phone: '0100000011', city: 'עיר 1', street: 'רחוב 1', status: 'active', assignedVehicleId: '1', notes: 'נהג 1 - חברה 1' },
+  { id: '2', fullName: 'נהג 2', licenseNumber: '100002', licenseExpiry: '2026-01-01', licenseTypes: ['B פרטי', 'C משאית'], email: 'nahag2.hevra1@gmail.com', phone: '0100000012', city: 'עיר 1', street: 'רחוב 2', status: 'active', assignedVehicleId: '2', notes: 'נהג 2 - חברה 1' },
+  { id: '3', fullName: 'נהג 3', licenseNumber: '200001', licenseExpiry: '2026-01-01', licenseTypes: ['B פרטי'], email: 'nahag1.hevra2@gmail.com', phone: '0200000011', city: 'עיר 2', street: 'רחוב 1', status: 'active', assignedVehicleId: '3', notes: 'נהג 3 - חברה 2' },
+  { id: '4', fullName: 'נהג 4', licenseNumber: '200002', licenseExpiry: '2026-01-01', licenseTypes: ['B פרטי'], email: 'nahag2.hevra2@gmail.com', phone: '0200000012', city: 'עיר 2', street: 'רחוב 2', status: 'active', assignedVehicleId: '4', notes: 'נהג 4 - חברה 2' },
 ];
 
 export const demoCustomers: Customer[] = [
-  { id: '1', name: 'חברת אלפא הסעות', contactPerson: 'דני כהן', phone: '03-5551234', email: 'info@alpha.co.il', customerType: 'company', status: 'active', createdAt: '2025-01-15', notes: 'לקוח VIP' },
-  { id: '2', name: 'בית ספר אורט', contactPerson: 'מיכל לוי', phone: '03-5559876', email: 'michal@ort.org.il', customerType: 'company', status: 'active', createdAt: '2025-03-20' },
-  { id: '3', name: 'דוד ישראלי', contactPerson: 'דוד ישראלי', phone: '050-1234567', email: 'david@gmail.com', customerType: 'private', status: 'active', createdAt: '2025-06-10' },
-  { id: '4', name: 'מפעלי ים המלח', contactPerson: 'רחל שמעוני', phone: '08-6543210', email: 'rachel@deadsea.co.il', customerType: 'company', status: 'inactive', createdAt: '2024-11-05', notes: 'הסכם הושהה' },
+  { id: '1', name: 'לקוח 1 חברה 1', contactPerson: 'איש קשר 1', phone: '0100000101', email: 'lakuah1.hevra1@gmail.com', customerType: 'company', status: 'active', createdAt: '2026-01-01', notes: 'לקוח 1 של חברה 1' },
+  { id: '2', name: 'לקוח 2 חברה 1', contactPerson: 'איש קשר 2', phone: '0100000102', email: 'lakuah2.hevra1@gmail.com', customerType: 'private', status: 'active', createdAt: '2026-01-01', notes: 'לקוח 2 של חברה 1' },
+  { id: '3', name: 'לקוח 1 חברה 2', contactPerson: 'איש קשר 3', phone: '0200000101', email: 'lakuah1.hevra2@gmail.com', customerType: 'company', status: 'active', createdAt: '2026-01-01', notes: 'לקוח 1 של חברה 2' },
 ];
 
 export const demoRoutes: Route[] = [
-  { id: '1', name: 'תל אביב - חיפה בוקר', origin: 'תל אביב, תחנה מרכזית', destination: 'חיפה, מרכזית', stops: ['הרצליה', 'נתניה', 'חדרה'], serviceType: 'daily', daysOfWeek: ['א', 'ב', 'ג', 'ד', 'ה'], startTime: '07:00', endTime: '09:30', customerId: '1', customerName: 'חברת אלפא הסעות', driverId: '2', driverName: 'אילנה אטיאס', vehicleId: '1', vehiclePlate: '1212121', status: 'active', distanceKm: 95 },
-  { id: '2', name: 'הסעת תלמידים בוקר', origin: 'שכונת רמות, ירושלים', destination: 'בית ספר אורט, ירושלים', stops: ['גבעת שאול', 'בית הכרם'], serviceType: 'daily', daysOfWeek: ['א', 'ב', 'ג', 'ד', 'ה'], startTime: '07:30', endTime: '08:15', customerId: '2', customerName: 'בית ספר אורט', driverId: '4', driverName: 'משה לוי', vehicleId: '2', vehiclePlate: '3334455', status: 'active', distanceKm: 12 },
-  { id: '3', name: 'שינוע חד פעמי באר שבע', origin: 'תל אביב', destination: 'באר שבע', stops: [], serviceType: 'one_time', daysOfWeek: [], startTime: '10:00', endTime: '12:00', customerId: '3', customerName: 'דוד ישראלי', status: 'active', distanceKm: 110 },
+  { id: '1', name: 'מסלול 1 חברה 1', origin: 'מוצא 1', destination: 'יעד 1', stops: ['תחנה א'], serviceType: 'daily', daysOfWeek: ['א', 'ב', 'ג'], startTime: '08:00', endTime: '09:00', customerName: 'לקוח 1 חברה 1', driverName: 'נהג 1', vehiclePlate: '1000001', status: 'active', distanceKm: 50 },
+  { id: '2', name: 'מסלול 2 חברה 1', origin: 'מוצא 2', destination: 'יעד 2', stops: [], serviceType: 'one_time', daysOfWeek: [], startTime: '10:00', endTime: '11:00', customerName: 'לקוח 2 חברה 1', driverName: 'נהג 2', vehiclePlate: '1000002', status: 'active', distanceKm: 30 },
+  { id: '3', name: 'מסלול 1 חברה 2', origin: 'מוצא 3', destination: 'יעד 3', stops: ['תחנה ב', 'תחנה ג'], serviceType: 'daily', daysOfWeek: ['א', 'ב', 'ג', 'ד', 'ה'], startTime: '07:00', endTime: '08:30', customerName: 'לקוח 1 חברה 2', driverName: 'נהג 3', vehiclePlate: '2000001', status: 'active', distanceKm: 40 },
 ];
 
 export const demoFaults: Fault[] = [
-  { id: 'ID-634860', date: '2026-02-08', driverName: 'אורין', vehiclePlate: '123456879', faultType: 'פנצ\'ר', description: 'פנצ\'ר בגלגל קדמי ימני', urgency: 'urgent', status: 'new', notes: '' },
-  { id: 'ID-582270', date: '2026-02-09', driverName: 'מישל', vehiclePlate: '8888888', faultType: 'חשמל', description: 'תקלת חשמל - אורות לא עובדים', urgency: 'normal', status: 'new' },
-  { id: 'ID-534189', date: '2026-02-16', driverName: 'יוני', vehiclePlate: '5555555', faultType: 'חשמל', description: 'בעיה במערכת חשמל', urgency: 'urgent', status: 'new' },
-  { id: 'ID-990348', date: '2026-02-16', driverName: 'יוסף', vehiclePlate: '5555555', faultType: 'חשמל', description: 'תקלה חשמלית חוזרת', urgency: 'critical', status: 'new' },
+  { id: 'TK-001', date: '2026-02-01', driverName: 'נהג 1', vehiclePlate: '1000001', faultType: 'מנוע', description: 'תקלה 1 - בעיית מנוע', urgency: 'urgent', status: 'new', notes: 'תקלה 1 נהג 1 חברה 1' },
+  { id: 'TK-002', date: '2026-02-05', driverName: 'נהג 2', vehiclePlate: '1000002', faultType: 'חשמל', description: 'תקלה 2 - בעיית חשמל', urgency: 'normal', status: 'new', notes: 'תקלה 2 נהג 2 חברה 1' },
+  { id: 'TK-003', date: '2026-02-10', driverName: 'נהג 3', vehiclePlate: '2000001', faultType: 'פנצ\'ר', description: 'תקלה 3 - פנצ\'ר', urgency: 'critical', status: 'new', notes: 'תקלה 3 נהג 3 חברה 2' },
 ];
 
 export const demoExpenses: Expense[] = [
-  { id: '1', date: '2026-02-10', driverName: 'יוני אטיאס', vehiclePlate: '1212121', category: 'דלק', vendor: 'פז', invoiceNumber: 'INV-001', invoiceDate: '2026-02-10', amount: 350, odometer: 15200, paymentMethod: 'fuel_card' },
-  { id: '2', date: '2026-02-12', driverName: 'אילנה אטיאס', vehiclePlate: '3334455', category: 'תיקון', vendor: 'מוסך המרכז', invoiceNumber: 'INV-002', invoiceDate: '2026-02-12', amount: 1200, odometer: 5050, paymentMethod: 'credit' },
-  { id: '3', date: '2026-02-15', driverName: 'משה לוי', vehiclePlate: '8888888', category: 'דלק', vendor: 'סונול', invoiceNumber: 'INV-003', invoiceDate: '2026-02-15', amount: 280, odometer: 41800, paymentMethod: 'cash' },
+  { id: '1', date: '2026-02-01', driverName: 'נהג 1', vehiclePlate: '1000001', category: 'דלק', vendor: 'תחנת דלק 1', invoiceNumber: 'INV-001', invoiceDate: '2026-02-01', amount: 200, odometer: 10100, paymentMethod: 'fuel_card', notes: 'הוצאה 1 נהג 1 חברה 1' },
+  { id: '2', date: '2026-02-10', driverName: 'נהג 3', vehiclePlate: '2000001', category: 'תיקון', vendor: 'מוסך 1', invoiceNumber: 'INV-002', invoiceDate: '2026-02-10', amount: 500, odometer: 5200, paymentMethod: 'credit', notes: 'הוצאה 1 נהג 3 חברה 2' },
 ];
 
 export const demoAccidents: Accident[] = [
-  { id: '1', date: '2026-02-05', vehiclePlate: '1212121', driverName: 'אילנה אטיאס', location: 'כביש 4 צומת גלילות', description: 'פגיעה קלה בפגוש אחורי', hasInsurance: true, thirdParty: true, estimatedCost: 3500, status: 'in_progress' },
+  { id: '1', date: '2026-01-15', vehiclePlate: '1000001', driverName: 'נהג 1', location: 'צומת 1', description: 'תאונה 1 - פגיעה קלה', hasInsurance: true, thirdParty: false, estimatedCost: 1000, status: 'open' },
 ];
 
 export const faultTypes = ['מנוע', 'חשמל', 'פנצ\'ר', 'מיזוג', 'אחר'];
