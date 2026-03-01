@@ -93,22 +93,28 @@ export default function Dashboard() {
 
   if (user.role === 'super_admin') {
     const isFleetMode = searchParams.get('mode') === 'fleet';
+    const fleetCompany = searchParams.get('company') || '';
 
     if (isFleetMode) {
-      return <FleetManagerDashboard isActingAsFleetManager />;
+      return <FleetManagerDashboard isActingAsFleetManager preselectedCompany={fleetCompany} />;
     }
 
-    return <SuperAdminDashboard onEnterFleetMode={() => setSearchParams({ mode: 'fleet' })} />;
+    return (
+      <SuperAdminDashboard
+        onEnterFleetMode={(company: string) => setSearchParams({ mode: 'fleet', company })}
+      />
+    );
   }
 
   return <FleetManagerDashboard isActingAsFleetManager={false} />;
 }
 
-function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: () => void }) {
+function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company: string) => void }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [creatingUser, setCreatingUser] = useState(false);
   const [showCreateUserModal, setShowCreateUserModal] = useState(false);
+  const [showFleetCompanyPicker, setShowFleetCompanyPicker] = useState(false);
   const [showCreatePassword, setShowCreatePassword] = useState(false);
   const [stats, setStats] = useState<SuperAdminStats>({
     companiesCount: 0,
@@ -265,7 +271,7 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: () => voi
 
   const superAdminActions = [
     { label: 'פתיחת משתמש חדש', icon: UserPlus, action: () => setShowCreateUserModal(true), type: 'button' as const },
-    { label: 'כניסה למנהל צי רכב', icon: ArrowRightLeft, action: onEnterFleetMode, type: 'button' as const },
+    { label: 'כניסה למנהל צי רכב', icon: ArrowRightLeft, action: () => setShowFleetCompanyPicker(true), type: 'button' as const },
     { label: 'דוחות כל החברות', icon: BarChart3, href: '/reports', type: 'link' as const },
     { label: 'ניהול הזמנות לקוחות', icon: ClipboardList, href: '/service-orders', type: 'link' as const },
     { label: 'ניהול חירום כל החברות', icon: AlertTriangle, href: '/emergency', type: 'link' as const },
@@ -445,22 +451,76 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: () => voi
           </div>
         </div>
       )}
+
+      {showFleetCompanyPicker && (
+        <div className="fixed inset-0 z-50 bg-foreground/50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-md p-5">
+            <h2 className="text-xl font-bold mb-4">בחירת חברה לצפייה כמנהל צי</h2>
+            <Popover open={true} onOpenChange={() => {}}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="w-full p-3 rounded-xl border border-input bg-background flex items-center justify-between text-right"
+                >
+                  <ChevronsUpDown size={16} className="text-muted-foreground shrink-0" />
+                  <span className="flex-1 text-right">בחר חברה...</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[60]" align="start">
+                <Command dir="rtl">
+                  <CommandInput placeholder="חיפוש חברה..." />
+                  <CommandList>
+                    <CommandEmpty>לא נמצאו חברות</CommandEmpty>
+                    <CommandGroup>
+                      {createCompanyOptions.map((company) => (
+                        <CommandItem
+                          key={company}
+                          value={company}
+                          onSelect={() => {
+                            setShowFleetCompanyPicker(false);
+                            onEnterFleetMode(company);
+                          }}
+                          className="flex items-center justify-between"
+                        >
+                          <span className="flex-1 text-right font-medium">{company}</span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            <button
+              type="button"
+              onClick={() => setShowFleetCompanyPicker(false)}
+              className="w-full mt-3 py-3 rounded-xl border border-input bg-background"
+            >
+              ביטול
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 function FleetManagerDashboard({
   isActingAsFleetManager,
+  preselectedCompany,
 }: {
   isActingAsFleetManager: boolean;
+  preselectedCompany?: string;
 }) {
-  const { user } = useAuth();
+  const { user, impersonate } = useAuth();
   const isSuperAdminView = user?.role === 'super_admin' && isActingAsFleetManager;
 
   const [loading, setLoading] = useState(true);
-  const [selectedCompany, setSelectedCompany] = useState(user?.company_name || '');
+  const [selectedCompany, setSelectedCompany] = useState(preselectedCompany || user?.company_name || '');
   const [companyOptions, setCompanyOptions] = useState<{ name: string; businessId: string }[]>([]);
   const [companyPickerOpen, setCompanyPickerOpen] = useState(false);
+  const [showDriverPicker, setShowDriverPicker] = useState(false);
+  const [driverOptions, setDriverOptions] = useState<{ id: string; full_name: string; phone: string }[]>([]);
+  const [driverPickerOpen, setDriverPickerOpen] = useState(false);
   const [stats, setStats] = useState<FleetStats>({ vehiclesCount: 0, driversCount: 0 });
   const [vehiclePreview, setVehiclePreview] = useState<FleetVehiclePreview[]>([]);
   const [alerts, setAlerts] = useState<FleetAlertRow[]>([]);
@@ -628,6 +688,35 @@ function FleetManagerDashboard({
     loadFleetDashboard();
   }, [user?.id, isSuperAdminView, selectedCompany]);
 
+  const loadDrivers = async () => {
+    const companyFilter = isSuperAdminView ? selectedCompany : user?.company_name || '';
+    const { data } = await supabase
+      .from('drivers')
+      .select('id, full_name, phone')
+      .eq('company_name', companyFilter)
+      .order('full_name');
+    setDriverOptions(data || []);
+  };
+
+  const handleOpenDriverPicker = async () => {
+    await loadDrivers();
+    setShowDriverPicker(true);
+  };
+
+  const handleSelectDriver = (driver: { id: string; full_name: string; phone: string }) => {
+    setShowDriverPicker(false);
+    // Create a UserProfile-like object for impersonation
+    impersonate({
+      id: driver.id,
+      email: '',
+      full_name: driver.full_name,
+      phone: driver.phone || '',
+      company_name: isSuperAdminView ? selectedCompany : user?.company_name || '',
+      is_active: true,
+      role: 'driver',
+    });
+  };
+
   const fleetActions = useMemo(
     () => [
       { label: 'הצמדת נהג לרכב', icon: ArrowRightLeft, href: '/attach-car' },
@@ -638,7 +727,6 @@ function FleetManagerDashboard({
       { label: 'ניהול מסלול וסידור עבודה לנהגים', icon: Route, href: '/routes' },
       { label: 'צירוף לקוח חדש', icon: FilePlus2, href: '/customers' },
       { label: 'הצמדת נהג ללקוח בתוך סידור עבודה', icon: Users, href: '/work-orders' },
-      { label: 'כניסה לדשבורד נהג', icon: Users, href: '/driver-view' },
     ],
     []
   );
@@ -782,7 +870,64 @@ function FleetManagerDashboard({
             <span>{action.label}</span>
           </Link>
         ))}
+        <button
+          type="button"
+          onClick={handleOpenDriverPicker}
+          className="big-action-btn bg-card text-foreground border border-border"
+        >
+          <Eye size={24} />
+          <span>כניסה לדשבורד נהג</span>
+        </button>
       </section>
+
+      {showDriverPicker && (
+        <div className="fixed inset-0 z-50 bg-foreground/50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-md p-5">
+            <h2 className="text-xl font-bold mb-4">בחירת נהג לצפייה</h2>
+            <Popover open={driverPickerOpen} onOpenChange={setDriverPickerOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="w-full p-3 rounded-xl border border-input bg-background flex items-center justify-between text-right"
+                >
+                  <ChevronsUpDown size={16} className="text-muted-foreground shrink-0" />
+                  <span className="flex-1 text-right">בחר נהג...</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[60]" align="start">
+                <Command dir="rtl">
+                  <CommandInput placeholder="חיפוש לפי שם נהג..." />
+                  <CommandList>
+                    <CommandEmpty>לא נמצאו נהגים</CommandEmpty>
+                    <CommandGroup>
+                      {driverOptions.map((driver) => (
+                        <CommandItem
+                          key={driver.id}
+                          value={driver.full_name}
+                          onSelect={() => handleSelectDriver(driver)}
+                          className="flex items-center justify-between"
+                        >
+                          <span className="flex-1 text-right font-medium">{driver.full_name}</span>
+                          {driver.phone && (
+                            <span className="text-xs text-muted-foreground mr-2">{driver.phone}</span>
+                          )}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            <button
+              type="button"
+              onClick={() => setShowDriverPicker(false)}
+              className="w-full mt-3 py-3 rounded-xl border border-input bg-background"
+            >
+              ביטול
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
