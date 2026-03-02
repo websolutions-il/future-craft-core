@@ -68,6 +68,39 @@ export type Database = {
         }
         Relationships: []
       }
+      company_settings: {
+        Row: {
+          company_name: string
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          whatsapp_button_color: string | null
+          whatsapp_button_text: string | null
+          whatsapp_enabled: boolean | null
+          whatsapp_phone: string | null
+        }
+        Insert: {
+          company_name: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          whatsapp_button_color?: string | null
+          whatsapp_button_text?: string | null
+          whatsapp_enabled?: boolean | null
+          whatsapp_phone?: string | null
+        }
+        Update: {
+          company_name?: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          whatsapp_button_color?: string | null
+          whatsapp_button_text?: string | null
+          whatsapp_enabled?: boolean | null
+          whatsapp_phone?: string | null
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
@@ -320,6 +353,153 @@ export type Database = {
         }
         Relationships: []
       }
+      fault_messages: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          fault_id: string
+          id: string
+          message: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          fault_id: string
+          id?: string
+          message?: string
+          user_id: string
+          user_name?: string
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          fault_id?: string
+          id?: string
+          message?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fault_messages_fault_id_fkey"
+            columns: ["fault_id"]
+            isOneToOne: false
+            referencedRelation: "faults"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fault_referrals: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          approved_by_name: string | null
+          company_name: string | null
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string
+          fault_id: string
+          id: string
+          notes: string | null
+          provider_name: string
+          provider_phone: string | null
+          provider_type: string | null
+          requested_by: string | null
+          requested_by_name: string | null
+          status: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_by_name?: string | null
+          company_name?: string | null
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string
+          fault_id: string
+          id?: string
+          notes?: string | null
+          provider_name?: string
+          provider_phone?: string | null
+          provider_type?: string | null
+          requested_by?: string | null
+          requested_by_name?: string | null
+          status?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_by_name?: string | null
+          company_name?: string | null
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string
+          fault_id?: string
+          id?: string
+          notes?: string | null
+          provider_name?: string
+          provider_phone?: string | null
+          provider_type?: string | null
+          requested_by?: string | null
+          requested_by_name?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fault_referrals_fault_id_fkey"
+            columns: ["fault_id"]
+            isOneToOne: false
+            referencedRelation: "faults"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fault_status_log: {
+        Row: {
+          changed_by: string | null
+          changed_by_name: string | null
+          company_name: string | null
+          created_at: string
+          fault_id: string
+          id: string
+          new_status: string
+          notes: string | null
+          old_status: string | null
+        }
+        Insert: {
+          changed_by?: string | null
+          changed_by_name?: string | null
+          company_name?: string | null
+          created_at?: string
+          fault_id: string
+          id?: string
+          new_status?: string
+          notes?: string | null
+          old_status?: string | null
+        }
+        Update: {
+          changed_by?: string | null
+          changed_by_name?: string | null
+          company_name?: string | null
+          created_at?: string
+          fault_id?: string
+          id?: string
+          new_status?: string
+          notes?: string | null
+          old_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fault_status_log_fault_id_fkey"
+            columns: ["fault_id"]
+            isOneToOne: false
+            referencedRelation: "faults"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       faults: {
         Row: {
           company_name: string | null
@@ -334,6 +514,12 @@ export type Database = {
           notes: string | null
           serial_id: string | null
           status: string | null
+          towing_approved: boolean | null
+          towing_approved_at: string | null
+          towing_approved_by: string | null
+          towing_completed: boolean | null
+          towing_completed_at: string | null
+          towing_required: boolean | null
           urgency: string | null
           vehicle_plate: string | null
         }
@@ -350,6 +536,12 @@ export type Database = {
           notes?: string | null
           serial_id?: string | null
           status?: string | null
+          towing_approved?: boolean | null
+          towing_approved_at?: string | null
+          towing_approved_by?: string | null
+          towing_completed?: boolean | null
+          towing_completed_at?: string | null
+          towing_required?: boolean | null
           urgency?: string | null
           vehicle_plate?: string | null
         }
@@ -366,6 +558,12 @@ export type Database = {
           notes?: string | null
           serial_id?: string | null
           status?: string | null
+          towing_approved?: boolean | null
+          towing_approved_at?: string | null
+          towing_approved_by?: string | null
+          towing_completed?: boolean | null
+          towing_completed_at?: string | null
+          towing_required?: boolean | null
           urgency?: string | null
           vehicle_plate?: string | null
         }

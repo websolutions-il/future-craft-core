@@ -5,6 +5,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { toast } from 'sonner';
 import MultiImageUpload from '@/components/MultiImageUpload';
+import FaultChat from '@/components/faults/FaultChat';
+import FaultStatusLog, { getStatusLabel } from '@/components/faults/FaultStatusLog';
+import FaultReferral from '@/components/faults/FaultReferral';
+import FaultTowing from '@/components/faults/FaultTowing';
+import WhatsAppButton from '@/components/faults/WhatsAppButton';
 
 interface FaultRow {
   id: string;
@@ -19,6 +24,13 @@ interface FaultRow {
   notes: string;
   images: string;
   created_at: string;
+  company_name: string;
+  towing_required: boolean;
+  towing_approved: boolean | null;
+  towing_approved_by: string;
+  towing_approved_at: string | null;
+  towing_completed: boolean | null;
+  towing_completed_at: string | null;
 }
 
 const urgencyLabels: Record<string, { text: string; cls: string }> = {
@@ -27,12 +39,32 @@ const urgencyLabels: Record<string, { text: string; cls: string }> = {
   critical: { text: 'מיידי', cls: 'status-urgent' },
 };
 
-const statusLabels: Record<string, { text: string; cls: string }> = {
-  new: { text: 'חדש', cls: 'status-new' },
-  open: { text: 'פתוח', cls: 'status-new' },
-  in_progress: { text: 'בטיפול', cls: 'status-pending' },
-  resolved: { text: 'טופל', cls: 'status-active' },
-  closed: { text: 'סגור', cls: 'status-inactive' },
+// New ordered statuses
+const orderedStatuses = [
+  { key: 'opened', text: 'נפתחה' },
+  { key: 'pending_approval', text: 'ממתינה לאישור' },
+  { key: 'approved', text: 'אושרה' },
+  { key: 'in_treatment', text: 'בטיפול' },
+  { key: 'referred_to_provider', text: 'הופנתה לספק' },
+  { key: 'towing_done', text: 'שינוע בוצע' },
+  { key: 'completed', text: 'הושלמה' },
+  { key: 'closed', text: 'נסגרה' },
+];
+
+const statusClasses: Record<string, string> = {
+  opened: 'status-new',
+  pending_approval: 'status-pending',
+  approved: 'status-active',
+  in_treatment: 'status-pending',
+  referred_to_provider: 'status-pending',
+  towing_done: 'status-active',
+  completed: 'status-active',
+  closed: 'status-inactive',
+  // legacy
+  new: 'status-new',
+  open: 'status-new',
+  in_progress: 'status-pending',
+  resolved: 'status-active',
 };
 
 const faultTypes = ['מנוע', 'בלמים', 'צמיגים', 'חשמל', 'מיזוג', 'פחחות', 'תאורה', 'אחר'];
@@ -79,20 +111,37 @@ export default function Faults() {
     return matchSearch && matchStatus && matchUrgency;
   });
 
-  const handleStatusChange = async (id: string, newStatus: string) => {
+  const handleStatusChange = async (id: string, oldStatus: string, newStatus: string) => {
     const { error } = await supabase.from('faults').update({ status: newStatus }).eq('id', id);
-    if (error) { toast.error('שגיאה בעדכון'); } else { toast.success('סטטוס עודכן'); loadFaults(); }
+    if (error) { toast.error('שגיאה בעדכון'); return; }
+    // Log status change
+    const fault = faults.find(f => f.id === id);
+    await supabase.from('fault_status_log').insert({
+      fault_id: id,
+      old_status: oldStatus,
+      new_status: newStatus,
+      changed_by: user?.id,
+      changed_by_name: user?.full_name || '',
+      company_name: fault?.company_name || '',
+    });
+    toast.success('סטטוס עודכן');
+    loadFaults();
   };
 
   if (viewMode === 'form') {
-    return <FaultForm fault={editFault} onDone={() => { setViewMode('list'); setEditFault(null); loadFaults(); }} onBack={() => { setViewMode('list'); setEditFault(null); }} user={user} />;
+    return (
+      <>
+        <FaultForm fault={editFault} onDone={() => { setViewMode('list'); setEditFault(null); loadFaults(); }} onBack={() => { setViewMode('list'); setEditFault(null); }} user={user} />
+        <WhatsAppButton />
+      </>
+    );
   }
 
   if (viewMode === 'detail' && selectedFault) {
     const f = selectedFault;
     const urg = urgencyLabels[f.urgency] || urgencyLabels.normal;
-    const st = statusLabels[f.status] || statusLabels.new;
-    const isClosed = f.status === 'closed' || f.status === 'resolved';
+    const stCls = statusClasses[f.status] || 'status-new';
+    const isClosed = f.status === 'closed' || f.status === 'completed';
     const faultImages = parseImages(f.images);
 
     return (
@@ -105,7 +154,7 @@ export default function Faults() {
             <h1 className="text-2xl font-bold">{f.fault_type}</h1>
             <div className="flex items-center gap-2">
               <span className={`status-badge ${urg.cls}`}>{urg.text}</span>
-              <span className={`status-badge ${st.cls}`}>{st.text}</span>
+              <span className={`status-badge ${stCls}`}>{getStatusLabel(f.status)}</span>
               {isManager && !isClosed && (
                 <button onClick={() => { setEditFault(f); setViewMode('form'); }} className="p-2 rounded-xl bg-primary/10 text-primary">
                   <Edit2 size={18} />
@@ -121,8 +170,6 @@ export default function Faults() {
             {f.serial_id && <div><span className="text-muted-foreground text-sm">מספר סידורי</span><p className="font-bold">{f.serial_id}</p></div>}
           </div>
           {f.notes && <p className="mt-4 p-3 bg-muted rounded-xl text-muted-foreground">{f.notes}</p>}
-
-          {/* Images */}
           {faultImages.length > 0 && (
             <div className="mt-4">
               <p className="text-sm text-muted-foreground mb-2">תמונות</p>
@@ -133,20 +180,20 @@ export default function Faults() {
               </div>
             </div>
           )}
-
           {isClosed && (
             <div className="mt-4 flex items-center gap-2 p-3 bg-muted rounded-xl text-muted-foreground">
-              <Lock size={16} />
-              <span className="text-sm">תקלה סגורה – לא ניתן לערוך</span>
+              <Lock size={16} /><span className="text-sm">תקלה סגורה – לא ניתן לערוך</span>
             </div>
           )}
         </div>
+
+        {/* Status change for managers */}
         {isManager && (
-          <div className="card-elevated">
+          <div className="card-elevated mb-4">
             <h2 className="text-lg font-bold mb-3">שנה סטטוס</h2>
             <div className="flex gap-2 flex-wrap">
-              {Object.entries(statusLabels).map(([key, { text }]) => (
-                <button key={key} onClick={() => { handleStatusChange(f.id, key); setSelectedFault({ ...f, status: key }); }}
+              {orderedStatuses.map(({ key, text }) => (
+                <button key={key} onClick={() => { handleStatusChange(f.id, f.status, key); setSelectedFault({ ...f, status: key }); }}
                   className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${f.status === key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                   {text}
                 </button>
@@ -154,6 +201,38 @@ export default function Faults() {
             </div>
           </div>
         )}
+
+        {/* Towing */}
+        <div className="mb-4">
+          <FaultTowing
+            faultId={f.id}
+            towingRequired={f.towing_required || false}
+            towingApproved={f.towing_approved ?? null}
+            towingApprovedBy={f.towing_approved_by || ''}
+            towingApprovedAt={f.towing_approved_at || null}
+            towingCompleted={f.towing_completed ?? null}
+            towingCompletedAt={f.towing_completed_at || null}
+            isManager={isManager}
+            onUpdate={() => { loadFaults().then(() => { const updated = faults.find(ff => ff.id === f.id); if (updated) setSelectedFault(updated); }); }}
+          />
+        </div>
+
+        {/* Referral */}
+        <div className="mb-4">
+          <FaultReferral faultId={f.id} companyName={f.company_name || ''} isManager={isManager} />
+        </div>
+
+        {/* Status Log */}
+        <div className="mb-4">
+          <FaultStatusLog faultId={f.id} />
+        </div>
+
+        {/* Chat */}
+        <div className="mb-4">
+          <FaultChat faultId={f.id} companyName={f.company_name || ''} />
+        </div>
+
+        <WhatsAppButton />
       </div>
     );
   }
@@ -179,10 +258,11 @@ export default function Faults() {
         ))}
       </div>
       <div className="flex gap-2 mb-5 flex-wrap">
-        {(['', 'new', 'open', 'in_progress', 'resolved', 'closed'] as const).map(key => (
+        <button onClick={() => setFilterStatus('')} className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${!filterStatus ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>הכל</button>
+        {orderedStatuses.map(({ key, text }) => (
           <button key={key} onClick={() => setFilterStatus(filterStatus === key ? '' : key)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${filterStatus === key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-            {key === '' ? 'הכל' : (statusLabels[key]?.text || key)}
+            {text}
           </button>
         ))}
       </div>
@@ -194,7 +274,7 @@ export default function Faults() {
         <div className="space-y-3">
           {filtered.map(f => {
             const urg = urgencyLabels[f.urgency] || urgencyLabels.normal;
-            const st = statusLabels[f.status] || statusLabels.new;
+            const stCls = statusClasses[f.status] || 'status-new';
             return (
               <button key={f.id} onClick={() => { setSelectedFault(f); setViewMode('detail'); }} className="card-elevated w-full text-right hover:shadow-lg transition-shadow">
                 <div className="flex items-start gap-4">
@@ -206,7 +286,7 @@ export default function Faults() {
                       <p className="text-xl font-bold">{f.fault_type}</p>
                       <div className="flex gap-1.5">
                         <span className={`status-badge ${urg.cls}`}>{urg.text}</span>
-                        <span className={`status-badge ${st.cls}`}>{st.text}</span>
+                        <span className={`status-badge ${stCls}`}>{getStatusLabel(f.status)}</span>
                       </div>
                     </div>
                     <p className="text-muted-foreground line-clamp-1">{f.description}</p>
@@ -222,6 +302,7 @@ export default function Faults() {
           })}
         </div>
       )}
+      <WhatsAppButton />
     </div>
   );
 }
@@ -269,10 +350,14 @@ function FaultForm({ fault, onDone, onBack, user }: { fault: FaultRow | null; on
     if (isEdit) {
       ({ error } = await supabase.from('faults').update(payload).eq('id', fault!.id));
     } else {
-      const insertPayload = { ...payload, status: 'open', company_name: user?.company_name || '', created_by: user?.id };
+      const insertPayload = { ...payload, status: 'opened', company_name: user?.company_name || '', created_by: user?.id };
       ({ error } = await supabase.from('faults').insert(insertPayload));
-      if (!error && (urgency === 'urgent' || urgency === 'critical')) {
-        supabase.functions.invoke('notify-accident-email', { body: { record: insertPayload, type: 'fault' } }).catch(console.error);
+      if (!error) {
+        // Log initial status
+        // We don't have the fault ID yet from insert, so we skip or use a trigger
+        if (urgency === 'urgent' || urgency === 'critical') {
+          supabase.functions.invoke('notify-accident-email', { body: { record: insertPayload, type: 'fault' } }).catch(console.error);
+        }
       }
     }
     setLoading(false);
@@ -325,16 +410,7 @@ function FaultForm({ fault, onDone, onBack, user }: { fault: FaultRow | null; on
           <label className="block text-lg font-medium mb-2">הערות</label>
           <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="הערות..." className={`${inputClass} resize-none`} />
         </div>
-
-        {/* Image Upload */}
-        <MultiImageUpload
-          label="תמונות תקלה"
-          imageUrls={imageUrls}
-          onImagesChanged={setImageUrls}
-          folder="faults"
-          max={5}
-        />
-
+        <MultiImageUpload label="תמונות תקלה" imageUrls={imageUrls} onImagesChanged={setImageUrls} folder="faults" max={5} />
         <button onClick={handleSubmit} disabled={!isValid || loading}
           className={`w-full py-5 rounded-xl text-xl font-bold transition-colors ${isValid && !loading ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}>
           {loading ? 'שומר...' : isEdit ? '💾 עדכן תקלה' : '💾 שמור תקלה'}
