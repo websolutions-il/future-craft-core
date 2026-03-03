@@ -101,6 +101,51 @@ export type Database = {
         }
         Relationships: []
       }
+      company_subscriptions: {
+        Row: {
+          billing_day: number | null
+          company_name: string
+          created_at: string | null
+          id: string
+          last_payment_date: string | null
+          monthly_price: number | null
+          next_payment_date: string | null
+          notes: string | null
+          payment_method: string | null
+          plan_name: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          billing_day?: number | null
+          company_name: string
+          created_at?: string | null
+          id?: string
+          last_payment_date?: string | null
+          monthly_price?: number | null
+          next_payment_date?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          plan_name?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          billing_day?: number | null
+          company_name?: string
+          created_at?: string | null
+          id?: string
+          last_payment_date?: string | null
+          monthly_price?: number | null
+          next_payment_date?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          plan_name?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
@@ -569,6 +614,39 @@ export type Database = {
         }
         Relationships: []
       }
+      internal_messages: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string
+          recipient_id: string
+          sender_id: string
+          sender_name: string
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          recipient_id: string
+          sender_id: string
+          sender_name?: string
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          recipient_id?: string
+          sender_id?: string
+          sender_name?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           company_name: string | null
@@ -599,6 +677,45 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_number?: string | null
+        }
+        Relationships: []
+      }
+      promotions: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          start_date: string | null
+          target_companies: string[] | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          start_date?: string | null
+          target_companies?: string[] | null
+          title?: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          start_date?: string | null
+          target_companies?: string[] | null
+          title?: string
         }
         Relationships: []
       }

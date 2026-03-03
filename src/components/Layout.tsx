@@ -37,12 +37,12 @@ export default function Layout() {
       <DesktopSidebar />
 
       {/* Mobile header */}
-      <header className="md:hidden bg-primary text-primary-foreground p-4 flex items-center justify-between sticky top-0 z-20 shadow-lg">
+      <header className="md:hidden bg-[hsl(218,58%,15%)] text-primary-foreground p-4 flex items-center justify-between sticky top-0 z-20 shadow-lg">
         <div className="flex items-center gap-3">
           <img src={logo} alt="דליה" className="h-10 brightness-0 invert" />
           <div>
             <h1 className="text-lg font-bold leading-tight">דליה</h1>
-            <p className="text-xs opacity-80">{user?.company_name}</p>
+            <p className="text-[10px] opacity-80">פתרונות תפעול ותחזוקה לרכב</p>
           </div>
         </div>
         <button onClick={() => logout()} className="flex items-center gap-2 bg-primary-foreground/20 rounded-xl px-3 py-2 active:scale-95 transition-transform">
@@ -53,7 +53,7 @@ export default function Layout() {
 
       {/* Company scope banner for super_admin */}
       {isSuperAdmin && selectedCompany && (
-        <div className="hidden md:flex bg-accent text-accent-foreground px-4 py-2 items-center justify-between text-sm font-medium sticky top-0 z-40 mr-64 border-b border-border">
+        <div className="hidden md:flex bg-accent text-accent-foreground px-4 py-2 items-center justify-between text-sm font-medium sticky top-0 z-40 mr-72 border-b border-border">
           <div className="flex items-center gap-2">
             <Building2 size={16} />
             <span>מציג נתוני חברה: <strong>{selectedCompany}</strong></span>
@@ -69,7 +69,7 @@ export default function Layout() {
       )}
 
       {/* Main content */}
-      <main className="md:mr-64 pb-24 md:pb-8 p-4 md:p-8">
+      <main className="md:mr-72 pb-24 md:pb-8 p-4 md:p-8">
         <Outlet />
       </main>
 
