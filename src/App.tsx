@@ -25,7 +25,6 @@ import AttachCar from "@/pages/AttachCar";
 import Alerts from "@/pages/Alerts";
 import HistoryPage from "@/pages/History";
 import ServiceOrders from "@/pages/ServiceOrders";
-
 import Expenses from "@/pages/Expenses";
 import WorkOrders from "@/pages/WorkOrders";
 import Emergency from "@/pages/Emergency";
@@ -35,6 +34,19 @@ import UserManagement from "@/pages/UserManagement";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+
+// New pages
+import Companions from "@/pages/Companions";
+import Towing from "@/pages/Towing";
+import Permissions from "@/pages/Permissions";
+import AlertSettings from "@/pages/AlertSettings";
+import ApprovalSettings from "@/pages/ApprovalSettings";
+import Suppliers from "@/pages/Suppliers";
+import EmailTemplates from "@/pages/EmailTemplates";
+import Promotions from "@/pages/Promotions";
+import InternalChat from "@/pages/InternalChat";
+import Subscriptions from "@/pages/Subscriptions";
+import CustomerDocs from "@/pages/CustomerDocs";
 
 const queryClient = new QueryClient();
 
@@ -80,16 +92,28 @@ function AppRoutes() {
         <Route path="/roadmap" element={<Roadmap />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/attach-car" element={<AttachCar />} />
+        <Route path="/attach-customer" element={<AttachCar />} />
         <Route path="/alerts" element={<Alerts />} />
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/service-orders" element={<ServiceOrders />} />
-        
         <Route path="/expenses" element={<Expenses />} />
         <Route path="/work-orders" element={<WorkOrders />} />
         <Route path="/emergency" element={<Emergency />} />
         <Route path="/driver-notifications" element={<DriverNotifications />} />
         <Route path="/driver-schedule" element={<DriverWeeklySchedule />} />
         <Route path="/user-management" element={<UserManagement />} />
+        {/* New routes */}
+        <Route path="/companions" element={<Companions />} />
+        <Route path="/towing" element={<Towing />} />
+        <Route path="/permissions" element={<Permissions />} />
+        <Route path="/alert-settings" element={<AlertSettings />} />
+        <Route path="/approval-settings" element={<ApprovalSettings />} />
+        <Route path="/suppliers" element={<Suppliers />} />
+        <Route path="/email-templates" element={<EmailTemplates />} />
+        <Route path="/promotions" element={<Promotions />} />
+        <Route path="/internal-chat" element={<InternalChat />} />
+        <Route path="/subscriptions" element={<Subscriptions />} />
+        <Route path="/customer-docs" element={<CustomerDocs />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>

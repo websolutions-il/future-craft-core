@@ -45,14 +45,14 @@
 
     --radius: 0.75rem;
 
-    --sidebar-background: 218 58% 20%;
+    --sidebar-background: 218 58% 12%;
     --sidebar-foreground: 210 40% 96%;
-    --sidebar-primary: 218 58% 45%;
+    --sidebar-primary: 218 58% 40%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 218 58% 30%;
+    --sidebar-accent: 218 58% 20%;
     --sidebar-accent-foreground: 210 40% 96%;
-    --sidebar-border: 218 58% 30%;
-    --sidebar-ring: 218 58% 45%;
+    --sidebar-border: 218 58% 20%;
+    --sidebar-ring: 218 58% 40%;
   }
 
   .dark {
@@ -139,7 +139,7 @@
   }
 
   .page-header {
-    @apply text-2xl md:text-3xl font-bold text-foreground mb-6;
+    @apply text-2xl md:text-4xl font-bold text-foreground mb-6;
   }
 
   .status-badge {
