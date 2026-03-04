@@ -730,6 +730,7 @@ export type Database = {
           distance_km: number | null
           driver_name: string | null
           end_time: string | null
+          execution_date: string | null
           id: string
           name: string
           notes: string | null
@@ -751,6 +752,7 @@ export type Database = {
           distance_km?: number | null
           driver_name?: string | null
           end_time?: string | null
+          execution_date?: string | null
           id?: string
           name?: string
           notes?: string | null
@@ -772,6 +774,7 @@ export type Database = {
           distance_km?: number | null
           driver_name?: string | null
           end_time?: string | null
+          execution_date?: string | null
           id?: string
           name?: string
           notes?: string | null

@@ -22,6 +22,16 @@ interface RouteRow {
   vehicle_plate: string;
   status: string;
   notes: string;
+  execution_date: string | null;
+}
+
+function isDatePassed(dateStr: string | null): boolean {
+  if (!dateStr) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = new Date(dateStr);
+  d.setHours(0, 0, 0, 0);
+  return d < today;
 }
 
 const serviceTypes: Record<string, string> = { regular: 'קו קבוע', charter: 'שכר', school: 'הסעות תלמידים', tourism: 'תיירות', delivery: 'משלוחים', other: 'אחר' };
@@ -149,13 +159,22 @@ export default function RoutesPage() {
                   <button onClick={() => setChangeDriverRoute(r)} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent/50 text-accent-foreground font-bold text-sm min-h-[44px]">
                     <UserRoundCog size={16} /> שינוי נהג
                   </button>
-                  <button onClick={() => { setEditItem(r); setViewMode('form'); }} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/10 text-primary font-bold text-sm min-h-[44px]">
-                    <Edit2 size={16} /> תיקון
-                  </button>
-                  <button onClick={async () => { if (!confirm('למחוק מסלול זה?')) return; await supabase.from('routes').delete().eq('id', r.id); toast.success('נמחק'); loadData(); }}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-destructive/10 text-destructive font-bold text-sm min-h-[44px]">
-                    <Trash2 size={16} /> מחיקה
-                  </button>
+                  {!isDatePassed(r.execution_date) && (
+                    <button onClick={() => { setEditItem(r); setViewMode('form'); }} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/10 text-primary font-bold text-sm min-h-[44px]">
+                      <Edit2 size={16} /> תיקון
+                    </button>
+                  )}
+                  {!isDatePassed(r.execution_date) && (
+                    <button onClick={async () => { if (!confirm('למחוק מסלול זה?')) return; await supabase.from('routes').delete().eq('id', r.id); toast.success('נמחק'); loadData(); }}
+                      className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-destructive/10 text-destructive font-bold text-sm min-h-[44px]">
+                      <Trash2 size={16} /> מחיקה
+                    </button>
+                  )}
+                  {isDatePassed(r.execution_date) && r.execution_date && (
+                    <span className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-muted text-muted-foreground text-sm min-h-[44px]">
+                      🔒 בוצע ב-{r.execution_date}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -216,6 +235,7 @@ function RouteForm({ route, onDone, onBack, user }: { route: RouteRow | null; on
   const [vehiclePlate, setVehiclePlate] = useState(route?.vehicle_plate || '');
   const [status, setStatus] = useState(route?.status || 'active');
   const [notes, setNotes] = useState(route?.notes || '');
+  const [executionDate, setExecutionDate] = useState(route?.execution_date || '');
   const [loading, setLoading] = useState(false);
 
   const [drivers, setDrivers] = useState<{ full_name: string }[]>([]);
@@ -235,7 +255,7 @@ function RouteForm({ route, onDone, onBack, user }: { route: RouteRow | null; on
   const handleSubmit = async () => {
     if (!isValid) return;
     setLoading(true);
-    const payload = { name, origin, destination, stops: stopsText ? stopsText.split(',').map(s => s.trim()) : [], distance_km: parseFloat(distanceKm) || 0, start_time: startTime, end_time: endTime, days_of_week: selectedDays, service_type: serviceType, customer_name: customerName, driver_name: driverName, vehicle_plate: vehiclePlate, status, notes };
+    const payload = { name, origin, destination, stops: stopsText ? stopsText.split(',').map(s => s.trim()) : [], distance_km: parseFloat(distanceKm) || 0, start_time: startTime, end_time: endTime, days_of_week: selectedDays, service_type: serviceType, customer_name: customerName, driver_name: driverName, vehicle_plate: vehiclePlate, status, notes, execution_date: executionDate || null };
     let error;
     if (isEdit) { ({ error } = await supabase.from('routes').update(payload).eq('id', route!.id)); }
     else { ({ error } = await supabase.from('routes').insert({ ...payload, company_name: user?.company_name || '', created_by: user?.id })); }
@@ -280,6 +300,7 @@ function RouteForm({ route, onDone, onBack, user }: { route: RouteRow | null; on
             </select></div>
         </div>
         <div><label className="block text-lg font-medium mb-2">לקוח</label><input value={customerName} onChange={e => setCustomerName(e.target.value)} className={inputClass} /></div>
+        <div><label className="block text-lg font-medium mb-2">תאריך ביצוע</label><input type="date" value={executionDate} onChange={e => setExecutionDate(e.target.value)} className={inputClass} /></div>
         <div><label className="block text-lg font-medium mb-2">הערות</label><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={`${inputClass} resize-none`} /></div>
         <button onClick={handleSubmit} disabled={!isValid || loading}
           className={`w-full py-5 rounded-xl text-xl font-bold transition-colors ${isValid && !loading ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}>
