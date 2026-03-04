@@ -1,0 +1,1 @@
+ALTER TABLE public.routes ADD COLUMN IF NOT EXISTS execution_date date DEFAULT NULL;
