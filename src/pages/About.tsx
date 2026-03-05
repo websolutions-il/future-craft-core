@@ -78,9 +78,9 @@ export default function About() {
       <section className="bg-primary text-primary-foreground py-20 sm:py-28 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
-            דליה — פתרונות תפעול
+            פתרונות מימון
             <br />
-            ותחזוקה לרכב
+            ותפעול לרכב
           </h1>
           <p className="text-lg sm:text-xl text-primary-foreground/80 max-w-2xl mx-auto mb-10 leading-relaxed">
             מערכת ניהול צי רכב מקצועית שמרכזת את כל התפעול במקום אחד:
