@@ -1,5 +1,8 @@
 import { Link } from 'react-router-dom';
 import logo from '@/assets/white-logo.png';
+import screenshotDashboard from '@/assets/screenshot-dashboard.jpg';
+import screenshotFaults from '@/assets/screenshot-faults.jpg';
+import screenshotVehicles from '@/assets/screenshot-vehicles.jpg';
 import {
   Car, Users, Wrench, FileText, BarChart3, Shield,
   TruckIcon, MessageCircle, ChevronLeft, AlertTriangle,
@@ -41,9 +44,9 @@ const features = [
 ];
 
 const screenshots = [
-  { title: 'דשבורד ראשי', placeholder: 'תצוגת דשבורד עם סטטיסטיקות והתראות' },
-  { title: 'ניהול תקלות', placeholder: 'מעקב תקלות עם סטטוסים וצ\'אט' },
-  { title: 'ניהול רכבים', placeholder: 'רשימת רכבים עם פרטים ושיוכים' },
+  { title: 'דשבורד ראשי', img: screenshotDashboard },
+  { title: 'ניהול תקלות', img: screenshotFaults },
+  { title: 'ניהול רכבים', img: screenshotVehicles },
 ];
 
 export default function About() {
@@ -163,13 +166,8 @@ export default function About() {
           <p className="text-muted-foreground text-center mb-12 text-lg">צילומי מסך מתוך המערכת</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {screenshots.map((s, i) => (
-              <div key={i} className="bg-card rounded-2xl overflow-hidden shadow-sm border border-border">
-                <div className="aspect-video bg-muted flex items-center justify-center">
-                  <div className="text-center p-6">
-                    <BarChart3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="text-muted-foreground/50 text-sm">{s.placeholder}</p>
-                  </div>
-                </div>
+              <div key={i} className="bg-card rounded-2xl overflow-hidden shadow-sm border border-border hover:shadow-md transition-shadow">
+                <img src={s.img} alt={s.title} className="w-full aspect-video object-cover" loading="lazy" />
                 <div className="p-4 text-center">
                   <h3 className="font-bold">{s.title}</h3>
                 </div>
