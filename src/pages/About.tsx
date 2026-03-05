@@ -51,7 +51,7 @@ const screenshots = [
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-background text-foreground font-heebo" dir="rtl">
+    <div className="min-h-screen bg-background text-foreground" dir="rtl" style={{ fontFamily: "'Heebo', sans-serif" }}>
       {/* Header */}
       <header className="sticky top-0 z-50 bg-primary/95 backdrop-blur-sm border-b border-primary-foreground/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
