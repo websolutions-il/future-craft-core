@@ -200,8 +200,8 @@ export default function About() {
             MAO.CO.IL
           </a>
           {' '}| מערכת ניהול{' '}
-          <a href="https://twaek-soft.com" target="_blank" rel="noopener noreferrer" className="text-primary-foreground/80 hover:text-primary-foreground underline">
-            twaek-soft.com
+          <a href="https://tweak-soft.com" target="_blank" rel="noopener noreferrer" className="text-primary-foreground/80 hover:text-primary-foreground underline">
+            tweak-soft.com
           </a>
           {' '}— מערכות ארגוניות לעסקים
         </p>
