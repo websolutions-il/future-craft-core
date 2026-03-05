@@ -243,7 +243,7 @@ export function DesktopSidebar() {
         </div>
       )}
 
-      <nav className="flex-1 py-3 overflow-y-auto scrollbar-thin">
+      <nav className="flex-1 py-3 overflow-y-auto sidebar-scroll">
         {isDriver ? (
           driverSidebarItems.map(item => (
             <NavLink key={item.path} to={item.path}
