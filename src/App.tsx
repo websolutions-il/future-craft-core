@@ -33,6 +33,7 @@ import DriverWeeklySchedule from "@/pages/DriverWeeklySchedule";
 import UserManagement from "@/pages/UserManagement";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
+import About from "@/pages/About";
 import NotFound from "./pages/NotFound";
 
 // New pages
@@ -67,9 +68,11 @@ function AppRoutes() {
   if (!isAuthenticated) {
     return (
       <Routes>
+        <Route path="/about" element={<About />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="*" element={<Login />} />
+        <Route path="*" element={<About />} />
       </Routes>
     );
   }

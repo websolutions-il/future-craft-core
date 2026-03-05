@@ -46,7 +46,7 @@ export default function Login() {
         <div className="flex flex-col items-center mb-8">
           <img src={logo} alt="דליה" className="h-24 mb-4 brightness-0 invert" />
           <h1 className="text-3xl font-bold text-primary-foreground">דליה</h1>
-          <p className="text-primary-foreground/70 text-lg mt-1">פתרונות מימון ותפעול לרכב</p>
+          <p className="text-primary-foreground/70 text-lg mt-1">פתרונות תפעול ותחזוקה לרכב</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card rounded-3xl shadow-2xl p-8 space-y-5">
@@ -124,6 +124,11 @@ export default function Login() {
               שכחתי סיסמה
             </button>
           )}
+
+          <button type="button" onClick={() => navigate('/about')}
+            className="w-full text-center text-muted-foreground font-medium text-sm py-1 hover:text-primary transition-colors">
+            ← חזרה לדף אודות המערכת
+          </button>
         </form>
       </div>
     </div>
