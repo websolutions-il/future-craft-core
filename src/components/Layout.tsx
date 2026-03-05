@@ -73,6 +73,21 @@ export default function Layout() {
         <Outlet />
       </main>
 
+      {/* Footer credits */}
+      <footer className="md:mr-72 pb-20 md:pb-4 px-4 text-center">
+        <p className="text-muted-foreground text-xs">
+          נבנה ע״י{' '}
+          <a href="https://mao.co.il" target="_blank" rel="noopener noreferrer" className="hover:text-foreground underline">
+            MAO.CO.IL
+          </a>
+          {' '}| מערכת ניהול{' '}
+          <a href="https://tweak-soft.com" target="_blank" rel="noopener noreferrer" className="hover:text-foreground underline">
+            tweak-soft.com
+          </a>
+          {' '}— מערכות ארגוניות לעסקים
+        </p>
+      </footer>
+
       <BottomNav />
       <HelpButton />
     </div>
