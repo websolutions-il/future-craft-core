@@ -1394,14 +1394,20 @@ export type Database = {
           company_name: string | null
           created_at: string
           created_by: string | null
+          customer_approved_at: string | null
+          customer_id: string | null
+          customer_name: string | null
           description: string | null
           driver_approved_at: string | null
           driver_id: string | null
           driver_name: string | null
+          end_time: string | null
           id: string
           location: string | null
           notes: string | null
           priority: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
           route_id: string | null
           scheduled_date: string | null
           scheduled_time: string | null
@@ -1417,14 +1423,20 @@ export type Database = {
           company_name?: string | null
           created_at?: string
           created_by?: string | null
+          customer_approved_at?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
           description?: string | null
           driver_approved_at?: string | null
           driver_id?: string | null
           driver_name?: string | null
+          end_time?: string | null
           id?: string
           location?: string | null
           notes?: string | null
           priority?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
           route_id?: string | null
           scheduled_date?: string | null
           scheduled_time?: string | null
@@ -1440,14 +1452,20 @@ export type Database = {
           company_name?: string | null
           created_at?: string
           created_by?: string | null
+          customer_approved_at?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
           description?: string | null
           driver_approved_at?: string | null
           driver_id?: string | null
           driver_name?: string | null
+          end_time?: string | null
           id?: string
           location?: string | null
           notes?: string | null
           priority?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
           route_id?: string | null
           scheduled_date?: string | null
           scheduled_time?: string | null
