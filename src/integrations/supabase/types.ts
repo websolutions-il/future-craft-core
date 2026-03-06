@@ -68,6 +68,72 @@ export type Database = {
         }
         Relationships: []
       }
+      approval_requests: {
+        Row: {
+          action_type: string
+          approved_at: string | null
+          approved_by: string | null
+          approved_by_name: string | null
+          company_name: string
+          created_at: string
+          description: string | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          last_reminder_at: string | null
+          notification_sent: boolean | null
+          rejection_reason: string | null
+          reminder_count: number | null
+          requested_by: string | null
+          requested_by_name: string | null
+          status: string
+          updated_at: string
+          vehicle_plate: string | null
+        }
+        Insert: {
+          action_type?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_by_name?: string | null
+          company_name?: string
+          created_at?: string
+          description?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          last_reminder_at?: string | null
+          notification_sent?: boolean | null
+          rejection_reason?: string | null
+          reminder_count?: number | null
+          requested_by?: string | null
+          requested_by_name?: string | null
+          status?: string
+          updated_at?: string
+          vehicle_plate?: string | null
+        }
+        Update: {
+          action_type?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_by_name?: string | null
+          company_name?: string
+          created_at?: string
+          description?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          last_reminder_at?: string | null
+          notification_sent?: boolean | null
+          rejection_reason?: string | null
+          reminder_count?: number | null
+          requested_by?: string | null
+          requested_by_name?: string | null
+          status?: string
+          updated_at?: string
+          vehicle_plate?: string | null
+        }
+        Relationships: []
+      }
       companions: {
         Row: {
           company_name: string | null
@@ -110,6 +176,9 @@ export type Database = {
           company_name: string
           created_at: string | null
           id: string
+          reminder_1_day: boolean | null
+          reminder_30_days: boolean | null
+          reminder_7_days: boolean | null
           updated_at: string | null
           vehicle_approval_required: boolean | null
           whatsapp_button_color: string | null
@@ -122,6 +191,9 @@ export type Database = {
           company_name: string
           created_at?: string | null
           id?: string
+          reminder_1_day?: boolean | null
+          reminder_30_days?: boolean | null
+          reminder_7_days?: boolean | null
           updated_at?: string | null
           vehicle_approval_required?: boolean | null
           whatsapp_button_color?: string | null
@@ -134,6 +206,9 @@ export type Database = {
           company_name?: string
           created_at?: string | null
           id?: string
+          reminder_1_day?: boolean | null
+          reminder_30_days?: boolean | null
+          reminder_7_days?: boolean | null
           updated_at?: string | null
           vehicle_approval_required?: boolean | null
           whatsapp_button_color?: string | null
@@ -1007,6 +1082,54 @@ export type Database = {
           vehicle_type?: string | null
           vendor_name?: string | null
           vendor_phone?: string | null
+        }
+        Relationships: []
+      }
+      system_logs: {
+        Row: {
+          action_type: string
+          channel: string | null
+          company_name: string
+          created_at: string
+          details: string | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          new_status: string | null
+          old_status: string | null
+          user_id: string | null
+          user_name: string
+          vehicle_plate: string | null
+        }
+        Insert: {
+          action_type?: string
+          channel?: string | null
+          company_name?: string
+          created_at?: string
+          details?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          new_status?: string | null
+          old_status?: string | null
+          user_id?: string | null
+          user_name?: string
+          vehicle_plate?: string | null
+        }
+        Update: {
+          action_type?: string
+          channel?: string | null
+          company_name?: string
+          created_at?: string
+          details?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          new_status?: string | null
+          old_status?: string | null
+          user_id?: string | null
+          user_name?: string
+          vehicle_plate?: string | null
         }
         Relationships: []
       }

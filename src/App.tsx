@@ -49,6 +49,7 @@ import InternalChat from "@/pages/InternalChat";
 import Subscriptions from "@/pages/Subscriptions";
 import EmergencySettings from "@/pages/EmergencySettings";
 import CustomerDocs from "@/pages/CustomerDocs";
+import SystemLogs from "@/pages/SystemLogs";
 
 const queryClient = new QueryClient();
 
@@ -119,6 +120,7 @@ function AppRoutes() {
         <Route path="/subscriptions" element={<Subscriptions />} />
         <Route path="/customer-docs" element={<CustomerDocs />} />
         <Route path="/emergency-settings" element={<EmergencySettings />} />
+        <Route path="/system-logs" element={<SystemLogs />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
