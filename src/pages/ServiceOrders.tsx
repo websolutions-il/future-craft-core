@@ -10,6 +10,7 @@ import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ImageUpload from '@/components/ImageUpload';
+import ServiceOrderChat from '@/components/service-orders/ServiceOrderChat';
 
 interface ServiceRow {
   id: string;
@@ -241,6 +242,9 @@ export default function ServiceOrders() {
               <p className="font-bold text-primary">{o.manager_approval}</p>
             </div>
           )}
+
+          {/* Internal chat */}
+          <ServiceOrderChat orderId={o.id} companyName={o.company_name} />
 
           <div className="flex gap-2 flex-wrap">
             {isManager && (

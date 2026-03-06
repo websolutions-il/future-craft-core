@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { History, Search, Filter, Download, Building2, Car, Calendar, BarChart3, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -38,6 +39,7 @@ const STATUS_CONFIG: Record<string, { text: string; cls: string }> = {
 const URGENCY_LABELS: Record<string, string> = { normal: 'רגיל', urgent: 'דחוף' };
 
 export default function ServiceOrderHistory() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const companyFilter = useCompanyFilter();
   const [orders, setOrders] = useState<ServiceRow[]>([]);
@@ -138,6 +140,10 @@ export default function ServiceOrderHistory() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="page-header mb-0 flex items-center gap-3"><History size={28} /> היסטוריית הזמנות שירות</h1>
         <div className="flex items-center gap-2">
+          <button onClick={() => navigate('/service-orders')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-muted text-foreground font-bold text-sm min-h-[44px]">
+            <ArrowRight size={18} /> חזרה להזמנות
+          </button>
           <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-muted text-foreground font-bold text-sm min-h-[44px]">
             <Download size={18} /> ייצוא CSV
           </button>

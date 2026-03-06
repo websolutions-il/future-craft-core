@@ -1004,6 +1004,44 @@ export type Database = {
         }
         Relationships: []
       }
+      service_order_messages: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          id: string
+          message: string
+          order_id: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          order_id: string
+          user_id: string
+          user_name?: string
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          order_id?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_order_messages_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "service_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_orders: {
         Row: {
           company_name: string | null
@@ -1014,6 +1052,7 @@ export type Database = {
           driver_name: string | null
           driver_phone: string | null
           id: string
+          images: string | null
           manager_approval: string | null
           manufacturer: string | null
           model: string | null
@@ -1024,7 +1063,12 @@ export type Database = {
           service_category: string | null
           service_date: string | null
           service_time: string | null
+          towing_address: string | null
+          towing_contact: string | null
+          towing_requested: boolean | null
+          towing_time: string | null
           treatment_status: string | null
+          urgency: string | null
           vehicle_notes: string | null
           vehicle_plate: string | null
           vehicle_type: string | null
@@ -1040,6 +1084,7 @@ export type Database = {
           driver_name?: string | null
           driver_phone?: string | null
           id?: string
+          images?: string | null
           manager_approval?: string | null
           manufacturer?: string | null
           model?: string | null
@@ -1050,7 +1095,12 @@ export type Database = {
           service_category?: string | null
           service_date?: string | null
           service_time?: string | null
+          towing_address?: string | null
+          towing_contact?: string | null
+          towing_requested?: boolean | null
+          towing_time?: string | null
           treatment_status?: string | null
+          urgency?: string | null
           vehicle_notes?: string | null
           vehicle_plate?: string | null
           vehicle_type?: string | null
@@ -1066,6 +1116,7 @@ export type Database = {
           driver_name?: string | null
           driver_phone?: string | null
           id?: string
+          images?: string | null
           manager_approval?: string | null
           manufacturer?: string | null
           model?: string | null
@@ -1076,7 +1127,12 @@ export type Database = {
           service_category?: string | null
           service_date?: string | null
           service_time?: string | null
+          towing_address?: string | null
+          towing_contact?: string | null
+          towing_requested?: boolean | null
+          towing_time?: string | null
           treatment_status?: string | null
+          urgency?: string | null
           vehicle_notes?: string | null
           vehicle_plate?: string | null
           vehicle_type?: string | null
