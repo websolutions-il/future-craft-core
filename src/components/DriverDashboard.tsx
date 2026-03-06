@@ -39,6 +39,14 @@ interface DriverAlert {
 
 const OPEN_TREATMENT_STATUSES = ['new', 'open', 'in_progress', 'pending', 'חדש', 'פתוח', 'בטיפול'];
 
+interface PendingAssignment {
+  id: string;
+  title: string;
+  scheduled_date: string | null;
+  scheduled_time: string;
+  status: string;
+}
+
 const daysUntil = (dateValue: string | null | undefined) => {
   if (!dateValue) return null;
   const diff = new Date(dateValue).getTime() - Date.now();
@@ -77,6 +85,7 @@ export default function DriverDashboard() {
   const [loading, setLoading] = useState(true);
   const [vehicle, setVehicle] = useState<AssignedVehicle | null>(null);
   const [alerts, setAlerts] = useState<DriverAlert[]>([]);
+  const [pendingAssignments, setPendingAssignments] = useState<PendingAssignment[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -84,7 +93,7 @@ export default function DriverDashboard() {
     const loadDriverDashboard = async () => {
       setLoading(true);
 
-      const [vehicleRes, serviceOrdersRes] = await Promise.all([
+      const [vehicleRes, serviceOrdersRes, assignmentsRes] = await Promise.all([
         supabase
           .from('vehicles')
           .select('id, manufacturer, model, year, license_plate, vehicle_type, odometer, test_expiry, insurance_expiry, comprehensive_insurance_expiry')
@@ -94,6 +103,11 @@ export default function DriverDashboard() {
           .from('service_orders')
           .select('id, service_category, treatment_status, vehicle_plate')
           .eq('driver_name', user.full_name),
+        supabase
+          .from('work_assignments')
+          .select('id, title, scheduled_date, scheduled_time, status')
+          .eq('driver_id', user.id)
+          .in('status', ['pending_driver_approval', 'sent_to_driver', 'driver_approved', 'in_progress']),
       ]);
 
       if (vehicleRes.error || serviceOrdersRes.error) {
@@ -181,6 +195,20 @@ export default function DriverDashboard() {
           count: scopedOpenOrders.length,
           severity: 'info',
           link: '/service-orders',
+        });
+      }
+
+      // Pending work assignments alert
+      const pendingWA = assignmentsRes.data || [];
+      setPendingAssignments(pendingWA as PendingAssignment[]);
+      const awaitingApproval = pendingWA.filter(a => a.status === 'pending_driver_approval');
+      if (awaitingApproval.length > 0) {
+        newAlerts.push({
+          key: 'pending_work',
+          title: 'עבודות ממתינות לאישורך',
+          count: awaitingApproval.length,
+          severity: 'critical',
+          link: '/work-orders',
         });
       }
 
@@ -311,6 +339,34 @@ export default function DriverDashboard() {
           <p className="text-muted-foreground">אין התראות פתוחות כרגע.</p>
         )}
       </section>
+
+      {/* Pending Work Assignments */}
+      {pendingAssignments.length > 0 && (
+        <section className="card-elevated p-4">
+          <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
+            <ClipboardList size={18} className="text-primary" />
+            עבודות פעילות
+          </h2>
+          <div className="space-y-2">
+            {pendingAssignments.map(a => (
+              <Link key={a.id} to="/work-orders"
+                className="flex items-center justify-between rounded-xl border border-border p-3 hover:bg-muted/40 transition-colors">
+                <div>
+                  <p className="font-medium">{a.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {a.scheduled_date ? new Date(a.scheduled_date).toLocaleDateString('he-IL') : ''} {a.scheduled_time}
+                  </p>
+                </div>
+                <span className={`text-xs font-bold ${a.status === 'pending_driver_approval' ? 'text-destructive' : 'text-primary'}`}>
+                  {a.status === 'pending_driver_approval' ? '⏳ ממתין לאישורך' :
+                   a.status === 'in_progress' ? '▶️ בביצוע' :
+                   a.status === 'driver_approved' ? '✅ אושר' : '📤 נשלח'}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Actions */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-3">

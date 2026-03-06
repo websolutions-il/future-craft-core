@@ -68,6 +68,42 @@ export type Database = {
         }
         Relationships: []
       }
+      companions: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          created_by: string | null
+          full_name: string
+          id: string
+          id_number: string | null
+          notes: string | null
+          phone: string | null
+          status: string | null
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          full_name?: string
+          id?: string
+          id_number?: string | null
+          notes?: string | null
+          phone?: string | null
+          status?: string | null
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          full_name?: string
+          id?: string
+          id_number?: string | null
+          notes?: string | null
+          phone?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       company_settings: {
         Row: {
           company_name: string
@@ -1231,6 +1267,171 @@ export type Database = {
           year?: number | null
         }
         Relationships: []
+      }
+      work_assignment_messages: {
+        Row: {
+          assignment_id: string
+          company_name: string | null
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          assignment_id: string
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          user_id: string
+          user_name?: string
+        }
+        Update: {
+          assignment_id?: string
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_assignment_messages_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "work_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_assignment_status_log: {
+        Row: {
+          assignment_id: string
+          changed_by: string | null
+          changed_by_name: string | null
+          company_name: string | null
+          created_at: string
+          id: string
+          new_status: string
+          notes: string | null
+          old_status: string | null
+        }
+        Insert: {
+          assignment_id: string
+          changed_by?: string | null
+          changed_by_name?: string | null
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          new_status?: string
+          notes?: string | null
+          old_status?: string | null
+        }
+        Update: {
+          assignment_id?: string
+          changed_by?: string | null
+          changed_by_name?: string | null
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          new_status?: string
+          notes?: string | null
+          old_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_assignment_status_log_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "work_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_assignments: {
+        Row: {
+          companion_id: string | null
+          companion_name: string | null
+          companion_requested: boolean | null
+          company_name: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          driver_approved_at: string | null
+          driver_id: string | null
+          driver_name: string | null
+          id: string
+          location: string | null
+          notes: string | null
+          priority: string | null
+          route_id: string | null
+          scheduled_date: string | null
+          scheduled_time: string | null
+          status: string
+          title: string
+          updated_at: string
+          vehicle_plate: string | null
+        }
+        Insert: {
+          companion_id?: string | null
+          companion_name?: string | null
+          companion_requested?: boolean | null
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          driver_approved_at?: string | null
+          driver_id?: string | null
+          driver_name?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          priority?: string | null
+          route_id?: string | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          vehicle_plate?: string | null
+        }
+        Update: {
+          companion_id?: string | null
+          companion_name?: string | null
+          companion_requested?: boolean | null
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          driver_approved_at?: string | null
+          driver_id?: string | null
+          driver_name?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          priority?: string | null
+          route_id?: string | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          vehicle_plate?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_assignments_companion_id_fkey"
+            columns: ["companion_id"]
+            isOneToOne: false
+            referencedRelation: "companions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
