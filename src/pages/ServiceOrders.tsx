@@ -537,7 +537,20 @@ function ServiceOrderForm({ onDone, user, editData }: { onDone: () => void; user
 
     setLoading(false);
     if (error) { toast.error('שגיאה בשמירה'); console.error(error); }
-    else { toast.success(editData ? 'ההזמנה עודכנה' : 'הזמנת השירות נשלחה – ממתינה לאישור'); onDone(); }
+    else {
+      toast.success(editData ? 'ההזמנה עודכנה' : 'הזמנת השירות נשלחה – ממתינה לאישור');
+      // Send email notification for new orders (or urgent updates)
+      if (!editData) {
+        const isUrgent = urgency === 'critical' || urgency === 'urgent';
+        supabase.functions.invoke('notify-service-order-email', {
+          body: {
+            record: { ...payload, created_by: user?.id, ordering_user: user?.full_name || '' },
+            type: isUrgent ? 'urgent_order' : 'new_order',
+          },
+        }).catch(err => console.error('Email notification error:', err));
+      }
+      onDone();
+    }
   };
 
   return (
