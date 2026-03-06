@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Fault, FaultAttachment, faultTypes } from '@/data/demo-data';
 import { ArrowRight, Camera, Paperclip, X, Plus, AlertTriangle, Wrench } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useDriverVehicle } from '@/hooks/useDriverVehicle';
 
 interface FaultFormProps {
   onSubmit: (fault: Fault) => void;
@@ -9,17 +11,23 @@ interface FaultFormProps {
 }
 
 export default function FaultForm({ onSubmit, onCancel }: FaultFormProps) {
+  const { user } = useAuth();
+  const { vehicle, isDriver } = useDriverVehicle();
+
   const [dbVehicles, setDbVehicles] = useState<{ license_plate: string; manufacturer: string; model: string }[]>([]);
   const [dbDrivers, setDbDrivers] = useState<{ full_name: string }[]>([]);
 
   useEffect(() => {
-    supabase.from('vehicles').select('license_plate, manufacturer, model').then(({ data }) => {
-      if (data) setDbVehicles(data);
-    });
-    supabase.from('drivers').select('full_name').then(({ data }) => {
-      if (data) setDbDrivers(data);
-    });
-  }, []);
+    if (!isDriver) {
+      supabase.from('vehicles').select('license_plate, manufacturer, model').then(({ data }) => {
+        if (data) setDbVehicles(data);
+      });
+      supabase.from('drivers').select('full_name').then(({ data }) => {
+        if (data) setDbDrivers(data);
+      });
+    }
+  }, [isDriver]);
+
   const [driverName, setDriverName] = useState('');
   const [vehiclePlate, setVehiclePlate] = useState('');
   const [faultType, setFaultType] = useState('');
@@ -29,6 +37,19 @@ export default function FaultForm({ onSubmit, onCancel }: FaultFormProps) {
   const [attachments, setAttachments] = useState<FaultAttachment[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-fill for drivers
+  useEffect(() => {
+    if (isDriver && user) {
+      setDriverName(user.full_name);
+    }
+  }, [isDriver, user]);
+
+  useEffect(() => {
+    if (isDriver && vehicle) {
+      setVehiclePlate(vehicle.license_plate);
+    }
+  }, [isDriver, vehicle]);
 
   const urgencyOptions = [
     { key: 'normal' as const, text: 'רגיל', icon: Wrench, color: 'border-info/40 bg-info/5' },
@@ -87,39 +108,61 @@ export default function FaultForm({ onSubmit, onCancel }: FaultFormProps) {
       <h1 className="text-2xl font-bold mb-6">דיווח תקלה חדשה</h1>
 
       <div className="space-y-5">
-        {/* Driver */}
-        <div>
-          <label className="block text-lg font-medium mb-2">שם נהג</label>
-          <select
-            value={driverName}
-            onChange={e => setDriverName(e.target.value)}
-            className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none"
-          >
-            <option value="">בחר נהג...</option>
-            {dbDrivers.map(d => (
-              <option key={d.full_name} value={d.full_name}>{d.full_name}</option>
-            ))}
-          </select>
-        </div>
+        {/* Driver - auto-filled for drivers, dropdown for managers */}
+        {isDriver ? (
+          <div>
+            <label className="block text-lg font-medium mb-2">שם נהג</label>
+            <div className="w-full p-4 text-lg rounded-xl border-2 border-input bg-muted/50 font-bold">{driverName}</div>
+          </div>
+        ) : (
+          <div>
+            <label className="block text-lg font-medium mb-2">שם נהג</label>
+            <select
+              value={driverName}
+              onChange={e => setDriverName(e.target.value)}
+              className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none"
+            >
+              <option value="">בחר נהג...</option>
+              {dbDrivers.map(d => (
+                <option key={d.full_name} value={d.full_name}>{d.full_name}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
-        {/* Vehicle */}
-        <div>
-          <label className="block text-lg font-medium mb-2">מספר רכב</label>
-          <select
-            value={vehiclePlate}
-            onChange={e => setVehiclePlate(e.target.value)}
-            className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none"
-          >
-            <option value="">בחר רכב...</option>
-            {dbVehicles.map(v => (
-              <option key={v.license_plate} value={v.license_plate}>{v.license_plate} - {v.manufacturer} {v.model}</option>
-            ))}
-          </select>
-        </div>
+        {/* Vehicle - auto-filled for drivers, dropdown for managers */}
+        {isDriver && vehicle ? (
+          <div>
+            <label className="block text-lg font-medium mb-2">רכב משויך</label>
+            <div className="w-full p-4 text-lg rounded-xl border-2 border-input bg-muted/50">
+              <p className="font-bold">{vehicle.license_plate}</p>
+              <p className="text-sm text-muted-foreground">{vehicle.manufacturer} {vehicle.model} {vehicle.year ? `(${vehicle.year})` : ''}</p>
+            </div>
+          </div>
+        ) : !isDriver ? (
+          <div>
+            <label className="block text-lg font-medium mb-2">מספר רכב</label>
+            <select
+              value={vehiclePlate}
+              onChange={e => setVehiclePlate(e.target.value)}
+              className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none"
+            >
+              <option value="">בחר רכב...</option>
+              {dbVehicles.map(v => (
+                <option key={v.license_plate} value={v.license_plate}>{v.license_plate} - {v.manufacturer} {v.model}</option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div>
+            <label className="block text-lg font-medium mb-2">מספר רכב</label>
+            <div className="w-full p-4 text-lg rounded-xl border-2 border-input bg-muted/50 text-muted-foreground">אין רכב משויך</div>
+          </div>
+        )}
 
         {/* Fault Type */}
         <div>
-          <label className="block text-lg font-medium mb-2">סוג תקלה</label>
+          <label className="block text-lg font-medium mb-2">סוג תקלה *</label>
           <div className="flex flex-wrap gap-2">
             {faultTypes.map(ft => (
               <button
@@ -151,7 +194,7 @@ export default function FaultForm({ onSubmit, onCancel }: FaultFormProps) {
 
         {/* Description */}
         <div>
-          <label className="block text-lg font-medium mb-2">תיאור התקלה</label>
+          <label className="block text-lg font-medium mb-2">תיאור התקלה *</label>
           <textarea
             value={description}
             onChange={e => setDescription(e.target.value)}
