@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Car, Users, Route, Wrench, FileText, AlertTriangle, BarChart3, RefreshCw, Menu, X, LogOut, Settings, Bell, Briefcase, ClipboardList, History, UserCheck, Phone, Building2, ChevronsUpDown, Check, Truck, Shield, CheckSquare, Mail, Tag, MessageCircle, CreditCard } from 'lucide-react';
+import { Home, Car, Users, Route, Wrench, FileText, AlertTriangle, BarChart3, RefreshCw, Menu, X, LogOut, Settings, Bell, Briefcase, ClipboardList, History, UserCheck, Phone, Building2, ChevronsUpDown, Check, Truck, Shield, CheckSquare, Mail, Tag, MessageCircle, CreditCard, ScrollText } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyScope } from '@/contexts/CompanyScopeContext';
 import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
@@ -71,6 +71,7 @@ const managerCategories = [
       { path: '/emergency', label: 'מספרי חירום', icon: Phone },
       { path: '/emergency-settings', label: 'הגדרות חירום', icon: Phone },
       { path: '/email-templates', label: 'תבניות מייל', icon: Mail },
+      { path: '/system-logs', label: 'לוג מערכת', icon: ScrollText },
       { path: '/settings', label: 'הגדרות', icon: Settings },
     ],
   },
