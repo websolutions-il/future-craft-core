@@ -162,18 +162,44 @@ export default function AttachCar() {
       <h2 className="text-xl font-bold mb-4">הצמדות נוכחיות</h2>
       <div className="space-y-3">
         {vehicles.map(v => (
-          <div key={v.id} className="card-elevated flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Car size={28} className="text-primary" />
+          <div key={v.id} className="card-elevated">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Car size={28} className="text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="text-lg font-bold">{v.license_plate}</p>
+                <p className="text-muted-foreground">{v.manufacturer} {v.model}</p>
+              </div>
+              <div className="text-left">
+                <p className={`text-sm font-medium ${v.assigned_driver_id ? 'text-success' : 'text-muted-foreground'}`}>
+                  {v.assigned_driver_id ? '✅' : '❌'} {getDriverName(v.assigned_driver_id)}
+                </p>
+              </div>
             </div>
-            <div className="flex-1">
-              <p className="text-lg font-bold">{v.license_plate}</p>
-              <p className="text-muted-foreground">{v.manufacturer} {v.model}</p>
-            </div>
-            <div className="text-left">
-              <p className={`text-sm font-medium ${v.assigned_driver_id ? 'text-success' : 'text-muted-foreground'}`}>
-                {v.assigned_driver_id ? '✅' : '❌'} {getDriverName(v.assigned_driver_id)}
-              </p>
+            {/* Edit / Reassign */}
+            <div className="mt-3 pt-3 border-t border-border flex gap-2 flex-wrap">
+              <button
+                onClick={() => {
+                  setSelectedVehicle(v.id);
+                  setSelectedDriver(v.assigned_driver_id || '');
+                  setSelectedUser(v.assigned_driver_id || '');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="flex-1 py-2 rounded-xl bg-primary/10 text-primary font-bold text-sm min-h-[40px]">
+                ✏️ שנה הצמדה
+              </button>
+              {v.assigned_driver_id && (
+                <button
+                  onClick={async () => {
+                    const { error } = await supabase.from('vehicles').update({ assigned_driver_id: null }).eq('id', v.id);
+                    if (error) toast.error('שגיאה בהסרת ההצמדה');
+                    else { toast.success('ההצמדה הוסרה'); loadData(); }
+                  }}
+                  className="py-2 px-4 rounded-xl bg-destructive/10 text-destructive font-bold text-sm min-h-[40px]">
+                  🗑️ הסר
+                </button>
+              )}
             </div>
           </div>
         ))}
