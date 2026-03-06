@@ -1388,6 +1388,8 @@ export type Database = {
       }
       work_assignments: {
         Row: {
+          approval_source_driver: string | null
+          approval_source_manager: string | null
           companion_id: string | null
           companion_name: string | null
           companion_requested: boolean | null
@@ -1404,6 +1406,9 @@ export type Database = {
           end_time: string | null
           id: string
           location: string | null
+          manager_approved_at: string | null
+          manager_approved_by: string | null
+          manager_approved_name: string | null
           notes: string | null
           priority: string | null
           rejected_by: string | null
@@ -1417,6 +1422,8 @@ export type Database = {
           vehicle_plate: string | null
         }
         Insert: {
+          approval_source_driver?: string | null
+          approval_source_manager?: string | null
           companion_id?: string | null
           companion_name?: string | null
           companion_requested?: boolean | null
@@ -1433,6 +1440,9 @@ export type Database = {
           end_time?: string | null
           id?: string
           location?: string | null
+          manager_approved_at?: string | null
+          manager_approved_by?: string | null
+          manager_approved_name?: string | null
           notes?: string | null
           priority?: string | null
           rejected_by?: string | null
@@ -1446,6 +1456,8 @@ export type Database = {
           vehicle_plate?: string | null
         }
         Update: {
+          approval_source_driver?: string | null
+          approval_source_manager?: string | null
           companion_id?: string | null
           companion_name?: string | null
           companion_requested?: boolean | null
@@ -1462,6 +1474,9 @@ export type Database = {
           end_time?: string | null
           id?: string
           location?: string | null
+          manager_approved_at?: string | null
+          manager_approved_by?: string | null
+          manager_approved_name?: string | null
           notes?: string | null
           priority?: string | null
           rejected_by?: string | null
