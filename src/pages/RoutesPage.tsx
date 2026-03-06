@@ -97,7 +97,7 @@ export default function RoutesPage() {
             <h1 className="text-2xl font-bold">{r.name}</h1>
             <div className="flex items-center gap-2">
               <span className={`status-badge ${r.status === 'active' ? 'status-active' : 'status-inactive'}`}>{r.status === 'active' ? 'פעיל' : 'לא פעיל'}</span>
-              {isManager && <button onClick={() => { setEditItem(r); setViewMode('form'); }} className="p-2 rounded-xl bg-primary/10 text-primary"><Edit2 size={18} /></button>}
+              {isManager && !isDatePassed(r.execution_date) && <button onClick={() => { setEditItem(r); setViewMode('form'); }} className="p-2 rounded-xl bg-primary/10 text-primary"><Edit2 size={18} /></button>}
             </div>
           </div>
           <div className="bg-muted rounded-2xl p-4 mb-4">
