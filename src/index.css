@@ -119,6 +119,14 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /* Ensure inputs are right-aligned for RTL by default */
+  input, textarea, select {
+    text-align: right;
+  }
+  input[dir="ltr"], textarea[dir="ltr"] {
+    text-align: left;
+  }
+
   /* Large touch targets for mobile */
   button, a, [role="button"] {
     min-height: 44px;

@@ -16,11 +16,12 @@ import {
   Check,
   ChevronsUpDown,
   Eye,
-  EyeOff,
 } from 'lucide-react';
 import { useAuth, type AppRole } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import DriverDashboard from '@/components/DriverDashboard';
+import CreateUserModal from '@/components/CreateUserModal';
+import type { CreateUserFormState } from '@/components/CreateUserModal';
 import { toast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -56,16 +57,6 @@ interface FleetAlertRow {
   link: string;
 }
 
-interface CreateUserFormState {
-  email: string;
-  password: string;
-  fullName: string;
-  phone: string;
-  companyName: string;
-  role: AppRole;
-  isActive: boolean;
-  userNumber: string;
-}
 
 const isOpenStatus = (status: string | null | undefined) =>
   OPEN_TREATMENT_STATUSES.includes((status || '').toLowerCase()) ||
@@ -336,144 +327,23 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
       </section>
 
       {showCreateUserModal && (
-        <div className="fixed inset-0 z-50 bg-foreground/50 flex items-center justify-center p-4">
-          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-lg p-5">
-            <h2 className="text-xl font-bold mb-4">פתיחת משתמש חדש</h2>
-            <form onSubmit={submitCreateUser} className="space-y-3 max-h-[70vh] overflow-y-auto">
-              <input
-                value={form.userNumber}
-                onChange={(event) => setForm((prev) => ({ ...prev, userNumber: event.target.value }))}
-                placeholder="מספר משתמש (מזהה ייחודי)"
-                className="w-full p-3 rounded-xl border border-input bg-background"
-              />
-              <input
-                value={form.fullName}
-                onChange={(event) => setForm((prev) => ({ ...prev, fullName: event.target.value }))}
-                placeholder="שם מלא"
-                className="w-full p-3 rounded-xl border border-input bg-background"
-                required
-              />
-              <input
-                type="email"
-                value={form.email}
-                onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
-                placeholder="אימייל"
-                className="w-full p-3 rounded-xl border border-input bg-background"
-                dir="ltr"
-                required
-              />
-              <div className="relative">
-                <input
-                  type={showCreatePassword ? 'text' : 'password'}
-                  value={form.password}
-                  onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
-                  placeholder="סיסמה"
-                  className="w-full p-3 rounded-xl border border-input bg-background pl-10"
-                  required
-                />
-                <button type="button" onClick={() => setShowCreatePassword(!showCreatePassword)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                  {showCreatePassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              <input
-                value={form.phone}
-                onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
-                placeholder="מספר טלפון"
-                className="w-full p-3 rounded-xl border border-input bg-background"
-                dir="ltr"
-              />
-
-              {/* Company picker */}
-              <Popover open={createCompanyPickerOpen} onOpenChange={setCreateCompanyPickerOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className="w-full p-3 rounded-xl border border-input bg-background flex items-center justify-between text-right"
-                  >
-                    <ChevronsUpDown size={16} className="text-muted-foreground shrink-0" />
-                    <span className="flex-1 text-right">
-                      {form.companyName || 'בחר חברה...'}
-                    </span>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[60]" align="start">
-                  <Command dir="rtl">
-                    <CommandInput placeholder="חיפוש חברה..." />
-                    <CommandList>
-                      <CommandEmpty>לא נמצאו חברות</CommandEmpty>
-                      <CommandGroup>
-                        {createCompanyOptions.map((option) => (
-                          <CommandItem
-                            key={option.name}
-                            value={`${option.name} ${option.businessId}`}
-                            onSelect={() => {
-                              setForm((prev) => ({ ...prev, companyName: option.name }));
-                              setCreateCompanyPickerOpen(false);
-                            }}
-                            className="flex items-center justify-between"
-                          >
-                            <Check size={16} className={cn("shrink-0", form.companyName === option.name ? "opacity-100" : "opacity-0")} />
-                            <div className="flex-1 text-right">
-                              <span className="font-medium">{option.name}</span>
-                              {option.businessId && (
-                                <span className="text-xs text-muted-foreground mr-2">({option.businessId})</span>
-                              )}
-                            </div>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-
-              <select
-                value={form.role}
-                onChange={(event) => setForm((prev) => ({ ...prev, role: event.target.value as AppRole }))}
-                className="w-full p-3 rounded-xl border border-input bg-background"
-              >
-                <option value="fleet_manager">מנהל צי</option>
-                <option value="driver">נהג</option>
-                <option value="super_admin">מנהל על</option>
-              </select>
-
-              {/* Active toggle */}
-              <div className="flex items-center justify-between p-3 rounded-xl border border-input bg-background">
-                <button
-                  type="button"
-                  onClick={() => setForm((prev) => ({ ...prev, isActive: !prev.isActive }))}
-                  className={cn(
-                    "px-4 py-1.5 rounded-lg text-sm font-bold transition-colors",
-                    form.isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-destructive text-destructive-foreground"
-                  )}
-                >
-                  {form.isActive ? 'כן' : 'לא'}
-                </button>
-                <span className="font-medium">משתמש פעיל</span>
-              </div>
-
-              <div className="flex gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateUserModal(false)}
-                  className="flex-1 py-3 rounded-xl border border-input bg-background"
-                >
-                  ביטול
-                </button>
-                <button
-                  type="submit"
-                  disabled={creatingUser}
-                  className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-bold disabled:opacity-60"
-                >
-                  {creatingUser ? 'יוצר...' : 'צור משתמש'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CreateUserModal
+          form={form}
+          setForm={setForm}
+          showCreatePassword={showCreatePassword}
+          setShowCreatePassword={setShowCreatePassword}
+          createCompanyOptions={createCompanyOptions}
+          createCompanyPickerOpen={createCompanyPickerOpen}
+          setCreateCompanyPickerOpen={setCreateCompanyPickerOpen}
+          creatingUser={creatingUser}
+          onSubmit={submitCreateUser}
+          onClose={() => setShowCreateUserModal(false)}
+          callerRole="super_admin"
+          onCompanyCreated={(name) => {
+            setCreateCompanyOptions(prev => [...prev, { name, businessId: '' }]);
+            setForm(prev => ({ ...prev, companyName: name }));
+          }}
+        />
       )}
 
       {showFleetCompanyPicker && (
@@ -746,6 +616,47 @@ function FleetManagerDashboard({
     });
   };
 
+  // Fleet manager create user state
+  const [showFleetCreateUser, setShowFleetCreateUser] = useState(false);
+  const [fleetCreatingUser, setFleetCreatingUser] = useState(false);
+  const [showFleetCreatePassword, setShowFleetCreatePassword] = useState(false);
+  const [fleetForm, setFleetForm] = useState<CreateUserFormState>({
+    email: '', password: '', fullName: '', phone: '',
+    companyName: user?.company_name || '', role: 'driver', isActive: false, userNumber: '',
+  });
+  const [fleetCompanyPickerOpen, setFleetCompanyPickerOpen] = useState(false);
+
+  const fleetCompanyOptions = user?.company_name ? [{ name: user.company_name, businessId: '' }] : [];
+
+  const submitFleetCreateUser = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!fleetForm.email || !fleetForm.password || !fleetForm.fullName) {
+      toast({ title: 'חסרים פרטים', description: 'יש למלא את כל השדות.', variant: 'destructive' });
+      return;
+    }
+    setFleetCreatingUser(true);
+    const { data, error } = await supabase.functions.invoke('create-admin-user', {
+      body: {
+        email: fleetForm.email, password: fleetForm.password, full_name: fleetForm.fullName,
+        phone: fleetForm.phone, company_name: user?.company_name || '',
+        role: fleetForm.role, is_active: false, user_number: fleetForm.userNumber || null,
+      },
+    });
+    setFleetCreatingUser(false);
+    if (error || data?.error) {
+      const errMsg = data?.error || error?.message || '';
+      let hebrewMsg = 'אירעה שגיאה.';
+      if (errMsg.toLowerCase().includes('already registered') || errMsg.toLowerCase().includes('unique')) {
+        hebrewMsg = 'כתובת האימייל כבר קיימת במערכת.';
+      } else if (errMsg) hebrewMsg = errMsg;
+      toast({ title: 'יצירת משתמש נכשלה', description: hebrewMsg, variant: 'destructive' });
+      return;
+    }
+    toast({ title: '✅ הבקשה נשלחה', description: 'המשתמש נוצר בסטטוס "ממתין לאישור". מנהל על יקבל התראה ויאשר.' });
+    setFleetForm({ email: '', password: '', fullName: '', phone: '', companyName: user?.company_name || '', role: 'driver', isActive: false, userNumber: '' });
+    setShowFleetCreateUser(false);
+  };
+
   const fleetActions = useMemo(
     () => [
       { label: 'הצמדת נהג לרכב', icon: ArrowRightLeft, href: '/attach-car' },
@@ -907,7 +818,31 @@ function FleetManagerDashboard({
           <Eye size={24} />
           <span>כניסה לדשבורד נהג</span>
         </button>
+        <button
+          type="button"
+          onClick={() => setShowFleetCreateUser(true)}
+          className="big-action-btn bg-card text-foreground border border-border"
+        >
+          <UserPlus size={24} />
+          <span>פתיחת משתמש חדש</span>
+        </button>
       </section>
+
+      {showFleetCreateUser && (
+        <CreateUserModal
+          form={fleetForm}
+          setForm={setFleetForm}
+          showCreatePassword={showFleetCreatePassword}
+          setShowCreatePassword={setShowFleetCreatePassword}
+          createCompanyOptions={fleetCompanyOptions}
+          createCompanyPickerOpen={fleetCompanyPickerOpen}
+          setCreateCompanyPickerOpen={setFleetCompanyPickerOpen}
+          creatingUser={fleetCreatingUser}
+          onSubmit={submitFleetCreateUser}
+          onClose={() => setShowFleetCreateUser(false)}
+          callerRole="fleet_manager"
+        />
+      )}
 
       {showDriverPicker && (
         <div className="fixed inset-0 z-50 bg-foreground/50 flex items-center justify-center p-4">
