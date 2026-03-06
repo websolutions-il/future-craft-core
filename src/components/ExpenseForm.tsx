@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Expense, FaultAttachment, expenseCategories } from '@/data/demo-data';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowRight, Camera, X, Plus } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useDriverVehicle } from '@/hooks/useDriverVehicle';
 
 interface ExpenseFormProps {
   onSubmit: (expense: Expense) => void;
@@ -15,17 +17,23 @@ const paymentMethods = [
 ];
 
 export default function ExpenseForm({ onSubmit, onCancel }: ExpenseFormProps) {
+  const { user } = useAuth();
+  const { vehicle, isDriver } = useDriverVehicle();
+
   const [dbVehicles, setDbVehicles] = useState<{ license_plate: string; manufacturer: string; model: string }[]>([]);
   const [dbDrivers, setDbDrivers] = useState<{ full_name: string }[]>([]);
 
   useEffect(() => {
-    supabase.from('vehicles').select('license_plate, manufacturer, model').then(({ data }) => {
-      if (data) setDbVehicles(data);
-    });
-    supabase.from('drivers').select('full_name').then(({ data }) => {
-      if (data) setDbDrivers(data);
-    });
-  }, []);
+    if (!isDriver) {
+      supabase.from('vehicles').select('license_plate, manufacturer, model').then(({ data }) => {
+        if (data) setDbVehicles(data);
+      });
+      supabase.from('drivers').select('full_name').then(({ data }) => {
+        if (data) setDbDrivers(data);
+      });
+    }
+  }, [isDriver]);
+
   const [driverName, setDriverName] = useState('');
   const [vehiclePlate, setVehiclePlate] = useState('');
   const [odometer, setOdometer] = useState('');
@@ -38,6 +46,20 @@ export default function ExpenseForm({ onSubmit, onCancel }: ExpenseFormProps) {
   const [notes, setNotes] = useState('');
   const [receiptImage, setReceiptImage] = useState<FaultAttachment | null>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
+
+  // Auto-fill for drivers
+  useEffect(() => {
+    if (isDriver && user) {
+      setDriverName(user.full_name);
+    }
+  }, [isDriver, user]);
+
+  useEffect(() => {
+    if (isDriver && vehicle) {
+      setVehiclePlate(vehicle.license_plate);
+      if (vehicle.odometer) setOdometer(vehicle.odometer.toString());
+    }
+  }, [isDriver, vehicle]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -95,24 +117,48 @@ export default function ExpenseForm({ onSubmit, onCancel }: ExpenseFormProps) {
         <div className="card-elevated">
           <h2 className="text-lg font-bold mb-4 text-primary">פרטי נהג ורכב</h2>
           <div className="space-y-4">
-            <div>
-              <label className="block text-lg font-medium mb-2">שם הנהג</label>
-              <select value={driverName} onChange={e => setDriverName(e.target.value)} className={inputClass}>
-                <option value="">בחר נהג...</option>
-                {dbDrivers.map(d => (
-                  <option key={d.full_name} value={d.full_name}>{d.full_name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-lg font-medium mb-2">מספר רכב</label>
-              <select value={vehiclePlate} onChange={e => setVehiclePlate(e.target.value)} className={inputClass}>
-                <option value="">בחר רכב...</option>
-                {dbVehicles.map(v => (
-                  <option key={v.license_plate} value={v.license_plate}>{v.license_plate} - {v.manufacturer} {v.model}</option>
-                ))}
-              </select>
-            </div>
+            {isDriver ? (
+              <div>
+                <label className="block text-lg font-medium mb-2">שם הנהג</label>
+                <div className="w-full p-4 text-lg rounded-xl border-2 border-input bg-muted/50 font-bold">{driverName}</div>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-lg font-medium mb-2">שם הנהג</label>
+                <select value={driverName} onChange={e => setDriverName(e.target.value)} className={inputClass}>
+                  <option value="">בחר נהג...</option>
+                  {dbDrivers.map(d => (
+                    <option key={d.full_name} value={d.full_name}>{d.full_name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {isDriver && vehicle ? (
+              <div>
+                <label className="block text-lg font-medium mb-2">רכב משויך</label>
+                <div className="w-full p-4 text-lg rounded-xl border-2 border-input bg-muted/50">
+                  <p className="font-bold">{vehicle.license_plate}</p>
+                  <p className="text-sm text-muted-foreground">{vehicle.manufacturer} {vehicle.model} {vehicle.year ? `(${vehicle.year})` : ''}</p>
+                </div>
+              </div>
+            ) : !isDriver ? (
+              <div>
+                <label className="block text-lg font-medium mb-2">מספר רכב</label>
+                <select value={vehiclePlate} onChange={e => setVehiclePlate(e.target.value)} className={inputClass}>
+                  <option value="">בחר רכב...</option>
+                  {dbVehicles.map(v => (
+                    <option key={v.license_plate} value={v.license_plate}>{v.license_plate} - {v.manufacturer} {v.model}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-lg font-medium mb-2">מספר רכב</label>
+                <div className="w-full p-4 text-lg rounded-xl border-2 border-input bg-muted/50 text-muted-foreground">אין רכב משויך</div>
+              </div>
+            )}
+
             <div>
               <label className="block text-lg font-medium mb-2">קילומטראז'</label>
               <input
@@ -146,42 +192,19 @@ export default function ExpenseForm({ onSubmit, onCancel }: ExpenseFormProps) {
             </div>
             <div>
               <label className="block text-lg font-medium mb-2">שם הספק</label>
-              <input
-                type="text"
-                value={vendor}
-                onChange={e => setVendor(e.target.value)}
-                placeholder="הכנס שם ספק..."
-                className={inputClass}
-              />
+              <input type="text" value={vendor} onChange={e => setVendor(e.target.value)} placeholder="הכנס שם ספק..." className={inputClass} />
             </div>
             <div>
               <label className="block text-lg font-medium mb-2">מספר חשבונית</label>
-              <input
-                type="text"
-                value={invoiceNumber}
-                onChange={e => setInvoiceNumber(e.target.value)}
-                placeholder="הכנס מספר חשבונית..."
-                className={inputClass}
-              />
+              <input type="text" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} placeholder="הכנס מספר חשבונית..." className={inputClass} />
             </div>
             <div>
               <label className="block text-lg font-medium mb-2">תאריך חשבונית</label>
-              <input
-                type="date"
-                value={invoiceDate}
-                onChange={e => setInvoiceDate(e.target.value)}
-                className={inputClass}
-              />
+              <input type="date" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} className={inputClass} />
             </div>
             <div>
               <label className="block text-lg font-medium mb-2">סכום בשקלים</label>
-              <input
-                type="number"
-                value={amount}
-                onChange={e => setAmount(e.target.value)}
-                placeholder="₪ הכנס סכום..."
-                className={inputClass}
-              />
+              <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="₪ הכנס סכום..." className={inputClass} />
             </div>
             <div>
               <label className="block text-lg font-medium mb-2">אמצעי תשלום</label>
@@ -214,10 +237,7 @@ export default function ExpenseForm({ onSubmit, onCancel }: ExpenseFormProps) {
           ) : (
             <div className="relative">
               <img src={receiptImage.url} alt="חשבונית" className="w-full rounded-xl max-h-64 object-cover" />
-              <button
-                onClick={removeReceipt}
-                className="absolute top-2 left-2 p-2 rounded-full bg-destructive text-destructive-foreground"
-              >
+              <button onClick={removeReceipt} className="absolute top-2 left-2 p-2 rounded-full bg-destructive text-destructive-foreground">
                 <X size={20} />
               </button>
             </div>
@@ -228,13 +248,7 @@ export default function ExpenseForm({ onSubmit, onCancel }: ExpenseFormProps) {
         {/* Notes */}
         <div>
           <label className="block text-lg font-medium mb-2">הערות</label>
-          <textarea
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-            rows={3}
-            placeholder="הערות נוספות..."
-            className={`${inputClass} resize-none`}
-          />
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="הערות נוספות..." className={`${inputClass} resize-none`} />
         </div>
 
         {/* Submit */}

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
+import { useDriverVehicle } from '@/hooks/useDriverVehicle';
 import MultiImageUpload from '@/components/MultiImageUpload';
 
 interface AccidentRow {
@@ -229,6 +230,8 @@ export default function Accidents() {
 
 function AccidentForm({ accident, onDone, onBack, user }: { accident: AccidentRow | null; onDone: () => void; onBack: () => void; user: any }) {
   const isEdit = !!accident;
+  const { vehicle, isDriver } = useDriverVehicle();
+  
   const [vehiclePlate, setVehiclePlate] = useState(accident?.vehicle_plate || '');
   const [driverName, setDriverName] = useState(accident?.driver_name || user?.full_name || '');
   const [location, setLocation] = useState(accident?.location || '');
@@ -244,7 +247,24 @@ function AccidentForm({ accident, onDone, onBack, user }: { accident: AccidentRo
   const [loading, setLoading] = useState(false);
 
   const [vehicles, setVehicles] = useState<{ license_plate: string; manufacturer: string; model: string }[]>([]);
-  useEffect(() => { supabase.from('vehicles').select('license_plate, manufacturer, model').then(({ data }) => { if (data) setVehicles(data); }); }, []);
+  useEffect(() => {
+    if (!isDriver) {
+      supabase.from('vehicles').select('license_plate, manufacturer, model').then(({ data }) => { if (data) setVehicles(data); });
+    }
+  }, [isDriver]);
+
+  // Auto-fill for drivers
+  useEffect(() => {
+    if (isDriver && !isEdit && vehicle) {
+      setVehiclePlate(vehicle.license_plate);
+    }
+  }, [isDriver, vehicle, isEdit]);
+
+  useEffect(() => {
+    if (isDriver && !isEdit && user) {
+      setDriverName(user.full_name);
+    }
+  }, [isDriver, user, isEdit]);
 
   const isValid = vehiclePlate && driverName && description;
   const inputClass = "w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
@@ -258,7 +278,6 @@ function AccidentForm({ accident, onDone, onBack, user }: { accident: AccidentRo
     else {
       const insertPayload = { ...payload, company_name: user?.company_name || '', created_by: user?.id };
       ({ error } = await supabase.from('accidents').insert(insertPayload));
-      // Send email notification to fleet managers (fire-and-forget)
       if (!error) {
         supabase.functions.invoke('notify-accident-email', { body: { record: insertPayload } }).catch(console.error);
       }
@@ -272,14 +291,35 @@ function AccidentForm({ accident, onDone, onBack, user }: { accident: AccidentRo
       <button onClick={onBack} className="flex items-center gap-2 text-primary text-lg font-medium mb-4 min-h-[48px]"><ArrowRight size={20} /> חזרה</button>
       <h1 className="text-2xl font-bold mb-6">{isEdit ? 'עריכת תאונה' : 'דיווח תאונה'}</h1>
       <div className="space-y-5">
-        <div><label className="block text-lg font-medium mb-2">רכב *</label>
-          <select value={vehiclePlate} onChange={e => setVehiclePlate(e.target.value)} className={inputClass}>
-            <option value="">בחר...</option>
-            {vehicles.map(v => <option key={v.license_plate} value={v.license_plate}>{v.license_plate} - {v.manufacturer} {v.model}</option>)}
-          </select>
-        </div>
-        <div><label className="block text-lg font-medium mb-2">נהג *</label>
-          <input value={driverName} onChange={e => setDriverName(e.target.value)} className={inputClass} /></div>
+        {/* Vehicle */}
+        {isDriver && vehicle && !isEdit ? (
+          <div>
+            <label className="block text-lg font-medium mb-2">רכב משויך</label>
+            <div className="w-full p-4 text-lg rounded-xl border-2 border-input bg-muted/50">
+              <p className="font-bold">{vehicle.license_plate}</p>
+              <p className="text-sm text-muted-foreground">{vehicle.manufacturer} {vehicle.model} {vehicle.year ? `(${vehicle.year})` : ''}</p>
+            </div>
+          </div>
+        ) : (
+          <div><label className="block text-lg font-medium mb-2">רכב *</label>
+            <select value={vehiclePlate} onChange={e => setVehiclePlate(e.target.value)} className={inputClass}>
+              <option value="">בחר...</option>
+              {vehicles.map(v => <option key={v.license_plate} value={v.license_plate}>{v.license_plate} - {v.manufacturer} {v.model}</option>)}
+            </select>
+          </div>
+        )}
+        
+        {/* Driver */}
+        {isDriver && !isEdit ? (
+          <div>
+            <label className="block text-lg font-medium mb-2">נהג</label>
+            <div className="w-full p-4 text-lg rounded-xl border-2 border-input bg-muted/50 font-bold">{driverName}</div>
+          </div>
+        ) : (
+          <div><label className="block text-lg font-medium mb-2">נהג *</label>
+            <input value={driverName} onChange={e => setDriverName(e.target.value)} className={inputClass} /></div>
+        )}
+
         <div><label className="block text-lg font-medium mb-2">מיקום</label>
           <input value={location} onChange={e => setLocation(e.target.value)} placeholder="כתובת / צומת..." className={inputClass} /></div>
         <div><label className="block text-lg font-medium mb-2">תיאור *</label>
