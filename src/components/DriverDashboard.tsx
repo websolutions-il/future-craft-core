@@ -9,6 +9,7 @@ import {
   Shield,
   Wrench,
   Bell,
+  Calendar,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,9 +21,11 @@ interface AssignedVehicle {
   model: string;
   year: number | null;
   license_plate: string;
+  vehicle_type: string;
   odometer: number;
   test_expiry: string | null;
   insurance_expiry: string | null;
+  comprehensive_insurance_expiry: string | null;
 }
 
 interface DriverAlert {
@@ -31,6 +34,7 @@ interface DriverAlert {
   count?: number;
   severity: 'critical' | 'warning' | 'info';
   link: string;
+  detail?: string;
 }
 
 const OPEN_TREATMENT_STATUSES = ['new', 'open', 'in_progress', 'pending', 'חדש', 'פתוח', 'בטיפול'];
@@ -39,6 +43,11 @@ const daysUntil = (dateValue: string | null | undefined) => {
   if (!dateValue) return null;
   const diff = new Date(dateValue).getTime() - Date.now();
   return Math.ceil(diff / 86400000);
+};
+
+const formatDate = (dateValue: string | null | undefined) => {
+  if (!dateValue) return '—';
+  return new Date(dateValue).toLocaleDateString('he-IL');
 };
 
 const isOpenStatus = (status: string | null | undefined) =>
@@ -55,9 +64,16 @@ const driverActions = [
   { label: 'יצירת קשר עם מוקד', icon: Phone, link: '/emergency' },
 ];
 
+function ExpiryBadge({ days }: { days: number | null }) {
+  if (days === null) return <span className="text-xs text-muted-foreground">לא הוזן</span>;
+  if (days <= 0) return <span className="text-xs font-bold text-destructive">פג תוקף!</span>;
+  if (days <= 14) return <span className="text-xs font-bold text-destructive">עוד {days} ימים</span>;
+  if (days <= 30) return <span className="text-xs font-semibold text-warning">עוד {days} ימים</span>;
+  return <span className="text-xs text-muted-foreground">עוד {days} ימים</span>;
+}
+
 export default function DriverDashboard() {
   const { user } = useAuth();
-
   const [loading, setLoading] = useState(true);
   const [vehicle, setVehicle] = useState<AssignedVehicle | null>(null);
   const [alerts, setAlerts] = useState<DriverAlert[]>([]);
@@ -71,7 +87,7 @@ export default function DriverDashboard() {
       const [vehicleRes, serviceOrdersRes] = await Promise.all([
         supabase
           .from('vehicles')
-          .select('id, manufacturer, model, year, license_plate, odometer, test_expiry, insurance_expiry')
+          .select('id, manufacturer, model, year, license_plate, vehicle_type, odometer, test_expiry, insurance_expiry, comprehensive_insurance_expiry')
           .eq('assigned_driver_id', user.id)
           .limit(1),
         supabase
@@ -81,50 +97,48 @@ export default function DriverDashboard() {
       ]);
 
       if (vehicleRes.error || serviceOrdersRes.error) {
-        toast({
-          title: 'שגיאה בטעינת נתוני הדשבורד',
-          description: 'לא הצלחנו לטעון נתונים כרגע.',
-          variant: 'destructive',
-        });
+        toast({ title: 'שגיאה בטעינת נתוני הדשבורד', description: 'לא הצלחנו לטעון נתונים כרגע.', variant: 'destructive' });
         setLoading(false);
         return;
       }
 
-      const assignedVehicle = vehicleRes.data?.[0] || null;
-      setVehicle(
-        assignedVehicle
-          ? {
-              id: assignedVehicle.id,
-              manufacturer: assignedVehicle.manufacturer || '-',
-              model: assignedVehicle.model || '-',
-              year: assignedVehicle.year,
-              license_plate: assignedVehicle.license_plate,
-              odometer: Number(assignedVehicle.odometer) || 0,
-              test_expiry: assignedVehicle.test_expiry,
-              insurance_expiry: assignedVehicle.insurance_expiry,
-            }
-          : null
-      );
+      const v = vehicleRes.data?.[0] || null;
+      const assignedVehicle: AssignedVehicle | null = v
+        ? {
+            id: v.id,
+            manufacturer: v.manufacturer || '—',
+            model: v.model || '—',
+            year: v.year,
+            license_plate: v.license_plate,
+            vehicle_type: v.vehicle_type || '—',
+            odometer: Number(v.odometer) || 0,
+            test_expiry: v.test_expiry,
+            insurance_expiry: v.insurance_expiry,
+            comprehensive_insurance_expiry: v.comprehensive_insurance_expiry,
+          }
+        : null;
+      setVehicle(assignedVehicle);
 
+      // Build alerts
       const allOrders = serviceOrdersRes.data || [];
-      const openOrders = allOrders.filter((order) => isOpenStatus(order.treatment_status));
+      const openOrders = allOrders.filter((o) => isOpenStatus(o.treatment_status));
       const scopedOpenOrders = assignedVehicle
-        ? openOrders.filter(
-            (order) => !order.vehicle_plate || order.vehicle_plate === assignedVehicle.license_plate
-          )
+        ? openOrders.filter((o) => !o.vehicle_plate || o.vehicle_plate === assignedVehicle.license_plate)
         : openOrders;
-      const periodicServiceOpen = scopedOpenOrders.filter((order) =>
-        (order.service_category || '').toLowerCase().includes('תקופ')
+      const periodicServiceOpen = scopedOpenOrders.filter((o) =>
+        (o.service_category || '').toLowerCase().includes('תקופ')
       );
 
       const newAlerts: DriverAlert[] = [];
       const testDays = daysUntil(assignedVehicle?.test_expiry);
       const insuranceDays = daysUntil(assignedVehicle?.insurance_expiry);
+      const compInsuranceDays = daysUntil(assignedVehicle?.comprehensive_insurance_expiry);
 
       if (testDays !== null && testDays <= 30) {
         newAlerts.push({
           key: 'test',
-          title: testDays <= 0 ? 'טסט פג תוקף' : `טסט מתקרב (${testDays} ימים)`,
+          title: testDays <= 0 ? 'טסט פג תוקף!' : `טסט בעוד ${testDays} ימים`,
+          detail: `תפוגה: ${formatDate(assignedVehicle?.test_expiry)}`,
           severity: testDays <= 0 ? 'critical' : 'warning',
           link: '/alerts',
         });
@@ -133,8 +147,19 @@ export default function DriverDashboard() {
       if (insuranceDays !== null && insuranceDays <= 30) {
         newAlerts.push({
           key: 'insurance',
-          title: insuranceDays <= 0 ? 'ביטוח פג תוקף' : `ביטוח מתקרב (${insuranceDays} ימים)`,
+          title: insuranceDays <= 0 ? 'ביטוח חובה פג תוקף!' : `ביטוח חובה בעוד ${insuranceDays} ימים`,
+          detail: `תפוגה: ${formatDate(assignedVehicle?.insurance_expiry)}`,
           severity: insuranceDays <= 0 ? 'critical' : 'warning',
+          link: '/alerts',
+        });
+      }
+
+      if (compInsuranceDays !== null && compInsuranceDays <= 30) {
+        newAlerts.push({
+          key: 'comp_insurance',
+          title: compInsuranceDays <= 0 ? 'ביטוח מקיף פג תוקף!' : `ביטוח מקיף בעוד ${compInsuranceDays} ימים`,
+          detail: `תפוגה: ${formatDate(assignedVehicle?.comprehensive_insurance_expiry)}`,
+          severity: compInsuranceDays <= 0 ? 'critical' : 'warning',
           link: '/alerts',
         });
       }
@@ -166,6 +191,10 @@ export default function DriverDashboard() {
     loadDriverDashboard();
   }, [user?.id, user?.full_name]);
 
+  const testDays = daysUntil(vehicle?.test_expiry);
+  const insuranceDays = daysUntil(vehicle?.insurance_expiry);
+  const compInsuranceDays = daysUntil(vehicle?.comprehensive_insurance_expiry);
+
   return (
     <div className="animate-fade-in space-y-6">
       <header className="space-y-1">
@@ -174,32 +203,70 @@ export default function DriverDashboard() {
         <p className="text-muted-foreground text-sm">{user?.company_name}</p>
       </header>
 
+      {/* Vehicle Info */}
       <section className="card-elevated p-4">
         <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
           <Car size={18} className="text-primary" />
           הרכב המשויך
         </h2>
         {vehicle ? (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
-            <div className="rounded-xl bg-muted p-3">
-              <p className="text-xs text-muted-foreground">יצרן</p>
-              <p className="font-bold">{vehicle.manufacturer}</p>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+              <div className="rounded-xl bg-muted p-3">
+                <p className="text-xs text-muted-foreground">מספר רכב</p>
+                <p className="font-bold text-base">{vehicle.license_plate}</p>
+              </div>
+              <div className="rounded-xl bg-muted p-3">
+                <p className="text-xs text-muted-foreground">יצרן</p>
+                <p className="font-bold">{vehicle.manufacturer}</p>
+              </div>
+              <div className="rounded-xl bg-muted p-3">
+                <p className="text-xs text-muted-foreground">דגם</p>
+                <p className="font-bold">{vehicle.model}</p>
+              </div>
+              <div className="rounded-xl bg-muted p-3">
+                <p className="text-xs text-muted-foreground">שנתון</p>
+                <p className="font-bold">{vehicle.year || '—'}</p>
+              </div>
+              <div className="rounded-xl bg-muted p-3">
+                <p className="text-xs text-muted-foreground">סוג רכב</p>
+                <p className="font-bold">{vehicle.vehicle_type}</p>
+              </div>
+              <div className="rounded-xl bg-muted p-3">
+                <p className="text-xs text-muted-foreground">קילומטראז׳</p>
+                <p className="font-bold">{vehicle.odometer.toLocaleString()}</p>
+              </div>
             </div>
-            <div className="rounded-xl bg-muted p-3">
-              <p className="text-xs text-muted-foreground">דגם</p>
-              <p className="font-bold">{vehicle.model}</p>
-            </div>
-            <div className="rounded-xl bg-muted p-3">
-              <p className="text-xs text-muted-foreground">מודל</p>
-              <p className="font-bold">{vehicle.year || '-'}</p>
-            </div>
-            <div className="rounded-xl bg-muted p-3">
-              <p className="text-xs text-muted-foreground">מספר רכב</p>
-              <p className="font-bold">{vehicle.license_plate}</p>
-            </div>
-            <div className="rounded-xl bg-muted p-3">
-              <p className="text-xs text-muted-foreground">קילומטראז'</p>
-              <p className="font-bold">{vehicle.odometer.toLocaleString()}</p>
+
+            {/* Documents / Expiry dates */}
+            <div className="border border-border rounded-xl p-3 space-y-2">
+              <h3 className="text-sm font-bold flex items-center gap-2">
+                <Calendar size={14} className="text-primary" />
+                מסמכים ותוקף
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+                <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
+                  <span className="text-muted-foreground">טסט</span>
+                  <div className="text-left">
+                    <p className="text-xs">{formatDate(vehicle.test_expiry)}</p>
+                    <ExpiryBadge days={testDays} />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
+                  <span className="text-muted-foreground">ביטוח חובה</span>
+                  <div className="text-left">
+                    <p className="text-xs">{formatDate(vehicle.insurance_expiry)}</p>
+                    <ExpiryBadge days={insuranceDays} />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
+                  <span className="text-muted-foreground">ביטוח מקיף</span>
+                  <div className="text-left">
+                    <p className="text-xs">{formatDate(vehicle.comprehensive_insurance_expiry)}</p>
+                    <ExpiryBadge days={compInsuranceDays} />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         ) : (
@@ -207,6 +274,7 @@ export default function DriverDashboard() {
         )}
       </section>
 
+      {/* Alerts */}
       <section className="card-elevated p-4">
         <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
           <Bell size={18} className="text-primary" />
@@ -228,7 +296,10 @@ export default function DriverDashboard() {
                   ) : (
                     <Shield size={16} className={alert.severity === 'warning' ? 'text-warning' : 'text-primary'} />
                   )}
-                  <span className="font-medium">{alert.title}</span>
+                  <div>
+                    <span className="font-medium">{alert.title}</span>
+                    {alert.detail && <p className="text-xs text-muted-foreground">{alert.detail}</p>}
+                  </div>
                 </div>
                 {typeof alert.count === 'number' && (
                   <span className="text-sm font-bold text-destructive">{alert.count}</span>
@@ -241,6 +312,7 @@ export default function DriverDashboard() {
         )}
       </section>
 
+      {/* Actions */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {driverActions.map((action) => (
           <Link key={action.label} to={action.link} className="big-action-btn bg-card text-foreground border border-border">
