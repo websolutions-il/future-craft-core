@@ -69,6 +69,7 @@ const managerCategories = [
       { path: '/approval-settings', label: 'הגדרות אישורים', icon: CheckSquare },
       { path: '/suppliers', label: 'ניהול ספקים', icon: Building2 },
       { path: '/emergency', label: 'מספרי חירום', icon: Phone },
+      { path: '/emergency-settings', label: 'הגדרות חירום', icon: Phone },
       { path: '/email-templates', label: 'תבניות מייל', icon: Mail },
       { path: '/settings', label: 'הגדרות', icon: Settings },
     ],
