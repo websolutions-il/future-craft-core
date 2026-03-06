@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Briefcase, Plus, Search, ArrowRight, Clock, CheckCircle, MessageSquareReply,
-  Filter, Car, User, Building2, Calendar, Truck, Trash2, Edit,
+  Filter, Car, User, Building2, Calendar, Truck, Trash2, Edit, History,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -57,6 +58,7 @@ const URGENCY_LABELS: Record<string, string> = { normal: 'רגיל', urgent: 'ד
 const URGENCY_COLORS: Record<string, string> = { normal: 'bg-muted text-muted-foreground', urgent: 'bg-destructive/10 text-destructive' };
 
 export default function ServiceOrders() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const companyFilter = useCompanyFilter();
   const [orders, setOrders] = useState<ServiceRow[]>([]);
@@ -308,10 +310,16 @@ export default function ServiceOrders() {
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <h1 className="page-header mb-0 flex items-center gap-3"><Briefcase size={28} /> הזמנות שירות</h1>
-        <button onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]">
-          <Plus size={22} /> הזמנה חדשה
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => navigate('/service-order-history')}
+            className="flex items-center gap-2 px-4 py-3 rounded-xl bg-muted text-foreground font-bold text-sm min-h-[48px]">
+            <History size={18} /> היסטוריה
+          </button>
+          <button onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]">
+            <Plus size={22} /> הזמנה חדשה
+          </button>
+        </div>
       </div>
 
       {/* Dashboard stats - managers only */}
