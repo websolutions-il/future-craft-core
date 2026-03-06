@@ -47,7 +47,12 @@ Deno.serve(async (req) => {
       .eq('user_id', caller.id)
       .single();
 
-    if (roleError || roleRow?.role !== 'super_admin') {
+    const callerRole = roleRow?.role;
+    const isSuperAdmin = callerRole === 'super_admin';
+    const isFleetManager = callerRole === 'fleet_manager';
+
+    // Only super_admin and fleet_manager can access this function
+    if (!isSuperAdmin && !isFleetManager) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -55,6 +60,15 @@ Deno.serve(async (req) => {
     }
 
     const { email, password, full_name, role, company_name, phone, action, user_id, is_active, user_number } = await req.json();
+
+    // Actions that require super_admin only
+    const superAdminOnlyActions = ['update-password', 'reset-password-by-id', 'update-role', 'update-profile', 'toggle-active'];
+    if (action && superAdminOnlyActions.includes(action) && !isSuperAdmin) {
+      return new Response(JSON.stringify({ error: 'Forbidden - super_admin only' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (action === 'update-password') {
       if (!email || !password) {
@@ -94,7 +108,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Reset password by user ID (for user management screen)
+    // Reset password by user ID
     if (action === 'reset-password-by-id') {
       if (!user_id || !password) {
         return new Response(JSON.stringify({ error: 'user_id and password are required' }), {
@@ -207,6 +221,7 @@ Deno.serve(async (req) => {
       });
     }
 
+    // === CREATE USER ===
     if (!email || !password || !full_name || !company_name || !role) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400,
@@ -214,11 +229,31 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Fleet managers can only create users for their own company, and users are always inactive
+    let effectiveCompany = company_name;
+    let effectiveIsActive = typeof is_active === 'boolean' ? is_active : true;
+
+    if (isFleetManager) {
+      // Force inactive - only super_admin can activate
+      effectiveIsActive = false;
+
+      // Fleet manager can only create for their own company
+      const { data: callerProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('company_name')
+        .eq('id', caller.id)
+        .single();
+      
+      if (callerProfile?.company_name) {
+        effectiveCompany = callerProfile.company_name;
+      }
+    }
+
     const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name, role, company_name },
+      user_metadata: { full_name, role, company_name: effectiveCompany },
     });
 
     if (createError) {
@@ -237,13 +272,45 @@ Deno.serve(async (req) => {
         {
           id: userData.user.id,
           full_name,
-          company_name,
+          company_name: effectiveCompany,
           phone: phone || '',
-          is_active: typeof is_active === 'boolean' ? is_active : true,
+          is_active: effectiveIsActive,
           user_number: user_number || null,
         },
         { onConflict: 'id' }
       );
+
+    // If created by fleet_manager, notify all super_admins
+    if (isFleetManager) {
+      const { data: callerProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('full_name, company_name')
+        .eq('id', caller.id)
+        .single();
+
+      const { data: superAdmins } = await supabaseAdmin
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'super_admin');
+
+      if (superAdmins && superAdmins.length > 0) {
+        const roleLabels: Record<string, string> = {
+          driver: 'נהג',
+          fleet_manager: 'מנהל צי',
+          super_admin: 'מנהל על',
+        };
+
+        const notifications = superAdmins.map((sa) => ({
+          user_id: sa.user_id,
+          type: 'new_user_request',
+          title: '📋 בקשה לפתיחת משתמש חדש',
+          message: `מבקש: ${callerProfile?.full_name || 'לא ידוע'} | חברה: ${effectiveCompany} | סוג: ${roleLabels[role] || role} | שם: ${full_name} | ${new Date().toLocaleString('he-IL')}`,
+          link: '/user-management',
+        }));
+
+        await supabaseAdmin.from('driver_notifications').insert(notifications);
+      }
+    }
 
     return new Response(JSON.stringify({ success: true, user_id: userData.user.id }), {
       status: 200,
