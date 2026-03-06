@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
-import { BarChart3, Car, Users, FileText, Wrench, AlertTriangle, Download, Filter, ChevronDown, ChevronUp, ShoppingCart, TrendingUp, Package } from 'lucide-react';
+import { BarChart3, Car, Users, FileText, Wrench, AlertTriangle, Download, Filter, ChevronDown, ChevronUp, ShoppingCart, TrendingUp, Package, Mail, MessageSquare, Share2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 interface RawData {
   vehicles: any[];
@@ -15,7 +17,6 @@ interface RawData {
   expenses: any[];
   serviceOrders: any[];
 }
-
 
 const reportTypes = [
   { value: 'vehicles', label: 'סיכום רכבים' },
@@ -34,6 +35,7 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [expandedReport, setExpandedReport] = useState<string | null>(null);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   // Filter state
   const [filterCompany, setFilterCompany] = useState('');
@@ -41,7 +43,6 @@ export default function Reports() {
   const [filterDateTo, setFilterDateTo] = useState<Date | undefined>();
   const [filterReportTypes, setFilterReportTypes] = useState<string[]>([]);
   const [filterVendor, setFilterVendor] = useState('');
-  
   const [filterVehicle, setFilterVehicle] = useState('');
   const [filterDriver, setFilterDriver] = useState('');
 
@@ -67,13 +68,11 @@ export default function Reports() {
     setLoading(false);
   };
 
-  // Derived unique values for filters
   const companies = useMemo(() => [...new Set(raw.vehicles.map(v => v.company_name).filter(Boolean))], [raw]);
   const vendors = useMemo(() => [...new Set([...raw.expenses.map(e => e.vendor), ...raw.serviceOrders.map(s => s.vendor_name)].filter(Boolean))], [raw]);
   const vehiclePlates = useMemo(() => [...new Set(raw.vehicles.map(v => v.license_plate).filter(Boolean))], [raw]);
   const driverNames = useMemo(() => [...new Set(raw.drivers.map(d => d.full_name).filter(Boolean))], [raw]);
 
-  // Apply filters
   const filtered = useMemo(() => {
     const inDateRange = (dateStr: string | null) => {
       if (!dateStr) return true;
@@ -115,11 +114,9 @@ export default function Reports() {
 
   const hasActiveFilters = filterCompany || filterDateFrom || filterDateTo || filterReportTypes.length > 0 || filterVendor || filterVehicle || filterDriver;
 
-  // Stats
   const totalExpenses = filtered.expenses.reduce((s, e) => s + (e.amount || 0), 0);
   const totalAccidentCost = filtered.accidents.reduce((s, a) => s + (a.estimated_cost || 0), 0);
 
-  // Vendor summary
   const vendorSummary = useMemo(() => {
     const map: Record<string, { count: number; total: number }> = {};
     filtered.expenses.forEach(e => {
@@ -136,18 +133,51 @@ export default function Reports() {
     return Object.entries(map).sort((a, b) => b[1].total - a[1].total);
   }, [filtered]);
 
-  if (loading) {
-    return <div className="animate-fade-in text-center py-12"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto" /></div>;
-  }
+  // Build CSV content for export/share
+  const buildReportText = () => {
+    const lines: string[] = [];
+    const dateStr = new Date().toLocaleDateString('he-IL');
+    lines.push(`דוח דליה - ${dateStr}`);
+    lines.push('');
 
-  const selectClass = "w-full p-3 text-base rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
+    if (showReport('expenses') && filtered.expenses.length > 0) {
+      lines.push('--- הוצאות ---');
+      filtered.expenses.forEach(e => {
+        lines.push(`${e.date ? new Date(e.date).toLocaleDateString('he-IL') : ''} | ${e.category || ''} | ${e.vendor || ''} | רכב: ${e.vehicle_plate || ''} | ${e.driver_name || ''} | ₪${(e.amount || 0).toLocaleString()}`);
+      });
+      lines.push(`סה"כ: ₪${totalExpenses.toLocaleString()}`);
+      lines.push('');
+    }
+    if (showReport('faults') && filtered.faults.length > 0) {
+      lines.push('--- תקלות ---');
+      filtered.faults.forEach(f => {
+        lines.push(`${f.date ? new Date(f.date).toLocaleDateString('he-IL') : ''} | ${f.fault_type || ''} | רכב: ${f.vehicle_plate || ''} | ${f.driver_name || ''} | ${f.status || ''}`);
+      });
+      lines.push('');
+    }
+    if (showReport('accidents') && filtered.accidents.length > 0) {
+      lines.push('--- תאונות ---');
+      filtered.accidents.forEach(a => {
+        lines.push(`${a.date ? new Date(a.date).toLocaleDateString('he-IL') : ''} | רכב: ${a.vehicle_plate || ''} | ${a.driver_name || ''} | ₪${(a.estimated_cost || 0).toLocaleString()}`);
+      });
+      lines.push('');
+    }
+    if (showReport('vehicles')) {
+      lines.push('--- רכבים ---');
+      filtered.vehicles.forEach(v => {
+        lines.push(`${v.license_plate || ''} | ${v.manufacturer || ''} ${v.model || ''} | ${v.year || ''} | ${v.status === 'active' ? 'פעיל' : v.status || ''} | ${(v.odometer || 0).toLocaleString()} ק"מ`);
+      });
+      lines.push('');
+    }
+    return lines.join('\n');
+  };
 
   const exportCSV = () => {
     const rows: string[][] = [];
 
     if (showReport('expenses') && filtered.expenses.length > 0) {
       rows.push(['--- הוצאות ---']);
-      rows.push(['תאריך', 'קטגוריה', 'ספק', 'רכב', 'נהג', 'סכום', 'חשבונית']);
+      rows.push(['תאריך', 'קטגוריה', 'ספק', 'מספר רכב', 'נהג', 'סכום', 'חשבונית']);
       filtered.expenses.forEach(e => rows.push([
         e.date ? new Date(e.date).toLocaleDateString('he-IL') : '',
         e.category || '', e.vendor || '', e.vehicle_plate || '', e.driver_name || '',
@@ -157,7 +187,7 @@ export default function Reports() {
     }
     if (showReport('faults') && filtered.faults.length > 0) {
       rows.push(['--- תקלות ---']);
-      rows.push(['תאריך', 'סוג', 'תיאור', 'רכב', 'נהג', 'סטטוס', 'דחיפות']);
+      rows.push(['תאריך', 'סוג', 'תיאור', 'מספר רכב', 'נהג', 'סטטוס', 'דחיפות']);
       filtered.faults.forEach(f => rows.push([
         f.date ? new Date(f.date).toLocaleDateString('he-IL') : '',
         f.fault_type || '', f.description || '', f.vehicle_plate || '', f.driver_name || '',
@@ -167,7 +197,7 @@ export default function Reports() {
     }
     if (showReport('accidents') && filtered.accidents.length > 0) {
       rows.push(['--- תאונות ---']);
-      rows.push(['תאריך', 'תיאור', 'רכב', 'נהג', 'מיקום', 'סטטוס', 'עלות']);
+      rows.push(['תאריך', 'תיאור', 'מספר רכב', 'נהג', 'מיקום', 'סטטוס', 'עלות']);
       filtered.accidents.forEach(a => rows.push([
         a.date ? new Date(a.date).toLocaleDateString('he-IL') : '',
         a.description || '', a.vehicle_plate || '', a.driver_name || '',
@@ -177,7 +207,7 @@ export default function Reports() {
     }
     if (showReport('service_orders') && filtered.serviceOrders.length > 0) {
       rows.push(['--- הזמנות שירות ---']);
-      rows.push(['תאריך', 'קטגוריה', 'תיאור', 'רכב', 'נהג', 'ספק', 'סטטוס']);
+      rows.push(['תאריך', 'קטגוריה', 'תיאור', 'מספר רכב', 'נהג', 'ספק', 'סטטוס']);
       filtered.serviceOrders.forEach(s => rows.push([
         s.service_date ? new Date(s.service_date).toLocaleDateString('he-IL') : '',
         s.service_category || '', s.description || '', s.vehicle_plate || '',
@@ -187,10 +217,10 @@ export default function Reports() {
     }
     if (showReport('vehicles')) {
       rows.push(['--- רכבים ---']);
-      rows.push(['לוחית', 'יצרן', 'דגם', 'שנה', 'סטטוס', 'קמ']);
+      rows.push(['מספר רכב', 'יצרן', 'דגם', 'שנה', 'סטטוס', 'ק"מ', 'חברה']);
       filtered.vehicles.forEach(v => rows.push([
         v.license_plate || '', v.manufacturer || '', v.model || '',
-        (v.year || '').toString(), v.status || '', (v.odometer || 0).toString(),
+        (v.year || '').toString(), v.status || '', (v.odometer || 0).toString(), v.company_name || '',
       ]));
       rows.push([]);
     }
@@ -203,9 +233,7 @@ export default function Reports() {
       ]));
     }
 
-    if (rows.length === 0) {
-      rows.push(['אין נתונים להצגה']);
-    }
+    if (rows.length === 0) rows.push(['אין נתונים להצגה']);
 
     const csv = '\uFEFF' + rows.map(r => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -215,19 +243,57 @@ export default function Reports() {
     link.click();
   };
 
+  const shareViaWhatsApp = () => {
+    const text = buildReportText();
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+    setShareDialogOpen(false);
+  };
+
+  const shareViaEmail = () => {
+    const text = buildReportText();
+    const subject = `דוח דליה - ${new Date().toLocaleDateString('he-IL')}`;
+    const url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+    setShareDialogOpen(false);
+  };
+
+  const copyToClipboard = () => {
+    const text = buildReportText();
+    navigator.clipboard.writeText(text).then(() => {
+      toast.success('הדוח הועתק ללוח');
+    });
+    setShareDialogOpen(false);
+  };
+
+  if (loading) {
+    return <div className="animate-fade-in text-center py-12"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto" /></div>;
+  }
+
+  const selectClass = "w-full p-3 text-base rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
+
+  const toggleExpand = (key: string) => {
+    setExpandedReport(expandedReport === key ? null : key);
+  };
+
   return (
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <h1 className="page-header !mb-0 flex items-center gap-3"><BarChart3 size={28} /> דוחות כספיים ותפעוליים</h1>
-        <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground text-base font-bold min-h-[48px]">
-          <Download size={20} /> ייצוא
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setShareDialogOpen(true)} className="flex items-center gap-2 px-3 py-3 rounded-xl bg-muted text-foreground text-base font-bold min-h-[48px]">
+            <Share2 size={20} />
+          </button>
+          <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground text-base font-bold min-h-[48px]">
+            <Download size={20} /> ייצוא
+          </button>
+        </div>
       </div>
       <p className="text-muted-foreground mb-4">
-        {hasActiveFilters ? 'מציג נתונים מסוננים — ייצוא CSV יכלול רק את הנתונים המוצגים' : 'סקירה כללית מבוססת נתונים חיים — סנן לצפייה ממוקדת'}
+        {hasActiveFilters ? 'מציג נתונים מסוננים — ייצוא יכלול רק את הנתונים המוצגים' : 'סקירה כללית מבוססת נתונים חיים — סנן לצפייה ממוקדת'}
       </p>
 
-      {/* Filter Toggle Button */}
+      {/* Filter Toggle */}
       <button
         onClick={() => setFiltersOpen(!filtersOpen)}
         className={cn(
@@ -246,7 +312,6 @@ export default function Reports() {
       {/* Filter Panel */}
       {filtersOpen && (
         <div className="card-elevated mb-6 space-y-4 animate-fade-in">
-          {/* Company */}
           {user?.role === 'super_admin' && (
             <div>
               <label className="block text-sm font-medium mb-1">חברה</label>
@@ -256,8 +321,6 @@ export default function Reports() {
               </select>
             </div>
           )}
-
-          {/* Date Range */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium mb-1">מתאריך</label>
@@ -286,8 +349,6 @@ export default function Reports() {
               </Popover>
             </div>
           </div>
-
-          {/* Report Types */}
           <div>
             <label className="block text-sm font-medium mb-2">סוג דוח</label>
             <div className="flex flex-wrap gap-2">
@@ -300,8 +361,6 @@ export default function Reports() {
               ))}
             </div>
           </div>
-
-          {/* Vendor */}
           <div>
             <label className="block text-sm font-medium mb-1">ספק</label>
             <select value={filterVendor} onChange={e => setFilterVendor(e.target.value)} className={selectClass}>
@@ -309,9 +368,6 @@ export default function Reports() {
               {vendors.map(v => <option key={v} value={v}>{v}</option>)}
             </select>
           </div>
-
-
-          {/* Vehicle & Driver */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium mb-1">רכב</label>
@@ -328,7 +384,6 @@ export default function Reports() {
               </select>
             </div>
           </div>
-
           {hasActiveFilters && (
             <button onClick={clearFilters} className="w-full py-3 rounded-xl bg-destructive/10 text-destructive font-bold text-base">
               ✕ נקה סינון
@@ -337,152 +392,161 @@ export default function Reports() {
         </div>
       )}
 
-      {/* Report Cards */}
+      {/* Report Cards - each with inline expandable table */}
       <div className="space-y-4">
+
+        {/* Expenses */}
         {showReport('expenses') && (
-          <div onClick={() => setExpandedReport(expandedReport === 'expenses' ? null : 'expenses')} className="cursor-pointer">
-          <ReportCard title="דוח הוצאות כולל" icon={FileText} color="bg-primary/10 text-primary"
-            stats={[
-              { label: 'סה"כ הוצאות', value: `₪${totalExpenses.toLocaleString()}` },
-              { label: 'מספר חשבוניות', value: filtered.expenses.length.toString() },
-              { label: 'ממוצע לחשבונית', value: `₪${filtered.expenses.length > 0 ? Math.round(totalExpenses / filtered.expenses.length).toLocaleString() : 0}` },
-            ]}
+          <ExpandableReport
+            expanded={expandedReport === 'expenses'}
+            onToggle={() => toggleExpand('expenses')}
+            card={
+              <ReportCard title="דוח הוצאות כולל" icon={FileText} color="bg-primary/10 text-primary"
+                expanded={expandedReport === 'expenses'}
+                stats={[
+                  { label: 'סה"כ הוצאות', value: `₪${totalExpenses.toLocaleString()}` },
+                  { label: 'מספר חשבוניות', value: filtered.expenses.length.toString() },
+                  { label: 'ממוצע לחשבונית', value: `₪${filtered.expenses.length > 0 ? Math.round(totalExpenses / filtered.expenses.length).toLocaleString() : 0}` },
+                ]}
+              />
+            }
+            table={filtered.expenses.length > 0 ? (
+              <DetailTable headers={['תאריך', 'קטגוריה', 'ספק', 'מספר רכב', 'נהג', 'סכום']}
+                rows={filtered.expenses.map(e => [
+                  e.date ? new Date(e.date).toLocaleDateString('he-IL') : '-',
+                  e.category || '-', e.vendor || '-', e.vehicle_plate || '-', e.driver_name || '-',
+                  `₪${(e.amount || 0).toLocaleString()}`,
+                ])} />
+            ) : null}
           />
-          </div>
         )}
 
         {/* Vehicles */}
         {showReport('vehicles') && (
-          <ReportCard title="דוח רכבים" icon={Car} color="bg-primary/10 text-primary"
-            stats={[
-              { label: 'רכבים פעילים', value: filtered.vehicles.filter(v => v.status === 'active').length.toString() },
-              { label: 'בטיפול', value: filtered.vehicles.filter(v => v.status === 'in_service').length.toString() },
-              { label: 'סה"כ רכבים', value: filtered.vehicles.length.toString() },
-            ]}
+          <ExpandableReport
+            expanded={expandedReport === 'vehicles'}
+            onToggle={() => toggleExpand('vehicles')}
+            card={
+              <ReportCard title="דוח רכבים" icon={Car} color="bg-primary/10 text-primary"
+                expanded={expandedReport === 'vehicles'}
+                stats={[
+                  { label: 'רכבים פעילים', value: filtered.vehicles.filter(v => v.status === 'active').length.toString() },
+                  { label: 'בטיפול', value: filtered.vehicles.filter(v => v.status === 'in_service').length.toString() },
+                  { label: 'סה"כ רכבים', value: filtered.vehicles.length.toString() },
+                ]}
+              />
+            }
+            table={filtered.vehicles.length > 0 ? (
+              <DetailTable headers={['מספר רכב', 'יצרן', 'דגם', 'שנה', 'סטטוס', 'ק"מ', 'חברה']}
+                rows={filtered.vehicles.map(v => [
+                  v.license_plate || '-', v.manufacturer || '-', v.model || '-',
+                  (v.year || '-').toString(), v.status === 'active' ? 'פעיל' : v.status || '-',
+                  (v.odometer || 0).toLocaleString(), v.company_name || '-',
+                ])} />
+            ) : null}
           />
         )}
 
-        {/* Faults / Treatments */}
+        {/* Faults */}
         {showReport('faults') && (
-          <ReportCard title="דוח טיפולים / תקלות" icon={Wrench} color="bg-warning/10 text-warning"
-            stats={[
-              { label: 'פתוחות', value: filtered.faults.filter(f => ['new', 'open', 'in_progress'].includes(f.status)).length.toString() },
-              { label: 'דחופות', value: filtered.faults.filter(f => ['urgent', 'critical'].includes(f.urgency)).length.toString() },
-              { label: 'סה"כ', value: filtered.faults.length.toString() },
-            ]}
+          <ExpandableReport
+            expanded={expandedReport === 'faults'}
+            onToggle={() => toggleExpand('faults')}
+            card={
+              <ReportCard title="דוח טיפולים / תקלות" icon={Wrench} color="bg-warning/10 text-warning"
+                expanded={expandedReport === 'faults'}
+                stats={[
+                  { label: 'פתוחות', value: filtered.faults.filter(f => ['new', 'open', 'in_progress'].includes(f.status)).length.toString() },
+                  { label: 'דחופות', value: filtered.faults.filter(f => ['urgent', 'critical'].includes(f.urgency)).length.toString() },
+                  { label: 'סה"כ', value: filtered.faults.length.toString() },
+                ]}
+              />
+            }
+            table={filtered.faults.length > 0 ? (
+              <DetailTable headers={['תאריך', 'סוג', 'מספר רכב', 'נהג', 'סטטוס', 'דחיפות']}
+                rows={filtered.faults.map(f => [
+                  f.date ? new Date(f.date).toLocaleDateString('he-IL') : '-',
+                  f.fault_type || '-', f.vehicle_plate || '-', f.driver_name || '-', f.status || '-', f.urgency || '-',
+                ])} />
+            ) : null}
           />
-        )}
-
-        {showReport('expenses') && filtered.expenses.length > 0 && expandedReport === 'expenses' && (
-          <DetailTable headers={['תאריך', 'קטגוריה', 'ספק', 'רכב', 'סכום']}
-            rows={filtered.expenses.map(e => [
-              e.date ? new Date(e.date).toLocaleDateString('he-IL') : '-',
-              e.category || '-', e.vendor || '-', e.vehicle_plate || '-',
-              `₪${(e.amount || 0).toLocaleString()}`,
-            ])} />
-        )}
-
-        {/* Vehicles */}
-        {showReport('vehicles') && (
-          <div onClick={() => setExpandedReport(expandedReport === 'vehicles' ? null : 'vehicles')} className="cursor-pointer">
-          <ReportCard title="דוח רכבים" icon={Car} color="bg-primary/10 text-primary"
-            stats={[
-              { label: 'רכבים פעילים', value: filtered.vehicles.filter(v => v.status === 'active').length.toString() },
-              { label: 'בטיפול', value: filtered.vehicles.filter(v => v.status === 'in_service').length.toString() },
-              { label: 'סה"כ רכבים', value: filtered.vehicles.length.toString() },
-            ]}
-          />
-          </div>
-        )}
-        {showReport('vehicles') && filtered.vehicles.length > 0 && expandedReport === 'vehicles' && (
-          <DetailTable headers={['לוחית', 'יצרן', 'דגם', 'שנה', 'סטטוס', 'ק"מ']}
-            rows={filtered.vehicles.map(v => [
-              v.license_plate || '-', v.manufacturer || '-', v.model || '-',
-              (v.year || '-').toString(), v.status === 'active' ? 'פעיל' : v.status || '-',
-              (v.odometer || 0).toLocaleString(),
-            ])} />
-        )}
-
-        {/* Faults / Treatments */}
-        {showReport('faults') && (
-          <div onClick={() => setExpandedReport(expandedReport === 'faults' ? null : 'faults')} className="cursor-pointer">
-          <ReportCard title="דוח טיפולים / תקלות" icon={Wrench} color="bg-warning/10 text-warning"
-            stats={[
-              { label: 'פתוחות', value: filtered.faults.filter(f => ['new', 'open', 'in_progress'].includes(f.status)).length.toString() },
-              { label: 'דחופות', value: filtered.faults.filter(f => ['urgent', 'critical'].includes(f.urgency)).length.toString() },
-              { label: 'סה"כ', value: filtered.faults.length.toString() },
-            ]}
-          />
-          </div>
-        )}
-        {showReport('faults') && filtered.faults.length > 0 && expandedReport === 'faults' && (
-          <DetailTable headers={['תאריך', 'סוג', 'רכב', 'נהג', 'סטטוס']}
-            rows={filtered.faults.map(f => [
-              f.date ? new Date(f.date).toLocaleDateString('he-IL') : '-',
-              f.fault_type || '-', f.vehicle_plate || '-', f.driver_name || '-', f.status || '-',
-            ])} />
         )}
 
         {/* Accidents */}
         {showReport('accidents') && (
-          <div onClick={() => setExpandedReport(expandedReport === 'accidents' ? null : 'accidents')} className="cursor-pointer">
-          <ReportCard title="דוח תאונות" icon={AlertTriangle} color="bg-destructive/10 text-destructive"
-            stats={[
-              { label: 'פתוחות', value: filtered.accidents.filter(a => a.status !== 'closed').length.toString() },
-              { label: 'עלות משוערת', value: `₪${totalAccidentCost.toLocaleString()}` },
-              { label: 'סה"כ', value: filtered.accidents.length.toString() },
-            ]}
+          <ExpandableReport
+            expanded={expandedReport === 'accidents'}
+            onToggle={() => toggleExpand('accidents')}
+            card={
+              <ReportCard title="דוח תאונות" icon={AlertTriangle} color="bg-destructive/10 text-destructive"
+                expanded={expandedReport === 'accidents'}
+                stats={[
+                  { label: 'פתוחות', value: filtered.accidents.filter(a => a.status !== 'closed').length.toString() },
+                  { label: 'עלות משוערת', value: `₪${totalAccidentCost.toLocaleString()}` },
+                  { label: 'סה"כ', value: filtered.accidents.length.toString() },
+                ]}
+              />
+            }
+            table={filtered.accidents.length > 0 ? (
+              <DetailTable headers={['תאריך', 'תיאור', 'מספר רכב', 'נהג', 'מיקום', 'עלות']}
+                rows={filtered.accidents.map(a => [
+                  a.date ? new Date(a.date).toLocaleDateString('he-IL') : '-',
+                  a.description || '-', a.vehicle_plate || '-', a.driver_name || '-',
+                  a.location || '-', `₪${(a.estimated_cost || 0).toLocaleString()}`,
+                ])} />
+            ) : null}
           />
-          </div>
-        )}
-        {showReport('accidents') && filtered.accidents.length > 0 && expandedReport === 'accidents' && (
-          <DetailTable headers={['תאריך', 'תיאור', 'רכב', 'נהג', 'עלות']}
-            rows={filtered.accidents.map(a => [
-              a.date ? new Date(a.date).toLocaleDateString('he-IL') : '-',
-              a.description || '-', a.vehicle_plate || '-', a.driver_name || '-',
-              `₪${(a.estimated_cost || 0).toLocaleString()}`,
-            ])} />
         )}
 
         {/* Drivers */}
         {showReport('drivers') && (
-          <div onClick={() => setExpandedReport(expandedReport === 'drivers' ? null : 'drivers')} className="cursor-pointer">
-          <ReportCard title="דוח נהגים" icon={Users} color="bg-primary/10 text-primary"
-            stats={[
-              { label: 'פעילים', value: filtered.drivers.filter(d => d.status === 'active').length.toString() },
-              { label: 'לא פעילים', value: filtered.drivers.filter(d => d.status !== 'active').length.toString() },
-              { label: 'סה"כ', value: filtered.drivers.length.toString() },
-            ]}
+          <ExpandableReport
+            expanded={expandedReport === 'drivers'}
+            onToggle={() => toggleExpand('drivers')}
+            card={
+              <ReportCard title="דוח נהגים" icon={Users} color="bg-primary/10 text-primary"
+                expanded={expandedReport === 'drivers'}
+                stats={[
+                  { label: 'פעילים', value: filtered.drivers.filter(d => d.status === 'active').length.toString() },
+                  { label: 'לא פעילים', value: filtered.drivers.filter(d => d.status !== 'active').length.toString() },
+                  { label: 'סה"כ', value: filtered.drivers.length.toString() },
+                ]}
+              />
+            }
+            table={filtered.drivers.length > 0 ? (
+              <DetailTable headers={['שם', 'טלפון', 'רישיון', 'תוקף', 'סטטוס']}
+                rows={filtered.drivers.map(d => [
+                  d.full_name || '-', d.phone || '-', d.license_number || '-',
+                  d.license_expiry || '-', d.status === 'active' ? 'פעיל' : 'לא פעיל',
+                ])} />
+            ) : null}
           />
-          </div>
-        )}
-        {showReport('drivers') && filtered.drivers.length > 0 && expandedReport === 'drivers' && (
-          <DetailTable headers={['שם', 'טלפון', 'רישיון', 'תוקף', 'סטטוס']}
-            rows={filtered.drivers.map(d => [
-              d.full_name || '-', d.phone || '-', d.license_number || '-',
-              d.license_expiry || '-', d.status === 'active' ? 'פעיל' : 'לא פעיל',
-            ])} />
         )}
 
         {/* Service Orders */}
         {showReport('service_orders') && (
-          <div onClick={() => setExpandedReport(expandedReport === 'service_orders' ? null : 'service_orders')} className="cursor-pointer">
-          <ReportCard title="דוח הזמנות שירות" icon={ShoppingCart} color="bg-primary/10 text-primary"
-            stats={[
-              { label: 'חדשות', value: filtered.serviceOrders.filter(s => s.treatment_status === 'new').length.toString() },
-              { label: 'בטיפול', value: filtered.serviceOrders.filter(s => s.treatment_status === 'in_progress').length.toString() },
-              { label: 'סה"כ', value: filtered.serviceOrders.length.toString() },
-            ]}
+          <ExpandableReport
+            expanded={expandedReport === 'service_orders'}
+            onToggle={() => toggleExpand('service_orders')}
+            card={
+              <ReportCard title="דוח הזמנות שירות" icon={ShoppingCart} color="bg-primary/10 text-primary"
+                expanded={expandedReport === 'service_orders'}
+                stats={[
+                  { label: 'חדשות', value: filtered.serviceOrders.filter(s => s.treatment_status === 'new').length.toString() },
+                  { label: 'בטיפול', value: filtered.serviceOrders.filter(s => s.treatment_status === 'in_progress').length.toString() },
+                  { label: 'סה"כ', value: filtered.serviceOrders.length.toString() },
+                ]}
+              />
+            }
+            table={filtered.serviceOrders.length > 0 ? (
+              <DetailTable headers={['תאריך', 'קטגוריה', 'מספר רכב', 'נהג', 'ספק', 'סטטוס']}
+                rows={filtered.serviceOrders.map(s => [
+                  s.service_date ? new Date(s.service_date).toLocaleDateString('he-IL') : '-',
+                  s.service_category || '-', s.vehicle_plate || '-', s.driver_name || '-',
+                  s.vendor_name || '-', s.treatment_status || '-',
+                ])} />
+            ) : null}
           />
-          </div>
-        )}
-        {showReport('service_orders') && filtered.serviceOrders.length > 0 && expandedReport === 'service_orders' && (
-          <DetailTable headers={['תאריך', 'קטגוריה', 'רכב', 'נהג', 'ספק', 'סטטוס']}
-            rows={filtered.serviceOrders.map(s => [
-              s.service_date ? new Date(s.service_date).toLocaleDateString('he-IL') : '-',
-              s.service_category || '-', s.vehicle_plate || '-', s.driver_name || '-',
-              s.vendor_name || '-', s.treatment_status || '-',
-            ])} />
         )}
 
         {/* Profit & Loss */}
@@ -521,22 +585,87 @@ export default function Reports() {
           </div>
         )}
       </div>
+
+      {/* Share Dialog */}
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent className="max-w-sm" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>שיתוף דוח</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <button onClick={exportCSV}
+              className="w-full flex items-center gap-3 p-4 rounded-xl bg-muted hover:bg-muted/80 transition-colors text-right">
+              <Download size={22} className="text-primary flex-shrink-0" />
+              <div>
+                <p className="font-bold">ייצוא לקובץ CSV</p>
+                <p className="text-xs text-muted-foreground">הורדת גיליון לפתיחה באקסל או Google Sheets</p>
+              </div>
+            </button>
+            <button onClick={shareViaEmail}
+              className="w-full flex items-center gap-3 p-4 rounded-xl bg-muted hover:bg-muted/80 transition-colors text-right">
+              <Mail size={22} className="text-primary flex-shrink-0" />
+              <div>
+                <p className="font-bold">שליחה במייל</p>
+                <p className="text-xs text-muted-foreground">פתיחת אפליקציית המייל עם תוכן הדוח</p>
+              </div>
+            </button>
+            <button onClick={shareViaWhatsApp}
+              className="w-full flex items-center gap-3 p-4 rounded-xl bg-[#25D366]/10 hover:bg-[#25D366]/20 transition-colors text-right">
+              <MessageSquare size={22} className="text-[#25D366] flex-shrink-0" />
+              <div>
+                <p className="font-bold">שליחה בוואטסאפ</p>
+                <p className="text-xs text-muted-foreground">שיתוף הדוח ישירות דרך WhatsApp</p>
+              </div>
+            </button>
+            <button onClick={copyToClipboard}
+              className="w-full flex items-center gap-3 p-4 rounded-xl bg-muted hover:bg-muted/80 transition-colors text-right">
+              <Share2 size={22} className="text-primary flex-shrink-0" />
+              <div>
+                <p className="font-bold">העתק ללוח</p>
+                <p className="text-xs text-muted-foreground">העתקת תוכן הדוח ללוח ההדבקה</p>
+              </div>
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function ReportCard({ title, icon: Icon, color, stats }: {
+// === Expandable Report Wrapper ===
+function ExpandableReport({ expanded, onToggle, card, table }: {
+  expanded: boolean;
+  onToggle: () => void;
+  card: React.ReactNode;
+  table: React.ReactNode | null;
+}) {
+  return (
+    <div>
+      <div onClick={onToggle} className="cursor-pointer">
+        {card}
+      </div>
+      {expanded && table && (
+        <div className="animate-fade-in">
+          {table}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReportCard({ title, icon: Icon, color, stats, expanded }: {
   title: string;
   icon: any;
   color: string;
   stats: { label: string; value: string }[];
+  expanded?: boolean;
 }) {
   return (
     <div className="card-elevated hover:shadow-lg transition-shadow">
       <div className="flex items-center gap-3 mb-4">
         <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", color)}><Icon size={24} /></div>
         <h2 className="text-xl font-bold flex-1">{title}</h2>
-        <ChevronDown size={18} className="text-muted-foreground" />
+        {expanded ? <ChevronUp size={18} className="text-primary" /> : <ChevronDown size={18} className="text-muted-foreground" />}
       </div>
       <div className={cn("grid gap-4", stats.length === 2 ? "grid-cols-2" : "grid-cols-3")}>
         {stats.map(stat => (
@@ -552,7 +681,7 @@ function ReportCard({ title, icon: Icon, color, stats }: {
 
 function DetailTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
   return (
-    <div className="card-elevated overflow-x-auto animate-fade-in -mt-2">
+    <div className="card-elevated overflow-x-auto animate-fade-in -mt-2 border-t-2 border-primary/20">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border">
