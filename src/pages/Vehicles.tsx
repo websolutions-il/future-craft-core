@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Car, Search, Plus, ArrowRight, Edit2, Phone, Mail, Trash2 } from 'lucide-react';
+import { Car, Search, Plus, ArrowRight, Edit2, Phone, Trash2, Truck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { toast } from 'sonner';
+import ImageUpload from '@/components/ImageUpload';
 
 interface VehicleRow {
   id: string;
@@ -18,7 +19,16 @@ interface VehicleRow {
   company_name: string;
   test_expiry: string | null;
   insurance_expiry: string | null;
+  insurance_start: string | null;
   comprehensive_insurance_expiry: string | null;
+  comprehensive_insurance_start: string | null;
+  next_service_date: string | null;
+  last_service_date: string | null;
+  needs_transport: boolean;
+  approval_status: string;
+  license_doc_url: string;
+  insurance_doc_url: string;
+  comprehensive_insurance_doc_url: string;
   notes: string;
 }
 
@@ -184,8 +194,34 @@ export default function Vehicles() {
             <ExpiryRow label="טסט" date={v.test_expiry} daysLeft={testDays} colorCls={expiryColor(testDays)} />
             <ExpiryRow label="ביטוח חובה" date={v.insurance_expiry} daysLeft={insDays} colorCls={expiryColor(insDays)} />
             <ExpiryRow label="ביטוח מקיף" date={v.comprehensive_insurance_expiry} daysLeft={compDays} colorCls={expiryColor(compDays)} />
+            {v.next_service_date && (() => {
+              const svcDays = daysUntil(v.next_service_date);
+              return <ExpiryRow label="טיפול הבא" date={v.next_service_date} daysLeft={svcDays} colorCls={expiryColor(svcDays)} />;
+            })()}
           </div>
         </div>
+
+        {/* Documents */}
+        <div className="card-elevated mb-4">
+          <h2 className="text-lg font-bold mb-4">מסמכים</h2>
+          <div className="space-y-2">
+            {v.license_doc_url && <DocLink label="רישיון רכב" url={v.license_doc_url} />}
+            {v.insurance_doc_url && <DocLink label="פוליסת ביטוח חובה" url={v.insurance_doc_url} />}
+            {v.comprehensive_insurance_doc_url && <DocLink label="פוליסת ביטוח מקיף" url={v.comprehensive_insurance_doc_url} />}
+            {!v.license_doc_url && !v.insurance_doc_url && !v.comprehensive_insurance_doc_url && (
+              <p className="text-muted-foreground text-sm">אין מסמכים מצורפים</p>
+            )}
+          </div>
+        </div>
+
+        {/* Transport */}
+        {v.needs_transport && (
+          <div className="card-elevated mb-4">
+            <div className="flex items-center gap-2 text-primary font-bold">
+              <Truck size={20} /> נדרש שינוע
+            </div>
+          </div>
+        )}
 
         {/* Notes */}
         {v.notes && (
@@ -310,6 +346,15 @@ function InfoField({ label, value }: { label: string; value: string }) {
   );
 }
 
+function DocLink({ label, url }: { label: string; url: string }) {
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer"
+      className="flex items-center gap-2 py-2 px-3 rounded-xl bg-muted hover:bg-muted/80 transition-colors text-sm font-medium text-primary">
+      📄 {label}
+    </a>
+  );
+}
+
 function ExpiryRow({ label, date, daysLeft, colorCls }: { label: string; date: string | null; daysLeft: number | null; colorCls: string }) {
   return (
     <div className="flex items-center justify-between py-2 border-b border-border last:border-0">
@@ -346,30 +391,69 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
   const [odometer, setOdometer] = useState(vehicle?.odometer?.toString() || '');
   const [assignedDriver, setAssignedDriver] = useState(vehicle?.assigned_driver_id || '');
   const [testExpiry, setTestExpiry] = useState(vehicle?.test_expiry || '');
+  const [insuranceStart, setInsuranceStart] = useState(vehicle?.insurance_start || '');
   const [insuranceExpiry, setInsuranceExpiry] = useState(vehicle?.insurance_expiry || '');
+  const [compInsStart, setCompInsStart] = useState(vehicle?.comprehensive_insurance_start || '');
   const [compInsExpiry, setCompInsExpiry] = useState(vehicle?.comprehensive_insurance_expiry || '');
+  const [lastServiceDate, setLastServiceDate] = useState(vehicle?.last_service_date || '');
+  const [nextServiceDate, setNextServiceDate] = useState(vehicle?.next_service_date || '');
+  const [needsTransport, setNeedsTransport] = useState(vehicle?.needs_transport || false);
   const [notes, setNotes] = useState(vehicle?.notes || '');
   const [loading, setLoading] = useState(false);
 
-  const isValid = licensePlate && manufacturer && model;
+  // Document uploads
+  const [licenseDocUrl, setLicenseDocUrl] = useState(vehicle?.license_doc_url || '');
+  const [insuranceDocUrl, setInsuranceDocUrl] = useState(vehicle?.insurance_doc_url || '');
+  const [compInsDocUrl, setCompInsDocUrl] = useState(vehicle?.comprehensive_insurance_doc_url || '');
+
+  // Validation: all fields required for new vehicles
+  const allFieldsFilled = licensePlate && manufacturer && model && year && vehicleType && odometer && assignedDriver;
+  const allDocsFilled = isEdit || (licenseDocUrl && insuranceDocUrl && compInsDocUrl);
+  const isValid = allFieldsFilled && allDocsFilled;
+
   const inputClass = "w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
 
   const handleSubmit = async () => {
-    if (!isValid) return;
+    if (!isValid) {
+      toast.error('יש למלא את כל השדות ולצרף מסמכים');
+      return;
+    }
     setLoading(true);
 
-    const payload = {
+    // Check if company requires approval
+    let approvalStatus = 'approved';
+    if (!isEdit) {
+      const { data: settings } = await supabase
+        .from('company_settings')
+        .select('vehicle_approval_required')
+        .eq('company_name', user?.company_name || '')
+        .maybeSingle();
+      if (settings?.vehicle_approval_required) {
+        approvalStatus = 'pending_approval';
+      }
+    }
+
+    const payload: any = {
       license_plate: licensePlate,
       manufacturer,
       model,
       year: parseInt(year) || null,
       vehicle_type: vehicleType,
-      status,
+      status: approvalStatus === 'pending_approval' ? 'out_of_service' : status,
       odometer: parseInt(odometer) || 0,
       assigned_driver_id: assignedDriver || null,
       test_expiry: testExpiry || null,
+      insurance_start: insuranceStart || null,
       insurance_expiry: insuranceExpiry || null,
+      comprehensive_insurance_start: compInsStart || null,
       comprehensive_insurance_expiry: compInsExpiry || null,
+      last_service_date: lastServiceDate || null,
+      next_service_date: nextServiceDate || null,
+      needs_transport: needsTransport,
+      approval_status: isEdit ? vehicle!.approval_status : approvalStatus,
+      license_doc_url: licenseDocUrl,
+      insurance_doc_url: insuranceDocUrl,
+      comprehensive_insurance_doc_url: compInsDocUrl,
       notes,
     };
 
@@ -384,12 +468,20 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
       }));
     }
 
+    // Generate alerts for expiring documents
+    if (!error && !isEdit) {
+      await generateVehicleAlerts(licensePlate, user);
+    }
+
     setLoading(false);
     if (error) {
       toast.error(isEdit ? 'שגיאה בעדכון הרכב' : 'שגיאה בהוספת הרכב');
       console.error(error);
     } else {
-      toast.success(isEdit ? 'הרכב עודכן בהצלחה' : 'הרכב נוסף בהצלחה');
+      const msg = approvalStatus === 'pending_approval'
+        ? 'הרכב נוסף וממתין לאישור מנהל על'
+        : isEdit ? 'הרכב עודכן בהצלחה' : 'הרכב נוסף בהצלחה';
+      toast.success(msg);
       onDone();
     }
   };
@@ -401,6 +493,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
       </button>
       <h1 className="text-2xl font-bold mb-6">{isEdit ? 'עריכת רכב' : 'הוספת רכב חדש'}</h1>
       <div className="space-y-5">
+        {/* Basic info */}
         <div>
           <label className="block text-lg font-medium mb-2">מספר רכב *</label>
           <input value={licensePlate} onChange={e => setLicensePlate(e.target.value)} placeholder="12-345-67" className={inputClass} dir="ltr" style={{ textAlign: 'right' }} />
@@ -417,59 +510,158 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-lg font-medium mb-2">שנה</label>
+            <label className="block text-lg font-medium mb-2">שנה *</label>
             <input type="number" value={year} onChange={e => setYear(e.target.value)} className={inputClass} />
           </div>
           <div>
-            <label className="block text-lg font-medium mb-2">סוג רכב</label>
+            <label className="block text-lg font-medium mb-2">סוג רכב *</label>
             <select value={vehicleType} onChange={e => setVehicleType(e.target.value)} className={inputClass}>
               <option value="">בחר סוג...</option>
               <option value="רכב פרטי">רכב פרטי</option>
               <option value="רכב מסחרי">רכב מסחרי</option>
               <option value="משאית">משאית</option>
+              <option value="אוטובוס">אוטובוס</option>
+              <option value="מיניבוס">מיניבוס</option>
               <option value="אופנוע">אופנוע</option>
             </select>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
+          {isEdit && (
+            <div>
+              <label className="block text-lg font-medium mb-2">סטטוס</label>
+              <select value={status} onChange={e => setStatus(e.target.value)} className={inputClass}>
+                <option value="active">פעיל</option>
+                <option value="in_service">בטיפול</option>
+                <option value="out_of_service">לא פעיל</option>
+              </select>
+            </div>
+          )}
           <div>
-            <label className="block text-lg font-medium mb-2">סטטוס</label>
-            <select value={status} onChange={e => setStatus(e.target.value)} className={inputClass}>
-              <option value="active">פעיל</option>
-              <option value="in_service">בטיפול</option>
-              <option value="out_of_service">לא פעיל</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-lg font-medium mb-2">ק"מ נוכחי</label>
+            <label className="block text-lg font-medium mb-2">ק"מ נוכחי *</label>
             <input type="number" value={odometer} onChange={e => setOdometer(e.target.value)} placeholder="0" className={inputClass} />
           </div>
         </div>
         <div>
-          <label className="block text-lg font-medium mb-2">נהג משויך</label>
+          <label className="block text-lg font-medium mb-2">נהג משויך *</label>
           <select value={assignedDriver} onChange={e => setAssignedDriver(e.target.value)} className={inputClass}>
-            <option value="">ללא שיוך</option>
+            <option value="">בחר נהג...</option>
             {drivers.map(d => <option key={d.id} value={d.id}>{d.full_name}</option>)}
           </select>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+        {/* === Expiry & Insurance Section === */}
+        <div className="border-t border-border pt-5">
+          <h2 className="text-xl font-bold mb-4">📋 תוקף מסמכים</h2>
           <div>
             <label className="block text-lg font-medium mb-2">תוקף טסט</label>
             <input type="date" value={testExpiry} onChange={e => setTestExpiry(e.target.value)} className={inputClass} />
           </div>
-          <div>
-            <label className="block text-lg font-medium mb-2">ביטוח חובה</label>
-            <input type="date" value={insuranceExpiry} onChange={e => setInsuranceExpiry(e.target.value)} className={inputClass} />
-          </div>
-          <div>
-            <label className="block text-lg font-medium mb-2">ביטוח מקיף</label>
-            <input type="date" value={compInsExpiry} onChange={e => setCompInsExpiry(e.target.value)} className={inputClass} />
+        </div>
+
+        {/* Insurance */}
+        <div className="border border-border rounded-xl p-4 space-y-4">
+          <h3 className="font-bold text-lg">ביטוח חובה</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">תאריך התחלה</label>
+              <input type="date" value={insuranceStart} onChange={e => setInsuranceStart(e.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">תאריך תוקף</label>
+              <input type="date" value={insuranceExpiry} onChange={e => setInsuranceExpiry(e.target.value)} className={inputClass} />
+            </div>
           </div>
         </div>
+
+        <div className="border border-border rounded-xl p-4 space-y-4">
+          <h3 className="font-bold text-lg">ביטוח מקיף</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">תאריך התחלה</label>
+              <input type="date" value={compInsStart} onChange={e => setCompInsStart(e.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">תאריך תוקף</label>
+              <input type="date" value={compInsExpiry} onChange={e => setCompInsExpiry(e.target.value)} className={inputClass} />
+            </div>
+          </div>
+        </div>
+
+        <div className="border border-border rounded-xl p-4 space-y-4">
+          <h3 className="font-bold text-lg">🔧 טיפול</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">טיפול אחרון</label>
+              <input type="date" value={lastServiceDate} onChange={e => setLastServiceDate(e.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">טיפול הבא</label>
+              <input type="date" value={nextServiceDate} onChange={e => setNextServiceDate(e.target.value)} className={inputClass} />
+            </div>
+          </div>
+        </div>
+
+        {/* === Document Uploads === */}
+        <div className="border-t border-border pt-5">
+          <h2 className="text-xl font-bold mb-4">📎 מסמכים {!isEdit && <span className="text-destructive text-sm">(חובה)</span>}</h2>
+          <div className="space-y-4">
+            <ImageUpload
+              label="צילום רישיון רכב"
+              required={!isEdit}
+              imageUrl={licenseDocUrl || null}
+              onImageUploaded={(url) => setLicenseDocUrl(url || '')}
+              folder="vehicle-docs"
+              acceptPdf
+            />
+            <ImageUpload
+              label="פוליסת ביטוח חובה"
+              required={!isEdit}
+              imageUrl={insuranceDocUrl || null}
+              onImageUploaded={(url) => setInsuranceDocUrl(url || '')}
+              folder="vehicle-docs"
+              acceptPdf
+            />
+            <ImageUpload
+              label="פוליסת ביטוח מקיף"
+              required={!isEdit}
+              imageUrl={compInsDocUrl || null}
+              onImageUploaded={(url) => setCompInsDocUrl(url || '')}
+              folder="vehicle-docs"
+              acceptPdf
+            />
+          </div>
+        </div>
+
+        {/* Transport */}
+        <div className="border-t border-border pt-5">
+          <h2 className="text-xl font-bold mb-4">🚛 שינוע</h2>
+          <div className="flex gap-3">
+            <button type="button" onClick={() => setNeedsTransport(false)}
+              className={`flex-1 py-3 rounded-xl text-lg font-medium transition-colors ${!needsTransport ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+              לא צריך שינוע
+            </button>
+            <button type="button" onClick={() => setNeedsTransport(true)}
+              className={`flex-1 py-3 rounded-xl text-lg font-medium transition-colors ${needsTransport ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+              צריך שינוע
+            </button>
+          </div>
+        </div>
+
+        {/* Notes */}
         <div>
           <label className="block text-lg font-medium mb-2">הערות</label>
           <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="הערות..." className={`${inputClass} resize-none`} />
         </div>
+
+        {/* Validation summary */}
+        {!isValid && (
+          <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-4 text-sm text-destructive space-y-1">
+            {!allFieldsFilled && <p>• יש למלא את כל שדות החובה (מסומנים ב-*)</p>}
+            {!allDocsFilled && <p>• יש לצרף את כל המסמכים הנדרשים (רישיון רכב, ביטוח חובה, ביטוח מקיף)</p>}
+          </div>
+        )}
+
         <button onClick={handleSubmit} disabled={!isValid || loading}
           className={`w-full py-5 rounded-xl text-xl font-bold transition-colors ${isValid && !loading ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}>
           {loading ? 'שומר...' : isEdit ? '💾 עדכן רכב' : '💾 שמור רכב'}
@@ -477,4 +669,38 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
       </div>
     </div>
   );
+}
+
+// Generate in-app alerts for vehicle document expiry
+async function generateVehicleAlerts(plate: string, user: any) {
+  // This function creates driver_notifications for managers about upcoming expirations
+  // The actual scheduled checking is handled by the dashboard alert logic
+  try {
+    const { data: managers } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'fleet_manager');
+
+    if (managers) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, company_name')
+        .in('id', managers.map(m => m.user_id))
+        .eq('company_name', user?.company_name || '');
+
+      if (profiles) {
+        for (const p of profiles) {
+          await supabase.from('driver_notifications').insert({
+            user_id: p.id,
+            type: 'vehicle',
+            title: 'רכב חדש נוסף',
+            message: `רכב ${plate} נוסף למערכת`,
+            link: '/vehicles',
+          });
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Alert generation error:', e);
+  }
 }

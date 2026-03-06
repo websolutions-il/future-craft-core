@@ -106,30 +106,36 @@ export type Database = {
       }
       company_settings: {
         Row: {
+          alert_days_before: number | null
           company_name: string
           created_at: string | null
           id: string
           updated_at: string | null
+          vehicle_approval_required: boolean | null
           whatsapp_button_color: string | null
           whatsapp_button_text: string | null
           whatsapp_enabled: boolean | null
           whatsapp_phone: string | null
         }
         Insert: {
+          alert_days_before?: number | null
           company_name: string
           created_at?: string | null
           id?: string
           updated_at?: string | null
+          vehicle_approval_required?: boolean | null
           whatsapp_button_color?: string | null
           whatsapp_button_text?: string | null
           whatsapp_enabled?: boolean | null
           whatsapp_phone?: string | null
         }
         Update: {
+          alert_days_before?: number | null
           company_name?: string
           created_at?: string | null
           id?: string
           updated_at?: string | null
+          vehicle_approval_required?: boolean | null
           whatsapp_button_color?: string | null
           whatsapp_button_text?: string | null
           whatsapp_enabled?: boolean | null
@@ -1210,16 +1216,25 @@ export type Database = {
       }
       vehicles: {
         Row: {
+          approval_status: string | null
           assigned_driver_id: string | null
           company_name: string | null
+          comprehensive_insurance_doc_url: string | null
           comprehensive_insurance_expiry: string | null
+          comprehensive_insurance_start: string | null
           created_at: string | null
           created_by: string | null
           id: string
+          insurance_doc_url: string | null
           insurance_expiry: string | null
+          insurance_start: string | null
+          last_service_date: string | null
+          license_doc_url: string | null
           license_plate: string
           manufacturer: string | null
           model: string | null
+          needs_transport: boolean | null
+          next_service_date: string | null
           notes: string | null
           odometer: number | null
           status: string | null
@@ -1229,16 +1244,25 @@ export type Database = {
           year: number | null
         }
         Insert: {
+          approval_status?: string | null
           assigned_driver_id?: string | null
           company_name?: string | null
+          comprehensive_insurance_doc_url?: string | null
           comprehensive_insurance_expiry?: string | null
+          comprehensive_insurance_start?: string | null
           created_at?: string | null
           created_by?: string | null
           id?: string
+          insurance_doc_url?: string | null
           insurance_expiry?: string | null
+          insurance_start?: string | null
+          last_service_date?: string | null
+          license_doc_url?: string | null
           license_plate: string
           manufacturer?: string | null
           model?: string | null
+          needs_transport?: boolean | null
+          next_service_date?: string | null
           notes?: string | null
           odometer?: number | null
           status?: string | null
@@ -1248,16 +1272,25 @@ export type Database = {
           year?: number | null
         }
         Update: {
+          approval_status?: string | null
           assigned_driver_id?: string | null
           company_name?: string | null
+          comprehensive_insurance_doc_url?: string | null
           comprehensive_insurance_expiry?: string | null
+          comprehensive_insurance_start?: string | null
           created_at?: string | null
           created_by?: string | null
           id?: string
+          insurance_doc_url?: string | null
           insurance_expiry?: string | null
+          insurance_start?: string | null
+          last_service_date?: string | null
+          license_doc_url?: string | null
           license_plate?: string
           manufacturer?: string | null
           model?: string | null
+          needs_transport?: boolean | null
+          next_service_date?: string | null
           notes?: string | null
           odometer?: number | null
           status?: string | null

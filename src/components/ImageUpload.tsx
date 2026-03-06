@@ -9,9 +9,10 @@ interface ImageUploadProps {
   imageUrl: string | null;
   onImageUploaded: (url: string | null) => void;
   folder: string; // e.g. 'expenses' or 'accidents'
+  acceptPdf?: boolean;
 }
 
-export default function ImageUpload({ label, required, imageUrl, onImageUploaded, folder }: ImageUploadProps) {
+export default function ImageUpload({ label, required, imageUrl, onImageUploaded, folder, acceptPdf }: ImageUploadProps) {
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -60,7 +61,13 @@ export default function ImageUpload({ label, required, imageUrl, onImageUploaded
         </button>
       ) : (
         <div className="relative">
-          <img src={imageUrl} alt={label} className="w-full rounded-xl max-h-64 object-cover" />
+          {imageUrl.endsWith('.pdf') ? (
+            <div className="w-full rounded-xl bg-muted p-4 flex items-center justify-center">
+              <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="text-primary font-bold">📄 צפה בקובץ PDF</a>
+            </div>
+          ) : (
+            <img src={imageUrl} alt={label} className="w-full rounded-xl max-h-64 object-cover" />
+          )}
           <button
             onClick={removeImage}
             className="absolute top-2 left-2 p-2 rounded-full bg-destructive text-destructive-foreground"
@@ -72,8 +79,8 @@ export default function ImageUpload({ label, required, imageUrl, onImageUploaded
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
-        capture="environment"
+        accept={acceptPdf ? "image/*,.pdf,application/pdf" : "image/*"}
+        capture={acceptPdf ? undefined : "environment"}
         onChange={handleFileChange}
         className="hidden"
       />
