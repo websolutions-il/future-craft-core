@@ -344,6 +344,105 @@ export type Database = {
         }
         Relationships: []
       }
+      emergency_categories: {
+        Row: {
+          auto_message_template: string
+          category_icon: string
+          category_key: string
+          category_label: string
+          company_name: string
+          created_at: string
+          id: string
+          is_active: boolean
+          sort_order: number
+          target_type: string
+          target_value: string
+          updated_at: string
+        }
+        Insert: {
+          auto_message_template?: string
+          category_icon?: string
+          category_key?: string
+          category_label?: string
+          company_name: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          target_type?: string
+          target_value?: string
+          updated_at?: string
+        }
+        Update: {
+          auto_message_template?: string
+          category_icon?: string
+          category_key?: string
+          category_label?: string
+          company_name?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          target_type?: string
+          target_value?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      emergency_logs: {
+        Row: {
+          category_key: string
+          category_label: string
+          company_name: string
+          created_at: string
+          id: string
+          location: string | null
+          notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          target_type: string
+          target_value: string
+          user_id: string
+          user_name: string
+          vehicle_plate: string | null
+        }
+        Insert: {
+          category_key?: string
+          category_label?: string
+          company_name?: string
+          created_at?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          target_type?: string
+          target_value?: string
+          user_id: string
+          user_name?: string
+          vehicle_plate?: string | null
+        }
+        Update: {
+          category_key?: string
+          category_label?: string
+          company_name?: string
+          created_at?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          target_type?: string
+          target_value?: string
+          user_id?: string
+          user_name?: string
+          vehicle_plate?: string | null
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number | null
