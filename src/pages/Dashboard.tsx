@@ -20,6 +20,7 @@ import {
 import { useAuth, type AppRole } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import DriverDashboard from '@/components/DriverDashboard';
+import DashboardCharts from '@/components/DashboardCharts';
 import CreateUserModal from '@/components/CreateUserModal';
 import type { CreateUserFormState } from '@/components/CreateUserModal';
 import { toast } from '@/hooks/use-toast';
@@ -802,6 +803,11 @@ function FleetManagerDashboard({
           ))}
         </div>
       </section>
+
+      <DashboardCharts
+        companyName={isSuperAdminView ? selectedCompany : (user?.company_name || '')}
+        isSuperAdminView={isSuperAdminView}
+      />
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {fleetActions.map((action) => (
