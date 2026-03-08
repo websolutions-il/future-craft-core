@@ -133,7 +133,7 @@ export default function Towing() {
           <p className="text-xs text-muted-foreground">מאושר</p>
         </div>
         <div className="card-elevated text-center">
-          <CheckCircle size={20} className="mx-auto mb-1 text-green-500" />
+          <CheckCircle size={20} className="mx-auto mb-1 text-accent-foreground" />
           <p className="text-2xl font-black">{completedCount}</p>
           <p className="text-xs text-muted-foreground">הושלם</p>
         </div>
