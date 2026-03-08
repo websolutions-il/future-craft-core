@@ -35,6 +35,7 @@ import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import About from "@/pages/About";
 import NotFound from "./pages/NotFound";
+import ProjectSummary from "@/pages/ProjectSummary";
 
 // New pages
 import Companions from "@/pages/Companions";
