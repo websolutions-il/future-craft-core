@@ -77,17 +77,89 @@ const withQA = Math.round(totalAdditionHours * QA_MULTIPLIER);
 
 const ProjectSummary = () => {
   const { user } = useAuth();
+  const contentRef = useRef<HTMLDivElement>(null);
 
   if (user?.role !== 'super_admin') {
     return <Navigate to="/dashboard" replace />;
   }
 
+  const handleExportPDF = () => {
+    const printContent = contentRef.current;
+    if (!printContent) return;
+    
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    
+    printWindow.document.write(`
+      <html dir="rtl">
+      <head>
+        <title>דו״ח שעות תכנות</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; padding: 30px; direction: rtl; color: #1a1a1a; }
+          h1 { font-size: 22px; margin-bottom: 20px; }
+          h2 { font-size: 18px; margin: 24px 0 12px; }
+          h3 { font-size: 16px; margin: 20px 0 10px; }
+          table { width: 100%; border-collapse: collapse; margin: 10px 0 20px; font-size: 13px; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+          th { background: #f5f5f5; font-weight: 600; }
+          tr:nth-child(even) { background: #fafafa; }
+          .summary-box { display: flex; gap: 20px; margin: 16px 0; }
+          .summary-item { flex: 1; border: 1px solid #ddd; border-radius: 8px; padding: 16px; text-align: center; }
+          .summary-item .num { font-size: 28px; font-weight: 700; }
+          .summary-item .label { font-size: 12px; color: #666; margin-top: 4px; }
+          .check { color: green; }
+          .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #eee; padding-top: 12px; }
+          @media print { body { padding: 15px; } }
+        </style>
+      </head>
+      <body>
+        <h1>דו״ח שעות תכנות — דליה</h1>
+        
+        <h2>תוכנית מקורית</h2>
+        <p style="margin-bottom:8px;color:#666;">דף נחיתה / אודות – בוצע במלואו ✅</p>
+        
+        <h2>כל המודולים שבוצעו (${completedItems.length})</h2>
+        <table>
+          <tr><th>#</th><th>מודול</th><th>תיאור</th><th>סטטוס</th></tr>
+          ${completedItems.map((item, i) => `<tr><td>${i + 1}</td><td>${item.module}</td><td>${item.desc}</td><td class="check">✓</td></tr>`).join('')}
+        </table>
+        
+        <h2>תוספות מעבר לתוכנית (${additions.length})</h2>
+        <p style="margin-bottom:8px;color:#666;">סה"כ ${TOTAL_ADDITION_HOURS} שעות פיתוח + 30% בדיקות ותיקונים = ${withQA} שעות</p>
+        <table>
+          <tr><th>#</th><th>תוספת</th><th>פירוט</th></tr>
+          ${additions.map((item, i) => `<tr><td>${i + 1}</td><td>${item.feature}</td><td>${item.desc}</td></tr>`).join('')}
+        </table>
+        
+        <h3>סיכום שעות</h3>
+        <div class="summary-box">
+          <div class="summary-item"><div class="num">${totalAdditionHours}</div><div class="label">שעות פיתוח נטו</div></div>
+          <div class="summary-item"><div class="num">30%</div><div class="label">בדיקות ותיקונים</div></div>
+          <div class="summary-item"><div class="num">${withQA}</div><div class="label">סה"כ שעות</div></div>
+        </div>
+        
+        <div class="footer">מסמך זה נוצר אוטומטית | ${new Date().toLocaleDateString('he-IL')}</div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
   return (
-    <div dir="rtl" className="animate-fade-in">
+    <div dir="rtl" className="animate-fade-in" ref={contentRef}>
       {/* Header */}
-      <h1 className="page-header flex items-center gap-3">
-        <Shield size={28} />
-        דו״ח שעות תכנות
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="page-header flex items-center gap-3 mb-0">
+          <Shield size={28} />
+          דו״ח שעות תכנות
+        </h1>
+        <Button onClick={handleExportPDF} variant="outline" className="flex items-center gap-2">
+          <Download size={16} />
+          ייצוא PDF
+        </Button>
+      </div>
       </h1>
 
       <div className="space-y-10">
