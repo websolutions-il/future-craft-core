@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Users, Plus, Search, Edit2, ArrowRight, Phone, CreditCard } from 'lucide-react';
+import { Users, Plus, Search, Edit2, ArrowRight, Phone, CreditCard, Download } from 'lucide-react';
+import { exportToCsv } from '@/utils/exportCsv';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
