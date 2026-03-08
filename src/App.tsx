@@ -124,6 +124,7 @@ function AppRoutes() {
         <Route path="/emergency-settings" element={<EmergencySettings />} />
         <Route path="/system-logs" element={<SystemLogs />} />
         <Route path="/service-order-history" element={<ServiceOrderHistory />} />
+        <Route path="/project-summary" element={<ProjectSummary />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
