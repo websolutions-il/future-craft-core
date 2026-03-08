@@ -1,5 +1,7 @@
 
-import { CheckCircle, Clock, Plus } from 'lucide-react';
+import { CheckCircle, Clock, Plus, Shield } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
 
 const completedItems = [
   { module: 'דף נחיתה / אודות', desc: 'דף נחיתה מקצועי עם Hero, תכונות, צילומי מסך, Footer – כולל ניווט ו-CTA' },
@@ -42,45 +44,51 @@ const completedItems = [
   { module: 'איפוס סיסמה', desc: 'Edge Function לשליחת קישור איפוס באימייל' },
 ];
 
+const HOURS_PER_ADDITION = 9;
+const QA_MULTIPLIER = 1.3;
+
 const additions = [
-  { feature: 'מערכת Multi-Tenancy מלאה', hours: 12, desc: 'הפרדת חברות, CompanyScope, סינון גלובלי בכל המודולים, RLS policies' },
-  { feature: 'התחזות (Impersonation)', hours: 4, desc: 'מנהל-על מתחזה למשתמש, שמירת realUser, חזרה' },
-  { feature: 'מודול תקלות מורחב', hours: 10, desc: 'צ\'אט Realtime, לוג סטטוס, הפניה לספק, שינוע, אישורי מנהל' },
-  { feature: 'הזמנות שירות (מודול שלם)', hours: 16, desc: 'טופס, דשבורד ניהולי, צ\'אט Realtime, סטטוסים, שינוע, היסטוריה, CSV, דוח חודשי' },
-  { feature: 'מערכת התראות אוטומטית', hours: 8, desc: 'DB Triggers, Toasts בזמן אמת, תיבת התראות, אימייל אוטומטי (3 Edge Functions)' },
-  { feature: 'סידורי עבודה', hours: 10, desc: 'יצירה, אישור 3-שלבי (נהג+מנהל+לקוח), צ\'אט, לוג סטטוס, שיוך מלווה' },
-  { feature: 'מסירות רכב מורחב', hours: 6, desc: 'צ\'קליסט מצב, אישור נהג, נהג זמני, מיקום GPS' },
-  { feature: 'בקשות אישור + תזכורות', hours: 5, desc: 'מנגנון אישורים, תזכורות 48 שעות, היסטוריה' },
-  { feature: 'דוחות מתקדמים', hours: 6, desc: 'דוחות Inline מתרחבים, ייצוא CSV/WhatsApp/אימייל, דוח חודשי' },
-  { feature: 'צ\'אט פנימי Realtime', hours: 5, desc: 'הודעות בזמן אמת, סינון חברה, סימון נקרא' },
-  { feature: 'ניהול ספקים', hours: 2, desc: 'CRUD ספקים עם סוג וטלפון' },
-  { feature: 'ניהול מלווים', hours: 2, desc: 'CRUD מלווים עם שיוך לסידורי עבודה' },
-  { feature: 'מנויים וחיוב', hours: 3, desc: 'ניהול מנויי חברות, תוכנית, סטטוס תשלום' },
-  { feature: 'מבצעים', hours: 2, desc: 'ניהול מבצעים ממוקדי חברה' },
-  { feature: 'הגדרות חירום', hours: 4, desc: 'קטגוריות חירום מותאמות, יעדים, תבניות הודעה' },
-  { feature: 'יומן מערכת', hours: 3, desc: 'לוג בלתי ניתן למחיקה עם סינון מתקדם' },
-  { feature: 'ניהול משתמשים + Edge Function', hours: 5, desc: 'יצירת משתמשים, שינוי תפקידים, Edge Function ליצירת admin' },
-  { feature: 'דשבורד נהג', hours: 4, desc: 'תצוגה ייעודית לנהג עם הרכב, מסלולים, סידורים' },
-  { feature: 'מסמכים + Storage', hours: 4, desc: 'העלאה ל-Storage, קטגוריות, שיוך לרכב/נהג' },
-  { feature: 'איפוס סיסמה באימייל', hours: 3, desc: 'Edge Function עם Resend לשליחת קישור איפוס' },
-  { feature: 'RLS Policies מלאות', hours: 6, desc: 'מדיניות אבטחה לכל הטבלאות, has_role, get_user_company' },
+  { feature: 'התחזות (Impersonation)', desc: 'מנהל-על מתחזה למשתמש, שמירת realUser, חזרה' },
+  { feature: 'מודול תקלות מורחב', desc: 'צ\'אט Realtime, לוג סטטוס, הפניה לספק, שינוע, אישורי מנהל' },
+  { feature: 'הזמנות שירות (מודול שלם)', desc: 'טופס, דשבורד ניהולי, צ\'אט Realtime, סטטוסים, שינוע, היסטוריה, CSV, דוח חודשי' },
+  { feature: 'מערכת התראות אוטומטית', desc: 'DB Triggers, Toasts בזמן אמת, תיבת התראות, אימייל אוטומטי (3 Edge Functions)' },
+  { feature: 'סידורי עבודה', desc: 'יצירה, אישור 3-שלבי (נהג+מנהל+לקוח), צ\'אט, לוג סטטוס, שיוך מלווה' },
+  { feature: 'מסירות רכב מורחב', desc: 'צ\'קליסט מצב, אישור נהג, נהג זמני, מיקום GPS' },
+  { feature: 'בקשות אישור + תזכורות', desc: 'מנגנון אישורים, תזכורות 48 שעות, היסטוריה' },
+  { feature: 'דוחות מתקדמים', desc: 'דוחות Inline מתרחבים, ייצוא CSV/WhatsApp/אימייל, דוח חודשי' },
+  { feature: 'צ\'אט פנימי Realtime', desc: 'הודעות בזמן אמת, סינון חברה, סימון נקרא' },
+  { feature: 'ניהול ספקים', desc: 'CRUD ספקים עם סוג וטלפון' },
+  { feature: 'ניהול מלווים', desc: 'CRUD מלווים עם שיוך לסידורי עבודה' },
+  { feature: 'מנויים וחיוב', desc: 'ניהול מנויי חברות, תוכנית, סטטוס תשלום' },
+  { feature: 'מבצעים', desc: 'ניהול מבצעים ממוקדי חברה' },
+  { feature: 'הגדרות חירום', desc: 'קטגוריות חירום מותאמות, יעדים, תבניות הודעה' },
+  { feature: 'יומן מערכת', desc: 'לוג בלתי ניתן למחיקה עם סינון מתקדם' },
+  { feature: 'ניהול משתמשים + Edge Function', desc: 'יצירת משתמשים, שינוי תפקידים, Edge Function ליצירת admin' },
+  { feature: 'דשבורד נהג', desc: 'תצוגה ייעודית לנהג עם הרכב, מסלולים, סידורים' },
+  { feature: 'מסמכים + Storage', desc: 'העלאה ל-Storage, קטגוריות, שיוך לרכב/נהג' },
+  { feature: 'איפוס סיסמה באימייל', desc: 'Edge Function עם Resend לשליחת קישור איפוס' },
+  { feature: 'RLS Policies מלאות', desc: 'מדיניות אבטחה לכל הטבלאות, has_role, get_user_company' },
 ];
 
-const totalAdditionHours = additions.reduce((sum, a) => sum + a.hours, 0);
-const withQA = Math.round(totalAdditionHours * 1.3);
+const totalAdditionHours = additions.length * HOURS_PER_ADDITION;
+const withQA = Math.round(totalAdditionHours * QA_MULTIPLIER);
 
 const ProjectSummary = () => {
-  return (
-    <div dir="rtl" className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <div className="bg-primary text-primary-foreground py-8 px-4">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">סיכום פרויקט דליה – מערכת ניהול צי רכב</h1>
-          <p className="text-primary-foreground/80">סיכום מלא של מה שבוצע, תוספות מעבר לתוכנית, והערכות זמן</p>
-        </div>
-      </div>
+  const { user } = useAuth();
 
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-10">
+  if (user?.role !== 'super_admin') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return (
+    <div dir="rtl" className="animate-fade-in">
+      {/* Header */}
+      <h1 className="page-header flex items-center gap-3">
+        <Shield size={28} />
+        דו״ח שעות תכנות
+      </h1>
+
+      <div className="space-y-10">
 
         {/* Section: Original Plan */}
         <section>
@@ -96,8 +104,9 @@ const ProjectSummary = () => {
             <div className="flex items-start gap-2"><CheckCircle className="text-green-500 h-4 w-4 mt-1 shrink-0" /><span>איך זה עובד – 4 שלבים</span></div>
             <div className="flex items-start gap-2"><CheckCircle className="text-green-500 h-4 w-4 mt-1 shrink-0" /><span>תכונות המערכת – רשימה מלאה</span></div>
             <div className="flex items-start gap-2"><CheckCircle className="text-green-500 h-4 w-4 mt-1 shrink-0" /><span>צילומי מסך</span></div>
-            <div className="flex items-start gap-2"><CheckCircle className="text-green-500 h-4 w-4 mt-1 shrink-0" /><span>Footer עם MAO.CO.IL + twaek-soft.com</span></div>
+            <div className="flex items-start gap-2"><CheckCircle className="text-green-500 h-4 w-4 mt-1 shrink-0" /><span>Footer עם MAO.CO.IL + tweak-soft.com</span></div>
             <div className="flex items-start gap-2"><CheckCircle className="text-green-500 h-4 w-4 mt-1 shrink-0" /><span>RTL + רספונסיבי + גופן Heebo + צבעי מיתוג</span></div>
+            <div className="flex items-start gap-2"><CheckCircle className="text-green-500 h-4 w-4 mt-1 shrink-0" /><span>מערכת Multi-Tenancy מלאה (כלול בתוכנית)</span></div>
           </div>
         </section>
 
@@ -107,7 +116,7 @@ const ProjectSummary = () => {
             <CheckCircle className="text-green-500 h-6 w-6" />
             כל המודולים שבוצעו ({completedItems.length})
           </h2>
-          <div className="border border-border rounded-lg overflow-hidden">
+          <div className="border border-border rounded-lg overflow-hidden overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-muted">
@@ -135,15 +144,15 @@ const ProjectSummary = () => {
         <section>
           <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
             <Plus className="text-blue-500 h-6 w-6" />
-            תוספות מעבר לתוכנית המקורית
+            תוספות מעבר לתוכנית המקורית ({additions.length})
           </h2>
           <p className="text-muted-foreground mb-4">
-            כל הפיצ'רים הבאים לא היו חלק מהתוכנית המקורית (שכללה רק דף נחיתה).
+            כל הפיצ'רים הבאים לא היו חלק מהתוכנית המקורית (שכללה דף נחיתה + Multi-Tenancy).
             <br />
-            הערכת זמן כוללת תוספת של 30% עבור ניסוח, בדיקות, QA, שליחה ללקוח ותיקונים.
+            הערכה: {HOURS_PER_ADDITION} שעות פיתוח לכל תוספת + 30% בדיקות ותיקונים.
           </p>
 
-          <div className="border border-border rounded-lg overflow-hidden">
+          <div className="border border-border rounded-lg overflow-hidden overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-muted">
@@ -156,7 +165,7 @@ const ProjectSummary = () => {
                   </th>
                   <th className="text-center p-3 font-semibold w-24">
                     <div>שעות</div>
-                    <div className="text-xs font-normal text-muted-foreground">כולל 30%</div>
+                    <div className="text-xs font-normal text-muted-foreground">+30% בדיקות</div>
                   </th>
                 </tr>
               </thead>
@@ -166,8 +175,8 @@ const ProjectSummary = () => {
                     <td className="p-3 text-muted-foreground">{i + 1}</td>
                     <td className="p-3 font-medium">{item.feature}</td>
                     <td className="p-3 text-muted-foreground">{item.desc}</td>
-                    <td className="p-3 text-center font-mono">{item.hours}</td>
-                    <td className="p-3 text-center font-mono font-bold">{Math.round(item.hours * 1.3)}</td>
+                    <td className="p-3 text-center font-mono">{HOURS_PER_ADDITION}</td>
+                    <td className="p-3 text-center font-mono font-bold">{Math.round(HOURS_PER_ADDITION * QA_MULTIPLIER)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -195,11 +204,11 @@ const ProjectSummary = () => {
             </div>
             <div className="bg-background rounded-lg p-4 text-center border border-border">
               <div className="text-3xl font-bold text-orange-500">30%</div>
-              <div className="text-sm text-muted-foreground mt-1">תוספת QA + ניהול</div>
+              <div className="text-sm text-muted-foreground mt-1">בדיקות ותיקונים</div>
             </div>
             <div className="bg-background rounded-lg p-4 text-center border border-border">
               <div className="text-3xl font-bold text-primary">{withQA}</div>
-              <div className="text-sm text-muted-foreground mt-1">סה"כ שעות כולל</div>
+              <div className="text-sm text-muted-foreground mt-1">סה"כ שעות</div>
             </div>
           </div>
         </section>

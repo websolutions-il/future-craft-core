@@ -73,7 +73,6 @@ function AppRoutes() {
     return (
       <Routes>
         <Route path="/about" element={<About />} />
-        <Route path="/project-summary" element={<ProjectSummary />} />
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
@@ -125,6 +124,7 @@ function AppRoutes() {
         <Route path="/emergency-settings" element={<EmergencySettings />} />
         <Route path="/system-logs" element={<SystemLogs />} />
         <Route path="/service-order-history" element={<ServiceOrderHistory />} />
+        <Route path="/project-summary" element={<ProjectSummary />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
