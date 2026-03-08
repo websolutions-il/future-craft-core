@@ -29,6 +29,7 @@ const categoryLabels: Record<AlertCategory, string> = {
   license: 'רישיון נהיגה',
   fault: 'תקלה דחופה',
   service_order: 'הזמנת שירות',
+  work_assignment: 'סידור עבודה',
 };
 
 const categoryIcons: Record<AlertCategory, typeof Car> = {
