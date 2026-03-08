@@ -39,6 +39,7 @@ const categoryIcons: Record<AlertCategory, typeof Car> = {
   license: IdCard,
   fault: Wrench,
   service_order: Briefcase,
+  work_assignment: ClipboardList,
 };
 
 const severityStyles: Record<AlertSeverity, string> = {
