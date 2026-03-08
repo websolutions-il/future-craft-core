@@ -199,7 +199,27 @@ export default function Alerts() {
       }
     }
 
-    allAlerts.sort((a, b) => {
+    // 5. Work assignments - pending approval
+    const { data: assignments } = await applyCompanyScope(
+      supabase.from('work_assignments').select('*').in('status', ['pending', 'approved']),
+      companyFilter
+    );
+    if (assignments) {
+      for (const wa of assignments) {
+        const isPending = wa.status === 'pending';
+        allAlerts.push({
+          id: `wa-${wa.id}`,
+          category: 'work_assignment',
+          severity: isPending ? 'warning' : 'info',
+          title: isPending ? 'סידור עבודה ממתין לאישור' : 'סידור עבודה פעיל',
+          subtitle: `${wa.driver_name || 'ללא נהג'} • ${wa.vehicle_plate || 'ללא רכב'}`,
+          daysLeft: null,
+          date: wa.scheduled_date || null,
+          meta: wa.title || undefined,
+        });
+      }
+    }
+
       const severityOrder: Record<AlertSeverity, number> = { critical: 0, warning: 1, info: 2 };
       const diff = severityOrder[a.severity] - severityOrder[b.severity];
       if (diff !== 0) return diff;
