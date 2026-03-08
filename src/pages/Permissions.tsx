@@ -52,7 +52,7 @@ export default function Permissions() {
     }
 
     const roleMap = new Map<string, string>();
-    roles.forEach((r: any) => roleMap.set(r.user_id, r.role));
+    roles.forEach((r: any) => roleMap.set(r.user_id, r.role as string));
 
     const merged: UserWithRole[] = profiles.map((p: any) => ({
       id: p.id,

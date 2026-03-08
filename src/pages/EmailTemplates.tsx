@@ -75,7 +75,7 @@ export default function EmailTemplates() {
     setTemplates(prev => prev.map(t => t.id === id ? { ...t, [field]: value } : t));
   };
 
-  const saveTemplate = (id: string) => {
+  const saveTemplate = (_id: string) => {
     toast.success('התבנית נשמרה בהצלחה');
     setEditingId(null);
   };

@@ -69,7 +69,6 @@ export default function CustomerDocs() {
     if (!uploadFile || !user) return;
     setUploading(true);
 
-    const ext = uploadFile.name.split('.').pop() || 'pdf';
     const filePath = `${user.company_name}/${Date.now()}_${uploadFile.name}`;
 
     const { error: storageError } = await supabase.storage
