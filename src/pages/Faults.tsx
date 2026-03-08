@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Wrench, Search, AlertTriangle, Plus, ArrowRight, Edit2, Lock } from 'lucide-react';
+import { Wrench, Search, AlertTriangle, Plus, ArrowRight, Edit2, Lock, Download } from 'lucide-react';
+import { exportToCsv } from '@/utils/exportCsv';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
