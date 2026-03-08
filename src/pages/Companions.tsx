@@ -74,7 +74,7 @@ export default function Companions() {
             </button>
           )}
         </div>
-
+      </div>
       <div className="relative mb-5">
         <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="חיפוש מלווה..."
