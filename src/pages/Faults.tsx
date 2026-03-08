@@ -242,9 +242,25 @@ export default function Faults() {
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <h1 className="page-header !mb-0 flex items-center gap-3"><Wrench size={28} /> תקלות</h1>
-        <button onClick={() => { setEditFault(null); setViewMode('form'); }} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]">
-          <Plus size={22} /> תקלה חדשה
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => exportToCsv('faults', [
+            { key: 'serial_id', label: 'מספר סידורי' },
+            { key: 'date', label: 'תאריך' },
+            { key: 'driver_name', label: 'נהג' },
+            { key: 'vehicle_plate', label: 'מספר רכב' },
+            { key: 'fault_type', label: 'סוג תקלה' },
+            { key: 'description', label: 'תיאור' },
+            { key: 'urgency', label: 'דחיפות' },
+            { key: 'status', label: 'סטטוס' },
+            { key: 'company_name', label: 'חברה' },
+            { key: 'notes', label: 'הערות' },
+          ], filtered)} className="flex items-center gap-2 px-4 py-3 rounded-xl border border-border bg-card text-foreground text-sm font-bold min-h-[48px] hover:bg-muted transition-colors">
+            <Download size={18} /> ייצוא
+          </button>
+          <button onClick={() => { setEditFault(null); setViewMode('form'); }} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]">
+            <Plus size={22} /> תקלה חדשה
+          </button>
+        </div>
       </div>
       <div className="relative mb-4">
         <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
