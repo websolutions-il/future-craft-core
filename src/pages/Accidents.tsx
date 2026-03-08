@@ -177,8 +177,22 @@ export default function Accidents() {
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <h1 className="page-header !mb-0 flex items-center gap-3"><AlertTriangle size={28} /> תאונות</h1>
-        <button onClick={() => { setEditItem(null); setViewMode('form'); }} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-destructive text-destructive-foreground text-lg font-bold min-h-[48px]">
-          <Plus size={22} /> דיווח תאונה
+        <div className="flex items-center gap-2">
+          <button onClick={() => exportToCsv('accidents', [
+            { key: 'date', label: 'תאריך' },
+            { key: 'vehicle_plate', label: 'מספר רכב' },
+            { key: 'driver_name', label: 'נהג' },
+            { key: 'location', label: 'מיקום' },
+            { key: 'description', label: 'תיאור' },
+            { key: 'status', label: 'סטטוס' },
+            { key: 'estimated_cost', label: 'עלות משוערת' },
+            { key: 'has_insurance', label: 'ביטוח' },
+            { key: 'third_party', label: 'צד שלישי' },
+          ], filtered)} className="flex items-center gap-1 px-3 py-2 rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 text-sm font-medium min-h-[48px]">
+            <Download size={18} /> ייצוא
+          </button>
+          <button onClick={() => { setEditItem(null); setViewMode('form'); }} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-destructive text-destructive-foreground text-lg font-bold min-h-[48px]">
+            <Plus size={22} /> דיווח תאונה
         </button>
       </div>
       <div className="relative mb-4">

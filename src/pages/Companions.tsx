@@ -57,8 +57,18 @@ export default function Companions() {
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <h1 className="page-header !mb-0 flex items-center gap-3"><Users size={28} /> מלווים</h1>
-        {isManager && (
-          <button onClick={() => { setEditItem(null); setShowForm(true); }}
+        <div className="flex items-center gap-2">
+          <button onClick={() => exportToCsv('companions', [
+            { key: 'full_name', label: 'שם מלא' },
+            { key: 'id_number', label: 'ת.ז.' },
+            { key: 'phone', label: 'טלפון' },
+            { key: 'status', label: 'סטטוס' },
+            { key: 'notes', label: 'הערות' },
+          ], filtered)} className="flex items-center gap-1 px-3 py-2 rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 text-sm font-medium min-h-[48px]">
+            <Download size={18} /> ייצוא
+          </button>
+          {isManager && (
+            <button onClick={() => { setEditItem(null); setShowForm(true); }}
             className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]">
             <Plus size={22} /> מלווה חדש
           </button>
