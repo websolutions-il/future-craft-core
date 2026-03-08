@@ -20,6 +20,7 @@ import {
 import { useAuth, type AppRole } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import DriverDashboard from '@/components/DriverDashboard';
+import DashboardCharts from '@/components/DashboardCharts';
 import CreateUserModal from '@/components/CreateUserModal';
 import type { CreateUserFormState } from '@/components/CreateUserModal';
 import { toast } from '@/hooks/use-toast';
