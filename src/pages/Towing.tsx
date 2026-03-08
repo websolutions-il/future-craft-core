@@ -214,7 +214,7 @@ export default function Towing() {
                       )}
                       {item.towing_approved && !item.towing_completed && (
                         <button onClick={() => handleCompleteTowing(item)}
-                          className="px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-bold">
+                          className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold">
                           🏁 סמן כהושלם
                         </button>
                       )}
