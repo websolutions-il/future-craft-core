@@ -172,10 +172,10 @@ export default function Towing() {
             <div key={`${item.source}-${item.id}`} className="card-elevated">
               <div className="flex items-start gap-4">
                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                  item.towing_completed ? 'bg-green-500/10' : item.towing_approved ? 'bg-primary/10' : 'bg-warning/10'
+                  item.towing_completed ? 'bg-accent/10' : item.towing_approved ? 'bg-primary/10' : 'bg-warning/10'
                 }`}>
                   {item.towing_completed ? (
-                    <CheckCircle size={24} className="text-green-500" />
+                    <CheckCircle size={24} className="text-accent-foreground" />
                   ) : item.towing_approved ? (
                     <Truck size={24} className="text-primary" />
                   ) : (
