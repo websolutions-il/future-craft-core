@@ -73,7 +73,6 @@ function AppRoutes() {
     return (
       <Routes>
         <Route path="/about" element={<About />} />
-        <Route path="/project-summary" element={<ProjectSummary />} />
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
