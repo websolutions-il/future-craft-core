@@ -160,7 +160,6 @@ const ProjectSummary = () => {
           ייצוא PDF
         </Button>
       </div>
-      </h1>
 
       <div className="space-y-10">
 
