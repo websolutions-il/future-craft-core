@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { FileText, Plus, Search, ArrowRight, TrendingUp } from 'lucide-react';
+import { FileText, Plus, Search, ArrowRight, TrendingUp, Download } from 'lucide-react';
+import { exportToCsv } from '@/utils/exportCsv';
 import ExpenseCard from '@/components/ExpenseCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -56,9 +57,24 @@ export default function Expenses() {
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <h1 className="page-header !mb-0 flex items-center gap-3"><FileText size={28} /> הוצאות</h1>
-        <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]">
-          <Plus size={22} /> הוצאה חדשה
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => exportToCsv('expenses', [
+            { key: 'date', label: 'תאריך' },
+            { key: 'driver_name', label: 'נהג' },
+            { key: 'vehicle_plate', label: 'מספר רכב' },
+            { key: 'category', label: 'קטגוריה' },
+            { key: 'vendor', label: 'ספק' },
+            { key: 'invoice_number', label: 'מספר חשבונית' },
+            { key: 'amount', label: 'סכום' },
+            { key: 'odometer', label: 'קילומטראז׳' },
+            { key: 'notes', label: 'הערות' },
+          ], filtered)} className="flex items-center gap-2 px-4 py-3 rounded-xl border border-border bg-card text-foreground text-sm font-bold min-h-[48px] hover:bg-muted transition-colors">
+            <Download size={18} /> ייצוא
+          </button>
+          <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]">
+            <Plus size={22} /> הוצאה חדשה
+          </button>
+        </div>
       </div>
 
       {/* Total */}

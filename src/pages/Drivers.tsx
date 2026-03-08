@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Users, Search, ArrowRight, Phone, Mail, Plus, Save, Edit2, X } from 'lucide-react';
+import { Users, Search, ArrowRight, Phone, Mail, Plus, Save, Edit2, X, Download } from 'lucide-react';
+import { exportToCsv } from '@/utils/exportCsv';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
@@ -111,12 +112,27 @@ export default function Drivers() {
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <h1 className="page-header mb-0">ניהול נהגים</h1>
-        {user?.role !== 'driver' && (
-          <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]">
-            <Plus size={22} />
-            נהג חדש
+        <div className="flex items-center gap-2">
+          <button onClick={() => exportToCsv('drivers', [
+            { key: 'full_name', label: 'שם מלא' },
+            { key: 'phone', label: 'טלפון' },
+            { key: 'email', label: 'אימייל' },
+            { key: 'license_number', label: 'מספר רישיון' },
+            { key: 'license_expiry', label: 'תוקף רישיון' },
+            { key: 'city', label: 'עיר' },
+            { key: 'status', label: 'סטטוס' },
+            { key: 'company_name', label: 'חברה' },
+            { key: 'notes', label: 'הערות' },
+          ], filtered)} className="flex items-center gap-2 px-4 py-3 rounded-xl border border-border bg-card text-foreground text-sm font-bold min-h-[48px] hover:bg-muted transition-colors">
+            <Download size={18} /> ייצוא
           </button>
-        )}
+          {user?.role !== 'driver' && (
+            <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]">
+              <Plus size={22} />
+              נהג חדש
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="relative mb-6">

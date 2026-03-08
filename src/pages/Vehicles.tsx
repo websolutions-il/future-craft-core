@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Car, Search, Plus, ArrowRight, Edit2, Phone, Trash2, Truck } from 'lucide-react';
+import { Car, Search, Plus, ArrowRight, Edit2, Phone, Trash2, Truck, Download } from 'lucide-react';
+import { exportToCsv } from '@/utils/exportCsv';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
@@ -253,11 +254,28 @@ export default function Vehicles() {
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <h1 className="page-header !mb-0 flex items-center gap-3"><Car size={28} /> ניהול רכבים</h1>
-        {isManager && (
-          <button onClick={() => handleOpenForm()} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]">
-            <Plus size={22} /> רכב חדש
+        <div className="flex items-center gap-2">
+          <button onClick={() => exportToCsv('vehicles', [
+            { key: 'license_plate', label: 'מספר רכב' },
+            { key: 'manufacturer', label: 'יצרן' },
+            { key: 'model', label: 'דגם' },
+            { key: 'year', label: 'שנה' },
+            { key: 'vehicle_type', label: 'סוג' },
+            { key: 'status', label: 'סטטוס' },
+            { key: 'odometer', label: 'קילומטראז׳' },
+            { key: 'test_expiry', label: 'תוקף טסט' },
+            { key: 'insurance_expiry', label: 'תוקף ביטוח' },
+            { key: 'company_name', label: 'חברה' },
+            { key: 'notes', label: 'הערות' },
+          ], filtered)} className="flex items-center gap-2 px-4 py-3 rounded-xl border border-border bg-card text-foreground text-sm font-bold min-h-[48px] hover:bg-muted transition-colors">
+            <Download size={18} /> ייצוא
           </button>
-        )}
+          {isManager && (
+            <button onClick={() => handleOpenForm()} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]">
+              <Plus size={22} /> רכב חדש
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="relative mb-4">
