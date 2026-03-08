@@ -122,7 +122,7 @@ function AppRoutes() {
         <Route path="/subscriptions" element={<Subscriptions />} />
         <Route path="/customer-docs" element={<CustomerDocs />} />
         <Route path="/emergency-settings" element={<EmergencySettings />} />
-        <Route path="/system-logs" element={<SystemLogs />} />
+        <Route path="/system-logs" element={<Alerts />} />
         <Route path="/service-order-history" element={<ServiceOrderHistory />} />
         <Route path="/project-summary" element={<ProjectSummary />} />
       </Route>
