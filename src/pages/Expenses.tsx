@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { FileText, Plus, Search, ArrowRight, TrendingUp } from 'lucide-react';
+import { FileText, Plus, Search, ArrowRight, TrendingUp, Download } from 'lucide-react';
+import { exportToCsv } from '@/utils/exportCsv';
 import ExpenseCard from '@/components/ExpenseCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
