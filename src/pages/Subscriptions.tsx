@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { CreditCard, Plus, Pencil, Trash2, Zap, TestTube, Loader2, Search, Calendar, DollarSign, Users, Snowflake, XCircle, ChevronLeft } from 'lucide-react';
+import { CreditCard, Plus, Pencil, Trash2, Zap, TestTube, Loader2, Search, Calendar, DollarSign, Users, Snowflake, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter } from '@/hooks/useCompanyFilter';
