@@ -72,7 +72,7 @@ export default function Permissions() {
     setSaving(userId);
     const { error } = await supabase
       .from('user_roles')
-      .update({ role: newRole })
+      .update({ role: newRole as any })
       .eq('user_id', userId);
 
     if (error) {
