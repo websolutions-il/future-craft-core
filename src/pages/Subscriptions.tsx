@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { CreditCard, Plus, Pencil, Trash2, Zap, TestTube, Loader2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { CreditCard, Plus, Pencil, Trash2, Zap, TestTube, Loader2, Search, Calendar, DollarSign, Users, Snowflake, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter } from '@/hooks/useCompanyFilter';
@@ -19,6 +19,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 
 interface Subscription {
   id: string;
@@ -43,10 +44,17 @@ const emptyForm = {
   notes: '',
 };
 
-const statusLabels: Record<string, { text: string; cls: string }> = {
-  active: { text: 'פעיל', cls: 'bg-green-500/10 text-green-600' },
-  frozen: { text: 'מוקפא', cls: 'bg-warning/10 text-warning' },
-  cancelled: { text: 'בוטל', cls: 'bg-destructive/10 text-destructive' },
+const statusConfig: Record<string, { text: string; color: string; border: string; icon: React.ReactNode }> = {
+  active: { text: 'פעיל', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20', border: 'border-r-emerald-500', icon: <Zap size={14} /> },
+  frozen: { text: 'מוקפא', color: 'bg-sky-500/10 text-sky-600 border-sky-500/20', border: 'border-r-sky-500', icon: <Snowflake size={14} /> },
+  cancelled: { text: 'בוטל', color: 'bg-rose-500/10 text-rose-600 border-rose-500/20', border: 'border-r-rose-500', icon: <XCircle size={14} /> },
+};
+
+const planColors: Record<string, string> = {
+  'בסיסי': 'bg-muted text-muted-foreground',
+  'מתקדם': 'bg-blue-500/10 text-blue-600',
+  'פרימיום': 'bg-amber-500/10 text-amber-700',
+  'מותאם אישית': 'bg-violet-500/10 text-violet-600',
 };
 
 export default function Subscriptions() {
@@ -54,6 +62,7 @@ export default function Subscriptions() {
   const companyFilter = useCompanyFilter();
   const { companyOptions } = useCompanyScope();
   const [subs, setSubs] = useState<Subscription[]>([]);
+  const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editingSub, setEditingSub] = useState<Subscription | null>(null);
@@ -61,16 +70,39 @@ export default function Subscriptions() {
   const [saving, setSaving] = useState(false);
   const [chargingId, setChargingId] = useState<string | null>(null);
   const [testingConnection, setTestingConnection] = useState(false);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const isSuperAdmin = user?.role === 'super_admin';
 
   const loadSubs = async () => {
+    setLoading(true);
     let q = supabase.from('company_subscriptions').select('*').order('company_name');
     if (companyFilter) q = q.eq('company_name', companyFilter);
     const { data } = await q;
     if (data) setSubs(data as Subscription[]);
+    setLoading(false);
   };
 
   useEffect(() => { loadSubs(); }, [companyFilter]);
+
+  const filtered = useMemo(() => {
+    return subs.filter(s => {
+      if (statusFilter !== 'all' && s.status !== statusFilter) return false;
+      if (search && !s.company_name.includes(search) && !s.plan_name?.includes(search)) return false;
+      return true;
+    });
+  }, [subs, search, statusFilter]);
+
+  const stats = useMemo(() => {
+    const active = subs.filter(s => s.status === 'active');
+    return {
+      total: subs.length,
+      active: active.length,
+      frozen: subs.filter(s => s.status === 'frozen').length,
+      cancelled: subs.filter(s => s.status === 'cancelled').length,
+      revenue: active.reduce((sum, s) => sum + (s.monthly_price || 0), 0),
+    };
+  }, [subs]);
 
   const openCreate = () => {
     setEditingSub(null);
@@ -115,16 +147,11 @@ export default function Subscriptions() {
     };
 
     if (editingSub) {
-      const { error } = await supabase
-        .from('company_subscriptions')
-        .update(payload)
-        .eq('id', editingSub.id);
+      const { error } = await supabase.from('company_subscriptions').update(payload).eq('id', editingSub.id);
       if (error) toast.error('שגיאה בעדכון: ' + error.message);
       else toast.success('מנוי עודכן בהצלחה');
     } else {
-      const { error } = await supabase
-        .from('company_subscriptions')
-        .insert(payload);
+      const { error } = await supabase.from('company_subscriptions').insert(payload);
       if (error) toast.error('שגיאה ביצירה: ' + error.message);
       else toast.success('מנוי נוצר בהצלחה');
     }
@@ -136,10 +163,7 @@ export default function Subscriptions() {
 
   const handleDelete = async () => {
     if (!deleteId) return;
-    const { error } = await supabase
-      .from('company_subscriptions')
-      .delete()
-      .eq('id', deleteId);
+    const { error } = await supabase.from('company_subscriptions').delete().eq('id', deleteId);
     if (error) toast.error('שגיאה במחיקה: ' + error.message);
     else toast.success('מנוי נמחק');
     setDeleteId(null);
@@ -149,15 +173,10 @@ export default function Subscriptions() {
   const testPayPalConnection = async () => {
     setTestingConnection(true);
     try {
-      const { data, error } = await supabase.functions.invoke('paypal-charge', {
-        body: { action: 'test_connection' },
-      });
+      const { data, error } = await supabase.functions.invoke('paypal-charge', { body: { action: 'test_connection' } });
       if (error) throw error;
-      if (data?.success) {
-        toast.success('חיבור PayPal תקין ✓');
-      } else {
-        toast.error('בעיה בחיבור PayPal: ' + (data?.error || 'שגיאה לא ידועה'));
-      }
+      if (data?.success) toast.success('חיבור PayPal תקין ✓');
+      else toast.error('בעיה בחיבור PayPal: ' + (data?.error || 'שגיאה לא ידועה'));
     } catch (err: any) {
       toast.error('שגיאה בבדיקת חיבור: ' + (err.message || 'שגיאה'));
     }
@@ -172,7 +191,6 @@ export default function Subscriptions() {
       });
       if (error) throw error;
       if (data?.order_id) {
-        // Auto-capture (no user approval needed for merchant-initiated)
         const { data: captureData, error: captureError } = await supabase.functions.invoke('paypal-charge', {
           body: { action: 'capture_order', order_id: data.order_id, subscription_id: sub.id },
         });
@@ -192,16 +210,12 @@ export default function Subscriptions() {
 
   const chargeAllDue = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('paypal-charge', {
-        body: { action: 'charge_all_due' },
-      });
+      const { data, error } = await supabase.functions.invoke('paypal-charge', { body: { action: 'charge_all_due' } });
       if (error) throw error;
       toast.success(`חויבו ${data?.charged || 0} מנויים`);
       if (data?.results) {
         data.results.forEach((r: any) => {
-          if (r.status === 'error') {
-            toast.error(`שגיאה ב-${r.company}: ${r.error}`);
-          }
+          if (r.status === 'error') toast.error(`שגיאה ב-${r.company}: ${r.error}`);
         });
       }
       loadSubs();
@@ -210,81 +224,186 @@ export default function Subscriptions() {
     }
   };
 
+  const getDaysUntilPayment = (dateStr: string | null) => {
+    if (!dateStr) return null;
+    const diff = Math.ceil((new Date(dateStr).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    return diff;
+  };
+
   return (
-    <div className="animate-fade-in">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="page-header !mb-0 flex items-center gap-3"><CreditCard size={28} /> מנויים וחיוב</h1>
+    <div className="animate-fade-in space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h1 className="page-header !mb-0 flex items-center gap-3">
+          <CreditCard size={28} /> מנויים וחיוב
+        </h1>
         {isSuperAdmin && (
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={testPayPalConnection} disabled={testingConnection}>
-              {testingConnection ? <Loader2 size={16} className="animate-spin" /> : <TestTube size={16} />}
-              <span className="mr-1">בדוק PayPal</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={testPayPalConnection} disabled={testingConnection} className="gap-1.5">
+              {testingConnection ? <Loader2 size={15} className="animate-spin" /> : <TestTube size={15} />}
+              בדוק PayPal
             </Button>
-            <Button variant="outline" size="sm" onClick={chargeAllDue}>
-              <Zap size={16} />
-              <span className="mr-1">חייב היום</span>
+            <Button variant="outline" size="sm" onClick={chargeAllDue} className="gap-1.5">
+              <Zap size={15} />
+              חייב היום
             </Button>
-            <button
-              onClick={openCreate}
-              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold"
-            >
-              <Plus size={22} /> מנוי חדש
-            </button>
+            <Button onClick={openCreate} className="gap-1.5 text-base font-bold px-5 py-2.5">
+              <Plus size={20} /> מנוי חדש
+            </Button>
           </div>
         )}
       </div>
 
-      {subs.length === 0 ? (
+      {/* Stats Counters */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        {[
+          { label: 'סה״כ מנויים', value: stats.total, icon: <Users size={20} />, color: 'text-primary', bg: 'bg-primary/5', filter: 'all' },
+          { label: 'פעילים', value: stats.active, icon: <Zap size={20} />, color: 'text-emerald-600', bg: 'bg-emerald-500/5', filter: 'active' },
+          { label: 'מוקפאים', value: stats.frozen, icon: <Snowflake size={20} />, color: 'text-sky-600', bg: 'bg-sky-500/5', filter: 'frozen' },
+          { label: 'בוטלו', value: stats.cancelled, icon: <XCircle size={20} />, color: 'text-rose-600', bg: 'bg-rose-500/5', filter: 'cancelled' },
+          { label: 'הכנסה חודשית', value: `₪${stats.revenue.toLocaleString()}`, icon: <DollarSign size={20} />, color: 'text-amber-600', bg: 'bg-amber-500/5', filter: null },
+        ].map((s, i) => (
+          <button
+            key={i}
+            onClick={() => s.filter !== null && setStatusFilter(prev => prev === s.filter ? 'all' : s.filter!)}
+            className={`rounded-xl border p-4 text-right transition-all ${
+              s.filter !== null && statusFilter === s.filter
+                ? 'ring-2 ring-primary border-primary shadow-md'
+                : 'border-border hover:border-primary/30'
+            } ${s.bg} ${s.filter === null ? 'cursor-default' : 'cursor-pointer'}`}
+          >
+            <div className={`flex items-center gap-2 mb-1 ${s.color}`}>
+              {s.icon}
+              <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
+            </div>
+            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+          </button>
+        ))}
+      </div>
+
+      {/* Search */}
+      <div className="relative max-w-md">
+        <Search size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="חפש לפי שם חברה..."
+          className="pr-10"
+        />
+      </div>
+
+      {/* Content */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <Loader2 size={32} className="animate-spin text-primary" />
+          <p className="text-muted-foreground">טוען מנויים...</p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="card-elevated text-center py-12">
-          <CreditCard size={48} className="mx-auto mb-4 text-muted-foreground opacity-50" />
-          <p className="text-xl text-muted-foreground">אין מנויים</p>
-          <p className="text-sm text-muted-foreground mt-2">לחץ על "מנוי חדש" כדי ליצור מנוי ראשון</p>
+          <CreditCard size={48} className="mx-auto mb-4 text-muted-foreground opacity-40" />
+          <p className="text-xl font-bold text-muted-foreground">
+            {subs.length === 0 ? 'אין מנויים' : 'לא נמצאו תוצאות'}
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            {subs.length === 0 ? 'לחץ על "מנוי חדש" כדי ליצור מנוי ראשון' : 'נסה לשנות את מילות החיפוש'}
+          </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {subs.map(s => {
-            const st = statusLabels[s.status] || statusLabels.active;
+        <div className="space-y-3">
+          {filtered.map(s => {
+            const st = statusConfig[s.status] || statusConfig.active;
+            const plan = planColors[s.plan_name] || planColors['בסיסי'];
+            const daysUntil = getDaysUntilPayment(s.next_payment_date);
+            const isUrgent = daysUntil !== null && daysUntil <= 3 && daysUntil >= 0;
+
             return (
-              <div key={s.id} className="card-elevated">
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-xl font-bold">{s.company_name}</h2>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${st.cls}`}>{st.text}</span>
-                    {isSuperAdmin && (
-                      <>
-                        <button
-                          onClick={() => chargeSubscription(s)}
-                          disabled={chargingId === s.id || s.status !== 'active'}
-                          className="p-2 rounded-lg hover:bg-green-500/10 transition-colors disabled:opacity-40"
-                          title="חייב עכשיו"
-                        >
-                          {chargingId === s.id ? (
-                            <Loader2 size={16} className="animate-spin text-green-600" />
-                          ) : (
-                            <Zap size={16} className="text-green-600" />
-                          )}
-                        </button>
-                        <button onClick={() => openEdit(s)} className="p-2 rounded-lg hover:bg-muted transition-colors">
-                          <Pencil size={16} className="text-muted-foreground" />
-                        </button>
-                        <button onClick={() => setDeleteId(s.id)} className="p-2 rounded-lg hover:bg-destructive/10 transition-colors">
-                          <Trash2 size={16} className="text-destructive" />
-                        </button>
-                      </>
-                    )}
+              <div
+                key={s.id}
+                className={`card-elevated border-r-4 ${st.border} transition-all hover:shadow-md`}
+              >
+                {/* Card Header */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-lg font-bold">{s.company_name}</h2>
+                    <Badge variant="outline" className={`${st.color} gap-1 text-xs`}>
+                      {st.icon} {st.text}
+                    </Badge>
+                    <Badge variant="secondary" className={`${plan} text-xs`}>
+                      {s.plan_name}
+                    </Badge>
+                  </div>
+                  {isSuperAdmin && (
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => chargeSubscription(s)}
+                        disabled={chargingId === s.id || s.status !== 'active'}
+                        title="חייב עכשיו"
+                        className="h-8 w-8"
+                      >
+                        {chargingId === s.id ? (
+                          <Loader2 size={15} className="animate-spin text-emerald-600" />
+                        ) : (
+                          <Zap size={15} className="text-emerald-600" />
+                        )}
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(s)} className="h-8 w-8">
+                        <Pencil size={15} className="text-muted-foreground" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => setDeleteId(s.id)} className="h-8 w-8">
+                        <Trash2 size={15} className="text-destructive" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Card Body */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="space-y-0.5">
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <DollarSign size={12} /> מחיר חודשי
+                    </p>
+                    <p className="text-lg font-bold">₪{(s.monthly_price || 0).toLocaleString()}</p>
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Calendar size={12} /> יום חיוב
+                    </p>
+                    <p className="font-bold">{s.billing_day} בחודש</p>
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="text-xs text-muted-foreground">חיוב אחרון</p>
+                    <p className="font-medium">
+                      {s.last_payment_date ? new Date(s.last_payment_date).toLocaleDateString('he-IL') : '—'}
+                    </p>
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="text-xs text-muted-foreground">חיוב הבא</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">
+                        {s.next_payment_date ? new Date(s.next_payment_date).toLocaleDateString('he-IL') : '—'}
+                      </p>
+                      {isUrgent && (
+                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                          {daysUntil === 0 ? 'היום!' : `עוד ${daysUntil} ימים`}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-                  <div><span className="text-muted-foreground">חבילה</span><p className="font-bold">{s.plan_name}</p></div>
-                  <div><span className="text-muted-foreground">מחיר חודשי</span><p className="font-bold">₪{s.monthly_price}</p></div>
-                  <div><span className="text-muted-foreground">יום חיוב</span><p className="font-bold">{s.billing_day} בחודש</p></div>
-                  <div><span className="text-muted-foreground">חיוב אחרון</span><p className="font-bold">{s.last_payment_date ? new Date(s.last_payment_date).toLocaleDateString('he-IL') : '—'}</p></div>
-                  <div><span className="text-muted-foreground">חיוב הבא</span><p className="font-bold">{s.next_payment_date ? new Date(s.next_payment_date).toLocaleDateString('he-IL') : '—'}</p></div>
-                </div>
-                {s.payment_method && (
-                  <p className="mt-2 text-sm"><span className="text-muted-foreground">אמצעי תשלום: </span>{s.payment_method}</p>
+
+                {/* Footer info */}
+                {(s.payment_method || s.notes) && (
+                  <div className="mt-3 pt-3 border-t border-border flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
+                    {s.payment_method && (
+                      <span>💳 {s.payment_method}</span>
+                    )}
+                    {s.notes && (
+                      <span>📝 {s.notes}</span>
+                    )}
+                  </div>
                 )}
-                {s.notes && <p className="mt-1 text-sm text-muted-foreground">{s.notes}</p>}
               </div>
             );
           })}
@@ -295,14 +414,14 @@ export default function Subscriptions() {
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-lg" dir="rtl">
           <DialogHeader>
-            <DialogTitle>{editingSub ? 'עריכת מנוי' : 'מנוי חדש'}</DialogTitle>
+            <DialogTitle className="text-xl">{editingSub ? '✏️ עריכת מנוי' : '➕ מנוי חדש'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>שם חברה</Label>
+              <Label className="text-sm font-bold">שם חברה</Label>
               {companyOptions.length > 0 ? (
                 <Select value={form.company_name} onValueChange={v => setForm(f => ({ ...f, company_name: v }))}>
-                  <SelectTrigger><SelectValue placeholder="בחר חברה" /></SelectTrigger>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="בחר חברה" /></SelectTrigger>
                   <SelectContent>
                     {companyOptions.map(c => (
                       <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
@@ -310,14 +429,14 @@ export default function Subscriptions() {
                   </SelectContent>
                 </Select>
               ) : (
-                <Input value={form.company_name} onChange={e => setForm(f => ({ ...f, company_name: e.target.value }))} />
+                <Input className="mt-1" value={form.company_name} onChange={e => setForm(f => ({ ...f, company_name: e.target.value }))} />
               )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>שם חבילה</Label>
+                <Label className="text-sm font-bold">שם חבילה</Label>
                 <Select value={form.plan_name} onValueChange={v => setForm(f => ({ ...f, plan_name: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="בסיסי">בסיסי</SelectItem>
                     <SelectItem value="מתקדם">מתקדם</SelectItem>
@@ -327,19 +446,19 @@ export default function Subscriptions() {
                 </Select>
               </div>
               <div>
-                <Label>מחיר חודשי (₪)</Label>
-                <Input type="number" min={0} value={form.monthly_price} onChange={e => setForm(f => ({ ...f, monthly_price: Number(e.target.value) }))} />
+                <Label className="text-sm font-bold">מחיר חודשי (₪)</Label>
+                <Input className="mt-1" type="number" min={0} value={form.monthly_price} onChange={e => setForm(f => ({ ...f, monthly_price: Number(e.target.value) }))} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>יום חיוב בחודש</Label>
-                <Input type="number" min={1} max={28} value={form.billing_day} onChange={e => setForm(f => ({ ...f, billing_day: Number(e.target.value) }))} />
+                <Label className="text-sm font-bold">יום חיוב בחודש</Label>
+                <Input className="mt-1" type="number" min={1} max={28} value={form.billing_day} onChange={e => setForm(f => ({ ...f, billing_day: Number(e.target.value) }))} />
               </div>
               <div>
-                <Label>סטטוס</Label>
+                <Label className="text-sm font-bold">סטטוס</Label>
                 <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">פעיל</SelectItem>
                     <SelectItem value="frozen">מוקפא</SelectItem>
@@ -349,17 +468,17 @@ export default function Subscriptions() {
               </div>
             </div>
             <div>
-              <Label>אמצעי תשלום</Label>
-              <Input value={form.payment_method} onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))} placeholder="PayPal / העברה / כרטיס" />
+              <Label className="text-sm font-bold">אמצעי תשלום</Label>
+              <Input className="mt-1" value={form.payment_method} onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))} placeholder="PayPal / העברה / כרטיס" />
             </div>
             <div>
-              <Label>הערות</Label>
-              <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} />
+              <Label className="text-sm font-bold">הערות</Label>
+              <Textarea className="mt-1" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} />
             </div>
             <div className="flex gap-3 justify-end pt-2">
               <Button variant="outline" onClick={() => setModalOpen(false)}>ביטול</Button>
-              <Button onClick={handleSave} disabled={saving}>
-                {saving ? 'שומר...' : editingSub ? 'עדכן' : 'צור מנוי'}
+              <Button onClick={handleSave} disabled={saving} className="min-w-[100px]">
+                {saving ? <Loader2 size={16} className="animate-spin" /> : editingSub ? 'עדכן' : 'צור מנוי'}
               </Button>
             </div>
           </div>
@@ -370,7 +489,7 @@ export default function Subscriptions() {
       <AlertDialog open={!!deleteId} onOpenChange={open => !open && setDeleteId(null)}>
         <AlertDialogContent dir="rtl">
           <AlertDialogHeader>
-            <AlertDialogTitle>מחיקת מנוי</AlertDialogTitle>
+            <AlertDialogTitle>🗑️ מחיקת מנוי</AlertDialogTitle>
             <AlertDialogDescription>האם אתה בטוח שברצונך למחוק את המנוי? פעולה זו אינה ניתנת לביטול.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row-reverse gap-2">
