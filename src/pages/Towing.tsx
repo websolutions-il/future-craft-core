@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Truck, Search, CheckCircle, Clock, AlertTriangle, MapPin, Phone } from 'lucide-react';
+import { Truck, Search, CheckCircle, Clock, MapPin, Phone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
