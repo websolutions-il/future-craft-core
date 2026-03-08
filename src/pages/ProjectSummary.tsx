@@ -1,7 +1,9 @@
 
-import { CheckCircle, Clock, Plus, Shield } from 'lucide-react';
+import { CheckCircle, Clock, Plus, Shield, Download } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { useRef } from 'react';
 
 const completedItems = [
   { module: 'דף נחיתה / אודות', desc: 'דף נחיתה מקצועי עם Hero, תכונות, צילומי מסך, Footer – כולל ניווט ו-CTA' },

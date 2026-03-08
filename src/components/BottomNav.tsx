@@ -190,6 +190,7 @@ export function DesktopSidebar() {
   ];
   const superAdminExtra: NavItem[] = [
     { path: '/subscriptions', label: 'מנויים וחיוב', icon: CreditCard },
+    { path: '/project-summary', label: 'דוח תוספות', icon: ScrollText },
   ];
 
   return (
