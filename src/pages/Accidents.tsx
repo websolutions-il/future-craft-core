@@ -193,7 +193,8 @@ export default function Accidents() {
           </button>
           <button onClick={() => { setEditItem(null); setViewMode('form'); }} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-destructive text-destructive-foreground text-lg font-bold min-h-[48px]">
             <Plus size={22} /> דיווח תאונה
-        </button>
+          </button>
+        </div>
       </div>
       <div className="relative mb-4">
         <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />

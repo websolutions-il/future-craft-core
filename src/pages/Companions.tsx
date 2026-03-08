@@ -69,11 +69,11 @@ export default function Companions() {
           </button>
           {isManager && (
             <button onClick={() => { setEditItem(null); setShowForm(true); }}
-            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]">
-            <Plus size={22} /> מלווה חדש
-          </button>
-        )}
-      </div>
+              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]">
+              <Plus size={22} /> מלווה חדש
+            </button>
+          )}
+        </div>
 
       <div className="relative mb-5">
         <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
