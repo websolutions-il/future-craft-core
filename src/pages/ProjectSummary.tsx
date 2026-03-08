@@ -149,7 +149,7 @@ const ProjectSummary = () => {
           <p className="text-muted-foreground mb-4">
             כל הפיצ'רים הבאים לא היו חלק מהתוכנית המקורית (שכללה דף נחיתה + Multi-Tenancy).
             <br />
-            הערכה: {HOURS_PER_ADDITION} שעות פיתוח לכל תוספת + 30% בדיקות ותיקונים.
+            סה"כ {TOTAL_ADDITION_HOURS} שעות פיתוח + 30% בדיקות ותיקונים = {withQA} שעות.
           </p>
 
           <div className="border border-border rounded-lg overflow-hidden overflow-x-auto">
@@ -159,14 +159,6 @@ const ProjectSummary = () => {
                   <th className="text-right p-3 font-semibold w-8">#</th>
                   <th className="text-right p-3 font-semibold">תוספת</th>
                   <th className="text-right p-3 font-semibold">פירוט</th>
-                  <th className="text-center p-3 font-semibold w-24">
-                    <div>שעות</div>
-                    <div className="text-xs font-normal text-muted-foreground">פיתוח</div>
-                  </th>
-                  <th className="text-center p-3 font-semibold w-24">
-                    <div>שעות</div>
-                    <div className="text-xs font-normal text-muted-foreground">+30% בדיקות</div>
-                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -175,18 +167,9 @@ const ProjectSummary = () => {
                     <td className="p-3 text-muted-foreground">{i + 1}</td>
                     <td className="p-3 font-medium">{item.feature}</td>
                     <td className="p-3 text-muted-foreground">{item.desc}</td>
-                    <td className="p-3 text-center font-mono">{HOURS_PER_ADDITION}</td>
-                    <td className="p-3 text-center font-mono font-bold">{Math.round(HOURS_PER_ADDITION * QA_MULTIPLIER)}</td>
                   </tr>
                 ))}
               </tbody>
-              <tfoot>
-                <tr className="bg-muted font-bold">
-                  <td className="p-3" colSpan={3}>סה"כ</td>
-                  <td className="p-3 text-center font-mono">{totalAdditionHours}</td>
-                  <td className="p-3 text-center font-mono">{withQA}</td>
-                </tr>
-              </tfoot>
             </table>
           </div>
         </section>
