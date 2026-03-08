@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Briefcase, Plus, Search, ArrowRight, Clock, CheckCircle, MessageSquareReply,
-  Filter, Car, User, Building2, Calendar, Truck, Trash2, Edit, History,
+  Filter, Car, User, Building2, Calendar, Truck, Trash2, Edit, History, Download,
 } from 'lucide-react';
 import { exportToCsv } from '@/utils/exportCsv';
 import { supabase } from '@/integrations/supabase/client';
