@@ -44,7 +44,7 @@ const completedItems = [
   { module: 'איפוס סיסמה', desc: 'Edge Function לשליחת קישור איפוס באימייל' },
 ];
 
-const HOURS_PER_ADDITION = 9;
+const TOTAL_ADDITION_HOURS = 9;
 const QA_MULTIPLIER = 1.3;
 
 const additions = [
