@@ -9,7 +9,7 @@ import { he } from 'date-fns/locale';
 
 // ─── Alerts Types ───
 type AlertSeverity = 'critical' | 'warning' | 'info';
-type AlertCategory = 'test' | 'insurance' | 'comprehensive_insurance' | 'license' | 'fault' | 'service_order';
+type AlertCategory = 'test' | 'insurance' | 'comprehensive_insurance' | 'license' | 'fault' | 'service_order' | 'work_assignment';
 
 interface AlertItem {
   id: string;
