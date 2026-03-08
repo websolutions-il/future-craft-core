@@ -804,6 +804,11 @@ function FleetManagerDashboard({
         </div>
       </section>
 
+      <DashboardCharts
+        companyName={isSuperAdminView ? selectedCompany : (user?.company_name || '')}
+        isSuperAdminView={isSuperAdminView}
+      />
+
       <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {fleetActions.map((action) => (
           <Link key={action.label} to={action.href} className="big-action-btn bg-card text-foreground border border-border">
