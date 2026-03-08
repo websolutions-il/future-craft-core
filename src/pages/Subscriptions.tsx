@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CreditCard, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { CreditCard, Plus, Pencil, Trash2, Zap, TestTube, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter } from '@/hooks/useCompanyFilter';
@@ -59,6 +59,8 @@ export default function Subscriptions() {
   const [editingSub, setEditingSub] = useState<Subscription | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [chargingId, setChargingId] = useState<string | null>(null);
+  const [testingConnection, setTestingConnection] = useState(false);
   const isSuperAdmin = user?.role === 'super_admin';
 
   const loadSubs = async () => {
@@ -97,7 +99,6 @@ export default function Subscriptions() {
     }
     setSaving(true);
 
-    // Calculate next payment date
     const now = new Date();
     let nextDate = new Date(now.getFullYear(), now.getMonth(), form.billing_day);
     if (nextDate <= now) nextDate.setMonth(nextDate.getMonth() + 1);
@@ -145,17 +146,91 @@ export default function Subscriptions() {
     loadSubs();
   };
 
+  const testPayPalConnection = async () => {
+    setTestingConnection(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('paypal-charge', {
+        body: { action: 'test_connection' },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast.success('חיבור PayPal תקין ✓');
+      } else {
+        toast.error('בעיה בחיבור PayPal: ' + (data?.error || 'שגיאה לא ידועה'));
+      }
+    } catch (err: any) {
+      toast.error('שגיאה בבדיקת חיבור: ' + (err.message || 'שגיאה'));
+    }
+    setTestingConnection(false);
+  };
+
+  const chargeSubscription = async (sub: Subscription) => {
+    setChargingId(sub.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('paypal-charge', {
+        body: { action: 'create_order', subscription_id: sub.id },
+      });
+      if (error) throw error;
+      if (data?.order_id) {
+        // Auto-capture (no user approval needed for merchant-initiated)
+        const { data: captureData, error: captureError } = await supabase.functions.invoke('paypal-charge', {
+          body: { action: 'capture_order', order_id: data.order_id, subscription_id: sub.id },
+        });
+        if (captureError) throw captureError;
+        if (captureData?.status === 'COMPLETED') {
+          toast.success(`חיוב ₪${sub.monthly_price} עבור ${sub.company_name} בוצע בהצלחה`);
+          loadSubs();
+        } else {
+          toast.warning(`סטטוס חיוב: ${captureData?.status || 'לא ידוע'}`);
+        }
+      }
+    } catch (err: any) {
+      toast.error('שגיאה בחיוב: ' + (err.message || 'שגיאה'));
+    }
+    setChargingId(null);
+  };
+
+  const chargeAllDue = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('paypal-charge', {
+        body: { action: 'charge_all_due' },
+      });
+      if (error) throw error;
+      toast.success(`חויבו ${data?.charged || 0} מנויים`);
+      if (data?.results) {
+        data.results.forEach((r: any) => {
+          if (r.status === 'error') {
+            toast.error(`שגיאה ב-${r.company}: ${r.error}`);
+          }
+        });
+      }
+      loadSubs();
+    } catch (err: any) {
+      toast.error('שגיאה בחיוב כולל: ' + (err.message || 'שגיאה'));
+    }
+  };
+
   return (
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-6">
         <h1 className="page-header !mb-0 flex items-center gap-3"><CreditCard size={28} /> מנויים וחיוב</h1>
         {isSuperAdmin && (
-          <button
-            onClick={openCreate}
-            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold"
-          >
-            <Plus size={22} /> מנוי חדש
-          </button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={testPayPalConnection} disabled={testingConnection}>
+              {testingConnection ? <Loader2 size={16} className="animate-spin" /> : <TestTube size={16} />}
+              <span className="mr-1">בדוק PayPal</span>
+            </Button>
+            <Button variant="outline" size="sm" onClick={chargeAllDue}>
+              <Zap size={16} />
+              <span className="mr-1">חייב היום</span>
+            </Button>
+            <button
+              onClick={openCreate}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold"
+            >
+              <Plus size={22} /> מנוי חדש
+            </button>
+          </div>
         )}
       </div>
 
@@ -177,6 +252,18 @@ export default function Subscriptions() {
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${st.cls}`}>{st.text}</span>
                     {isSuperAdmin && (
                       <>
+                        <button
+                          onClick={() => chargeSubscription(s)}
+                          disabled={chargingId === s.id || s.status !== 'active'}
+                          className="p-2 rounded-lg hover:bg-green-500/10 transition-colors disabled:opacity-40"
+                          title="חייב עכשיו"
+                        >
+                          {chargingId === s.id ? (
+                            <Loader2 size={16} className="animate-spin text-green-600" />
+                          ) : (
+                            <Zap size={16} className="text-green-600" />
+                          )}
+                        </button>
                         <button onClick={() => openEdit(s)} className="p-2 rounded-lg hover:bg-muted transition-colors">
                           <Pencil size={16} className="text-muted-foreground" />
                         </button>
@@ -187,10 +274,11 @@ export default function Subscriptions() {
                     )}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                   <div><span className="text-muted-foreground">חבילה</span><p className="font-bold">{s.plan_name}</p></div>
                   <div><span className="text-muted-foreground">מחיר חודשי</span><p className="font-bold">₪{s.monthly_price}</p></div>
                   <div><span className="text-muted-foreground">יום חיוב</span><p className="font-bold">{s.billing_day} בחודש</p></div>
+                  <div><span className="text-muted-foreground">חיוב אחרון</span><p className="font-bold">{s.last_payment_date ? new Date(s.last_payment_date).toLocaleDateString('he-IL') : '—'}</p></div>
                   <div><span className="text-muted-foreground">חיוב הבא</span><p className="font-bold">{s.next_payment_date ? new Date(s.next_payment_date).toLocaleDateString('he-IL') : '—'}</p></div>
                 </div>
                 {s.payment_method && (
