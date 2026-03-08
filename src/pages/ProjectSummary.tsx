@@ -70,7 +70,7 @@ const additions = [
   { feature: 'RLS Policies מלאות', desc: 'מדיניות אבטחה לכל הטבלאות, has_role, get_user_company' },
 ];
 
-const totalAdditionHours = additions.length * HOURS_PER_ADDITION;
+const totalAdditionHours = TOTAL_ADDITION_HOURS;
 const withQA = Math.round(totalAdditionHours * QA_MULTIPLIER);
 
 const ProjectSummary = () => {
