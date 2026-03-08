@@ -4,6 +4,7 @@ import {
   Briefcase, Plus, Search, ArrowRight, Clock, CheckCircle, MessageSquareReply,
   Filter, Car, User, Building2, Calendar, Truck, Trash2, Edit, History,
 } from 'lucide-react';
+import { exportToCsv } from '@/utils/exportCsv';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
