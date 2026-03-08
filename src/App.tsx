@@ -50,7 +50,7 @@ import InternalChat from "@/pages/InternalChat";
 import Subscriptions from "@/pages/Subscriptions";
 import EmergencySettings from "@/pages/EmergencySettings";
 import CustomerDocs from "@/pages/CustomerDocs";
-import SystemLogs from "@/pages/SystemLogs";
+
 import ServiceOrderHistory from "@/pages/ServiceOrderHistory";
 
 const queryClient = new QueryClient();
