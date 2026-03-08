@@ -71,7 +71,7 @@ const managerCategories = [
       { path: '/emergency', label: 'מספרי חירום', icon: Phone },
       { path: '/emergency-settings', label: 'הגדרות חירום', icon: Phone },
       { path: '/email-templates', label: 'תבניות מייל', icon: Mail },
-      { path: '/system-logs', label: 'לוג מערכת', icon: ScrollText },
+      { path: '/alerts', label: 'התראות ועדכונים', icon: Bell },
       { path: '/settings', label: 'הגדרות', icon: Settings },
     ],
   },
