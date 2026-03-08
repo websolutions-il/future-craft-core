@@ -220,6 +220,7 @@ export default function Alerts() {
       }
     }
 
+    allAlerts.sort((a, b) => {
       const severityOrder: Record<AlertSeverity, number> = { critical: 0, warning: 1, info: 2 };
       const diff = severityOrder[a.severity] - severityOrder[b.severity];
       if (diff !== 0) return diff;
