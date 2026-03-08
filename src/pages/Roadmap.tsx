@@ -1,7 +1,7 @@
 import { Map, CheckCircle2, Clock, Calendar, Rocket } from 'lucide-react';
 
-const currentVersion = '2.0.0-beta';
-const releaseDate = '2026-02-28';
+const currentVersion = '3.0.0';
+const releaseDate = '2026-03-08';
 
 interface RoadmapPhase {
   phase: string;
@@ -40,37 +40,36 @@ const roadmap: RoadmapPhase[] = [
     ],
   },
   {
-    phase: 'שלב 3', title: 'מודולים מתקדמים', status: 'current',
+    phase: 'שלב 3', title: 'מודולים מתקדמים', status: 'done',
     items: [
-      { name: 'עמוד התראות חכם - תוקף + תקלות דחופות', done: true },
+      { name: 'עמוד התראות חכם - תוקף + תקלות + טיפולים', done: true },
       { name: 'שירותי חירום 24/7 עם GPS', done: true },
-      { name: 'סידור עבודה - ניהול משימות', done: true },
+      { name: 'סידור עבודה - ניהול משימות + אישורים', done: true },
       { name: 'דוחות כספיים ותפעוליים חיים', done: true },
-      { name: 'ייצוא CSV', done: true },
+      { name: 'ייצוא CSV בכל הרשימות', done: true },
       { name: 'עמוד מסמכים - מבנה קטגוריות', done: true },
       { name: 'הגדרות - פרופיל, סיסמה, תצוגה', done: true },
-      { name: 'העלאת קבצים ותמונות', done: false },
-      { name: 'דשבורד נהג מותאם', done: false },
+      { name: 'העלאת קבצים ותמונות', done: true },
+      { name: 'דשבורד נהג מותאם', done: true },
+      { name: 'ניהול ספקים', done: true },
+      { name: 'ניהול מלווים', done: true },
+      { name: 'צ\'אט פנימי + צ\'אט תקלות', done: true },
+      { name: 'מנגנון אישורים והפניות', done: true },
+      { name: 'Audit Log (עדכוני מערכת)', done: true },
+      { name: 'ניהול הרשאות', done: true },
+      { name: 'תבניות מייל אוטומטיות', done: true },
+      { name: 'מנויים וחיוב', done: true },
     ],
   },
   {
-    phase: 'שלב 4', title: 'דוחות מתקדמים וייצוא', status: 'planned',
+    phase: 'שלב 4', title: 'דוחות מתקדמים ואינטגרציות', status: 'current',
     items: [
-      { name: 'דוח לפי רכב/נהג/תקופה', done: false },
+      { name: 'דוח לפי רכב/נהג/תקופה', done: true },
+      { name: 'שיתוף דוח ב-WhatsApp ומייל', done: true },
       { name: 'ייצוא PDF', done: false },
-      { name: 'שליחת דוח במייל', done: false },
-      { name: 'פילטרים מתקדמים לכל דוח', done: false },
-    ],
-  },
-  {
-    phase: 'שלב 5', title: 'אינטגרציות ואופטימיזציה', status: 'planned',
-    items: [
-      { name: 'חיבור WhatsApp לנהגים', done: false },
       { name: 'PWA - התקנה על מכשיר', done: false },
-      { name: 'עבודה אופליין + סנכרון', done: false },
       { name: 'חיבור מערכת הנהלת חשבונות', done: false },
-      { name: 'Audit Log מלא', done: false },
-      { name: 'פאנל מנהל על - ניהול חברות', done: false },
+      { name: 'עבודה אופליין + סנכרון', done: false },
     ],
   },
 ];

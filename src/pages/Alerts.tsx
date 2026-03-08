@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
-import { Bell, ShieldAlert, Car, IdCard, Wrench, Clock, CheckCircle2, ScrollText, Search, Building2, Briefcase } from 'lucide-react';
+import { Bell, ShieldAlert, Car, IdCard, Wrench, Clock, CheckCircle2, ScrollText, Search, Building2, Briefcase, ClipboardList } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 
 // ─── Alerts Types ───
 type AlertSeverity = 'critical' | 'warning' | 'info';
-type AlertCategory = 'test' | 'insurance' | 'comprehensive_insurance' | 'license' | 'fault' | 'service_order';
+type AlertCategory = 'test' | 'insurance' | 'comprehensive_insurance' | 'license' | 'fault' | 'service_order' | 'work_assignment';
 
 interface AlertItem {
   id: string;
@@ -29,6 +29,7 @@ const categoryLabels: Record<AlertCategory, string> = {
   license: 'רישיון נהיגה',
   fault: 'תקלה דחופה',
   service_order: 'הזמנת שירות',
+  work_assignment: 'סידור עבודה',
 };
 
 const categoryIcons: Record<AlertCategory, typeof Car> = {
@@ -38,6 +39,7 @@ const categoryIcons: Record<AlertCategory, typeof Car> = {
   license: IdCard,
   fault: Wrench,
   service_order: Briefcase,
+  work_assignment: ClipboardList,
 };
 
 const severityStyles: Record<AlertSeverity, string> = {
@@ -197,6 +199,27 @@ export default function Alerts() {
       }
     }
 
+    // 5. Work assignments - pending approval
+    const { data: assignments } = await applyCompanyScope(
+      supabase.from('work_assignments').select('*').in('status', ['pending', 'approved']),
+      companyFilter
+    );
+    if (assignments) {
+      for (const wa of assignments) {
+        const isPending = wa.status === 'pending';
+        allAlerts.push({
+          id: `wa-${wa.id}`,
+          category: 'work_assignment',
+          severity: isPending ? 'warning' : 'info',
+          title: isPending ? 'סידור עבודה ממתין לאישור' : 'סידור עבודה פעיל',
+          subtitle: `${wa.driver_name || 'ללא נהג'} • ${wa.vehicle_plate || 'ללא רכב'}`,
+          daysLeft: null,
+          date: wa.scheduled_date || null,
+          meta: wa.title || undefined,
+        });
+      }
+    }
+
     allAlerts.sort((a, b) => {
       const severityOrder: Record<AlertSeverity, number> = { critical: 0, warning: 1, info: 2 };
       const diff = severityOrder[a.severity] - severityOrder[b.severity];
@@ -221,7 +244,7 @@ export default function Alerts() {
     critical: alerts.filter(a => a.severity === 'critical').length,
     warning: alerts.filter(a => a.severity === 'warning').length,
   };
-  const categories: (AlertCategory | 'all')[] = ['all', 'test', 'insurance', 'comprehensive_insurance', 'license', 'fault', 'service_order'];
+  const categories: (AlertCategory | 'all')[] = ['all', 'test', 'insurance', 'comprehensive_insurance', 'license', 'fault', 'service_order', 'work_assignment'];
 
   const filteredLogs = logs.filter(l => {
     if (logSearch && !l.user_name.includes(logSearch) && !l.details.includes(logSearch) && !l.vehicle_plate.includes(logSearch) && !l.entity_id.includes(logSearch)) return false;

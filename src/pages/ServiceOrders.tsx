@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Briefcase, Plus, Search, ArrowRight, Clock, CheckCircle, MessageSquareReply,
-  Filter, Car, User, Building2, Calendar, Truck, Trash2, Edit, History,
+  Filter, Car, User, Building2, Calendar, Truck, Trash2, Edit, History, Download,
 } from 'lucide-react';
+import { exportToCsv } from '@/utils/exportCsv';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
@@ -315,6 +316,18 @@ export default function ServiceOrders() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="page-header mb-0 flex items-center gap-3"><Briefcase size={28} /> הזמנות שירות</h1>
         <div className="flex items-center gap-2">
+          <button onClick={() => exportToCsv('service_orders', [
+            { key: 'vehicle_plate', label: 'מספר רכב' },
+            { key: 'driver_name', label: 'נהג' },
+            { key: 'service_category', label: 'קטגוריה' },
+            { key: 'description', label: 'תיאור' },
+            { key: 'vendor_name', label: 'ספק' },
+            { key: 'treatment_status', label: 'סטטוס' },
+            { key: 'urgency', label: 'דחיפות' },
+            { key: 'created_at', label: 'תאריך' },
+          ], filtered)} className="flex items-center gap-1 px-3 py-2 rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 text-sm font-medium min-h-[48px]">
+            <Download size={18} /> ייצוא
+          </button>
           <button onClick={() => navigate('/service-order-history')}
             className="flex items-center gap-2 px-4 py-3 rounded-xl bg-muted text-foreground font-bold text-sm min-h-[48px]">
             <History size={18} /> היסטוריה
