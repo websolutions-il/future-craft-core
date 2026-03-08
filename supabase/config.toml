@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.notify-service-order-email]
 verify_jwt = false
+
+[functions.paypal-charge]
+verify_jwt = false
