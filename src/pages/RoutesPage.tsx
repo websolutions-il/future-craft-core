@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Route as RouteIcon, Search, ArrowRight, MapPin, Clock, Plus, Edit2, Trash2, UserRoundCog } from 'lucide-react';
+import { Route as RouteIcon, Search, ArrowRight, MapPin, Clock, Plus, Edit2, Trash2, UserRoundCog, Download } from 'lucide-react';
+import { exportToCsv } from '@/utils/exportCsv';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
