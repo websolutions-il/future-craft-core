@@ -39,6 +39,13 @@ Deno.serve(async (req) => {
       },
     });
 
+    // Replace any lovable.app or preview URLs in the action_link with the production domain
+    let resetLink = linkData?.properties?.action_link;
+    if (resetLink) {
+      resetLink = resetLink.replace(/https?:\/\/[^\/]*lovable\.app/g, 'https://car.mrk.co.il');
+      resetLink = resetLink.replace(/https?:\/\/[^\/]*\.lovableproject\.com/g, 'https://car.mrk.co.il');
+    }
+
     if (linkError) {
       console.error('Generate link error:', linkError);
       // Don't reveal if user exists or not
@@ -48,7 +55,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    const resetLink = linkData?.properties?.action_link;
     if (!resetLink) {
       console.error('No action_link returned');
       return new Response(JSON.stringify({ success: true }), {
