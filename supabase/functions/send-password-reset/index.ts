@@ -55,7 +55,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    const resetLink = linkData?.properties?.action_link;
     if (!resetLink) {
       console.error('No action_link returned');
       return new Response(JSON.stringify({ success: true }), {
