@@ -53,10 +53,6 @@ export default function Customers() {
     if (error) toast.error('שגיאה'); else { toast.success('נמחק'); setViewMode('list'); loadData(); }
   };
 
-  if (viewMode === 'form') {
-    return <CustomerForm customer={editItem} onDone={() => { setViewMode('list'); setEditItem(null); loadData(); }} onBack={() => { setViewMode('list'); setEditItem(null); }} user={user} />;
-  }
-
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -101,6 +97,10 @@ export default function Customers() {
     }
     setPasswordLoading(false);
   };
+
+  if (viewMode === 'form') {
+    return <CustomerForm customer={editItem} onDone={() => { setViewMode('list'); setEditItem(null); loadData(); }} onBack={() => { setViewMode('list'); setEditItem(null); }} user={user} />;
+  }
 
   if (viewMode === 'detail' && selected) {
     const c = selected;
