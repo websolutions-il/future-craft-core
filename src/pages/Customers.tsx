@@ -57,6 +57,51 @@ export default function Customers() {
     return <CustomerForm customer={editItem} onDone={() => { setViewMode('list'); setEditItem(null); loadData(); }} onBack={() => { setViewMode('list'); setEditItem(null); }} user={user} />;
   }
 
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+
+  const handleSendResetEmail = async (email: string) => {
+    if (!email) { toast.error('ללקוח זה אין כתובת אימייל'); return; }
+    setResetLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-password-reset', {
+        body: { email, redirect_url: 'https://car.mrk.co.il/reset-password' },
+      });
+      if (error || data?.error) {
+        toast.error('שגיאה בשליחת קישור האיפוס');
+      } else {
+        toast.success('קישור לאיפוס סיסמה נשלח בהצלחה');
+      }
+    } catch {
+      toast.error('שגיאה בשליחת קישור האיפוס');
+    }
+    setResetLoading(false);
+  };
+
+  const handleChangePassword = async (email: string) => {
+    if (!email) { toast.error('ללקוח זה אין כתובת אימייל'); return; }
+    if (!newPassword || newPassword.length < 6) { toast.error('סיסמה חייבת להכיל לפחות 6 תווים'); return; }
+    setPasswordLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('change-user-password', {
+        body: { email, new_password: newPassword },
+      });
+      if (error || data?.error) {
+        toast.error(data?.error || 'שגיאה בשינוי הסיסמה');
+      } else {
+        toast.success('הסיסמה שונתה בהצלחה');
+        setShowPasswordDialog(false);
+        setNewPassword('');
+      }
+    } catch {
+      toast.error('שגיאה בשינוי הסיסמה');
+    }
+    setPasswordLoading(false);
+  };
+
   if (viewMode === 'detail' && selected) {
     const c = selected;
     return (
@@ -90,6 +135,33 @@ export default function Customers() {
             {c.email && <a href={`mailto:${c.email}`} className="flex-1 bg-muted text-foreground rounded-2xl p-4 flex items-center justify-center gap-2 text-lg font-bold"><Mail size={22} /> מייל</a>}
           </div>
 
+          {/* Password management section */}
+          {isManager && c.email && (
+            <div className="border-2 border-primary/20 rounded-2xl p-5 mt-4 space-y-3">
+              <div className="flex items-center gap-2 text-primary mb-1">
+                <Lock size={20} />
+                <h3 className="text-lg font-bold">ניהול סיסמה</h3>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleSendResetEmail(c.email)}
+                  disabled={resetLoading}
+                  className="flex-1 py-4 rounded-xl bg-accent text-accent-foreground font-bold flex items-center justify-center gap-2 text-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {resetLoading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
+                  שלח קישור איפוס
+                </button>
+                <button
+                  onClick={() => { setNewPassword(''); setShowPasswordDialog(true); }}
+                  className="flex-1 py-4 rounded-xl bg-primary/10 text-primary font-bold flex items-center justify-center gap-2 text-lg hover:opacity-90 transition-opacity"
+                >
+                  <KeyRound size={20} />
+                  החלף סיסמה
+                </button>
+              </div>
+            </div>
+          )}
+
           {isManager && (
             <div className="flex gap-3 mt-4">
               <button onClick={() => { setEditItem(c); setViewMode('form'); }} className="flex-1 py-4 rounded-xl bg-primary/10 text-primary font-bold flex items-center justify-center gap-2 text-lg">
@@ -101,6 +173,48 @@ export default function Customers() {
             </div>
           )}
         </div>
+
+        {/* Change Password Dialog */}
+        <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <KeyRound size={22} className="text-primary" />
+                החלפת סיסמה - {c.name}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <p className="text-muted-foreground text-sm">הגדר סיסמה חדשה עבור <strong dir="ltr">{c.email}</strong></p>
+              <div className="relative">
+                <label className="block text-lg font-medium mb-2">סיסמה חדשה</label>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none pl-12"
+                  placeholder="לפחות 6 תווים"
+                  dir="ltr"
+                  style={{ textAlign: 'right' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute left-3 top-[52px] text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+              <button
+                onClick={() => handleChangePassword(c.email)}
+                disabled={passwordLoading || !newPassword || newPassword.length < 6}
+                className="w-full py-4 rounded-xl bg-primary text-primary-foreground text-lg font-bold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {passwordLoading ? <Loader2 size={20} className="animate-spin" /> : <KeyRound size={20} />}
+                שמור סיסמה חדשה
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
