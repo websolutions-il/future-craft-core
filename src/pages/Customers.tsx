@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Building2, User, Search, ArrowRight, Phone, Mail, Plus, Edit2, Trash2, Hash, FileText, Printer } from 'lucide-react';
+import { Building2, User, Search, ArrowRight, Phone, Mail, Plus, Edit2, Trash2, Hash, FileText, Printer, KeyRound, Send, Eye, EyeOff, Loader2, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface CustomerRow {
   id: string;
