@@ -478,6 +478,10 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
       license_doc_url: licenseDocUrl,
       insurance_doc_url: insuranceDocUrl,
       comprehensive_insurance_doc_url: compInsDocUrl,
+      is_leasing: isLeasing,
+      leasing_end_date: isLeasing ? leasingEndDate || null : null,
+      insurance_cost: insuranceCost ? parseFloat(insuranceCost) : null,
+      has_no_claims: hasNoClaims,
       notes,
     };
 
