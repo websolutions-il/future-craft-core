@@ -196,7 +196,7 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
   const [notes, setNotes] = useState(driver?.notes || '');
   const [loading, setLoading] = useState(false);
 
-  const isValid = fullName.trim().length > 0;
+  const isValid = fullName.trim().length > 0 && phone.trim().length > 0 && licenseNumber.trim().length > 0;
   const inputClass = "w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
 
   const toggleLicense = (type: string) => {
