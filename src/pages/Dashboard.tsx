@@ -24,6 +24,7 @@ import DriverDashboard from '@/components/DriverDashboard';
 import PrivateCustomerDashboard from '@/components/PrivateCustomerDashboard';
 import DashboardCharts from '@/components/DashboardCharts';
 import CreateUserModal from '@/components/CreateUserModal';
+import CreateAlertModal from '@/components/CreateAlertModal';
 import type { CreateUserFormState } from '@/components/CreateUserModal';
 import { toast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
