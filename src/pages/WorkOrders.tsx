@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import AssignmentChat from '@/components/work-assignments/AssignmentChat';
 import AssignmentStatusLog from '@/components/work-assignments/AssignmentStatusLog';
 import { ORDERED_STATUSES, STATUS_LABELS, STATUS_COLORS } from '@/components/work-assignments/statusConfig';
+import DriverWorkSchedule from '@/components/work-assignments/DriverWorkSchedule';
 
 interface Assignment {
   id: string;
@@ -47,6 +48,17 @@ const PRIORITY_COLORS: Record<string, string> = { normal: 'bg-muted text-muted-f
 
 export default function WorkOrders() {
   const { user } = useAuth();
+
+  // Drivers get dedicated weekly schedule view
+  if (user?.role === 'driver') {
+    return <DriverWorkSchedule />;
+  }
+
+  return <ManagerWorkOrders />;
+}
+
+function ManagerWorkOrders() {
+  const { user } = useAuth();
   const companyFilter = useCompanyFilter();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [search, setSearch] = useState('');
@@ -66,7 +78,6 @@ export default function WorkOrders() {
   useEffect(() => { loadData(); }, [companyFilter]);
 
   const isManager = user?.role === 'fleet_manager' || user?.role === 'super_admin';
-  const isDriver = user?.role === 'driver';
 
   const filtered = assignments.filter(a => {
     const matchSearch = !search || a.title?.includes(search) || a.driver_name?.includes(search) || a.vehicle_plate?.includes(search) || a.customer_name?.includes(search);
@@ -195,8 +206,8 @@ export default function WorkOrders() {
     }).eq('id', assignment.id);
     await logStatusChange(assignment.id, assignment.status, 'rejected', `נדחה ע״י ${user?.full_name}: ${reason}`);
 
-    // Notify relevant parties
-    if (isDriver && assignment.driver_id) {
+    // Notify relevant parties (manager rejecting -> notify driver)
+    if (isManager && assignment.driver_id) {
       // Notify managers
       const { data: managers } = await supabase.from('user_roles').select('user_id').eq('role', 'fleet_manager');
       if (managers) {
@@ -323,16 +334,7 @@ export default function WorkOrders() {
                       </div>
                     </button>
 
-                    {/* Driver approval */}
-                    {isDriver && ['sent_for_approval', 'pending_driver_approval'].includes(a.status) && a.driver_id === user?.id && !a.driver_approved_at && (
-                      <div className="mt-3 pt-3 border-t border-border flex gap-2">
-                        <button onClick={() => handleDriverApprove(a)}
-                          className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-bold text-lg">
-                          ✅ אישור
-                        </button>
-                        <RejectButton onReject={(reason: string) => handleReject(a, reason)} />
-                      </div>
-                    )}
+                    {/* Driver approval - drivers use dedicated view */}
 
                     {/* Manager approval */}
                     {isManager && ['sent_for_approval', 'pending_manager_approval'].includes(a.status) && !a.manager_approved_at && (
@@ -477,16 +479,7 @@ export default function WorkOrders() {
 
                 {selected.notes && <p className="text-sm bg-muted p-3 rounded-xl text-muted-foreground">{selected.notes}</p>}
 
-                {/* Driver approval in dialog */}
-                {isDriver && ['sent_for_approval', 'pending_driver_approval'].includes(selected.status) && selected.driver_id === user?.id && !selected.driver_approved_at && (
-                  <div className="flex gap-2">
-                    <button onClick={() => handleDriverApprove(selected)}
-                      className="flex-1 py-4 rounded-xl bg-primary text-primary-foreground font-bold text-lg">
-                      ✅ אישור קבלת עבודה
-                    </button>
-                    <RejectButton onReject={(reason: string) => handleReject(selected, reason)} />
-                  </div>
-                )}
+                {/* Driver approval - drivers use dedicated view */}
 
                 {/* Manager approval in dialog */}
                 {isManager && ['sent_for_approval', 'pending_manager_approval'].includes(selected.status) && !selected.manager_approved_at && (
