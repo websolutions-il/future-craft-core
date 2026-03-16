@@ -661,6 +661,42 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
           </div>
         </div>
 
+        {/* Leasing / Loan */}
+        <div className="border-t border-border pt-5">
+          <h2 className="text-xl font-bold mb-4">💰 ליסינג / הלוואה</h2>
+          <div className="flex gap-3 mb-4">
+            <button type="button" onClick={() => setIsLeasing(false)}
+              className={`flex-1 py-3 rounded-xl text-lg font-medium transition-colors ${!isLeasing ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+              ללא
+            </button>
+            <button type="button" onClick={() => setIsLeasing(true)}
+              className={`flex-1 py-3 rounded-xl text-lg font-medium transition-colors ${isLeasing ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+              ליסינג / הלוואה
+            </button>
+          </div>
+          {isLeasing && (
+            <div>
+              <label className="block text-sm font-medium mb-1">תאריך סיום עסקה</label>
+              <input type="date" value={leasingEndDate} onChange={e => setLeasingEndDate(e.target.value)} className={inputClass} />
+            </div>
+          )}
+        </div>
+
+        {/* Insurance Cost */}
+        <div className="border border-border rounded-xl p-4 space-y-4">
+          <h3 className="font-bold text-lg">💵 נתוני ביטוח</h3>
+          <div>
+            <label className="block text-sm font-medium mb-1">עלות ביטוח (₪)</label>
+            <input type="number" value={insuranceCost} onChange={e => setInsuranceCost(e.target.value)} placeholder="עלות..." className={inputClass} />
+          </div>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={() => setHasNoClaims(!hasNoClaims)}
+              className={`px-4 py-2.5 rounded-xl text-base font-medium transition-colors ${hasNoClaims ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+              {hasNoClaims ? '✅ קיימת היעדר תביעות' : 'ללא היעדר תביעות'}
+            </button>
+          </div>
+        </div>
+
         {/* Transport */}
         <div className="border-t border-border pt-5">
           <h2 className="text-xl font-bold mb-4">🚛 שינוע</h2>
