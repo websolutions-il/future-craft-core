@@ -479,16 +479,7 @@ function ManagerWorkOrders() {
 
                 {selected.notes && <p className="text-sm bg-muted p-3 rounded-xl text-muted-foreground">{selected.notes}</p>}
 
-                {/* Driver approval in dialog */}
-                {isDriver && ['sent_for_approval', 'pending_driver_approval'].includes(selected.status) && selected.driver_id === user?.id && !selected.driver_approved_at && (
-                  <div className="flex gap-2">
-                    <button onClick={() => handleDriverApprove(selected)}
-                      className="flex-1 py-4 rounded-xl bg-primary text-primary-foreground font-bold text-lg">
-                      ✅ אישור קבלת עבודה
-                    </button>
-                    <RejectButton onReject={(reason: string) => handleReject(selected, reason)} />
-                  </div>
-                )}
+                {/* Driver approval - drivers use dedicated view */}
 
                 {/* Manager approval in dialog */}
                 {isManager && ['sent_for_approval', 'pending_manager_approval'].includes(selected.status) && !selected.manager_approved_at && (
