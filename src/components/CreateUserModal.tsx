@@ -191,11 +191,20 @@ export default function CreateUserModal({
 
             <select
               value={form.role}
-              onChange={(e) => setForm((prev) => ({ ...prev, role: e.target.value as AppRole }))}
+              onChange={(e) => {
+                const role = e.target.value as AppRole;
+                setForm((prev) => ({
+                  ...prev,
+                  role,
+                  // Clear company for private customers
+                  companyName: role === 'private_customer' ? '' : prev.companyName,
+                }));
+              }}
               className={inputClass}
             >
               <option value="fleet_manager">מנהל צי</option>
               <option value="driver">נהג</option>
+              <option value="private_customer">לקוח פרטי</option>
               {isSuperAdmin && <option value="super_admin">מנהל על</option>}
             </select>
 

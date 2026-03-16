@@ -133,20 +133,26 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
     const loadCompaniesForCreate = async () => {
       const [profilesRes, customersRes] = await Promise.all([
         supabase.from('profiles').select('company_name'),
-        supabase.from('customers').select('company_name, business_id'),
+        supabase.from('customers').select('name, company_name, business_id'),
       ]);
-      const companies = Array.from(
-        new Set(
-          (profilesRes.data || []).map(r => r.company_name?.trim()).filter((c): c is string => Boolean(c))
-        )
-      );
-      const customerMap = new Map<string, string>();
-      (customersRes.data || []).forEach((c) => {
-        if (c.company_name?.trim()) {
-          customerMap.set(c.company_name.trim(), c.business_id?.trim() || '');
-        }
+      // Merge company names from profiles and customer names
+      const companySet = new Map<string, string>();
+      // Add from profiles
+      (profilesRes.data || []).forEach(r => {
+        const name = r.company_name?.trim();
+        if (name) companySet.set(name, '');
       });
-      setCreateCompanyOptions(companies.map(name => ({ name, businessId: customerMap.get(name) || '' })));
+      // Add from customers (name field = the actual customer/company name)
+      (customersRes.data || []).forEach((c) => {
+        const name = c.name?.trim();
+        const companyName = c.company_name?.trim();
+        const bid = c.business_id?.trim() || '';
+        if (name) companySet.set(name, bid);
+        if (companyName && companyName !== name) companySet.set(companyName, bid);
+      });
+      setCreateCompanyOptions(
+        Array.from(companySet.entries()).map(([name, businessId]) => ({ name, businessId }))
+      );
     };
     loadCompaniesForCreate();
   }, []);
