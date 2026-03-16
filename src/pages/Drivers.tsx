@@ -251,7 +251,7 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-lg font-medium mb-2">טלפון</label>
+            <label className="block text-lg font-medium mb-2">טלפון <span className="text-destructive">*</span></label>
             <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="050-..." className={inputClass} dir="ltr" style={{ textAlign: 'right' }} />
           </div>
           <div>
