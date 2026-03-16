@@ -110,8 +110,9 @@ export default function BottomNav() {
   const unreadCount = useUnreadNotifications();
 
   const isDriver = user?.role === 'driver';
-  const mobileNav = isDriver ? driverMobileNav : managerMobileNav;
-  const moreItems = isDriver ? [] : allManagerItems.filter(
+  const isPrivateCustomer = user?.role === 'private_customer';
+  const mobileNav = isDriver ? driverMobileNav : isPrivateCustomer ? privateCustomerMobileNav : managerMobileNav;
+  const moreItems = (isDriver || isPrivateCustomer) ? [] : allManagerItems.filter(
     item => !managerMobileNav.some(m => m.path === item.path)
   );
 
