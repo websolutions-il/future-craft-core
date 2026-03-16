@@ -48,6 +48,17 @@ const PRIORITY_COLORS: Record<string, string> = { normal: 'bg-muted text-muted-f
 
 export default function WorkOrders() {
   const { user } = useAuth();
+
+  // Drivers get dedicated weekly schedule view
+  if (user?.role === 'driver') {
+    return <DriverWorkSchedule />;
+  }
+
+  return <ManagerWorkOrders />;
+}
+
+function ManagerWorkOrders() {
+  const { user } = useAuth();
   const companyFilter = useCompanyFilter();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [search, setSearch] = useState('');
@@ -55,12 +66,6 @@ export default function WorkOrders() {
   const [filterDate, setFilterDate] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [selected, setSelected] = useState<Assignment | null>(null);
-
-  // Drivers get dedicated weekly schedule view
-  const isDriver = user?.role === 'driver';
-  if (isDriver) {
-    return <DriverWorkSchedule />;
-  }
 
   const loadData = async () => {
     const { data } = await applyCompanyScope(
