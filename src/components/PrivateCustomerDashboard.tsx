@@ -188,13 +188,16 @@ export default function PrivateCustomerDashboard() {
 
           {/* Grid actions */}
           <div className="grid grid-cols-2 gap-3">
-            {quickActions.slice(1).map(action => (
-              <Link key={action.label} to={action.link}
-                className={`flex flex-col items-center justify-center p-5 rounded-2xl border-2 ${action.color} hover:shadow-md transition-shadow text-center min-h-[110px]`}>
-                <action.icon size={28} className="mb-2" />
-                <p className="font-bold text-sm">{action.label}</p>
-              </Link>
-            ))}
+            {quickActions.slice(1).map(action => {
+              const ActionIcon = action.icon;
+              return (
+                <Link key={action.label} to={action.link}
+                  className={`flex flex-col items-center justify-center p-5 rounded-2xl border-2 ${action.color} hover:shadow-md transition-shadow text-center min-h-[110px]`}>
+                  <ActionIcon size={28} className="mb-2" />
+                  <p className="font-bold text-sm">{action.label}</p>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>
