@@ -125,69 +125,75 @@ export default function CreateUserModal({
               dir="ltr"
             />
 
-            {/* Company picker */}
-            <div className="flex gap-2">
-              <div className="flex-1">
-                {isSuperAdmin ? (
-                  <Popover open={createCompanyPickerOpen} onOpenChange={setCreateCompanyPickerOpen}>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className="w-full p-3 rounded-xl border border-input bg-background flex items-center justify-between text-right"
-                      >
-                        <ChevronsUpDown size={16} className="text-muted-foreground shrink-0" />
-                        <span className="flex-1 text-right">
-                          {form.companyName || 'בחר חברה...'}
-                        </span>
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[60]" align="start">
-                      <Command dir="rtl">
-                        <CommandInput placeholder="חיפוש חברה..." />
-                        <CommandList>
-                          <CommandEmpty>לא נמצאו חברות</CommandEmpty>
-                          <CommandGroup>
-                            {createCompanyOptions.map((option) => (
-                              <CommandItem
-                                key={option.name}
-                                value={`${option.name} ${option.businessId}`}
-                                onSelect={() => {
-                                  setForm((prev) => ({ ...prev, companyName: option.name }));
-                                  setCreateCompanyPickerOpen(false);
-                                }}
-                                className="flex items-center justify-between"
-                              >
-                                <Check size={16} className={cn("shrink-0", form.companyName === option.name ? "opacity-100" : "opacity-0")} />
-                                <div className="flex-1 text-right">
-                                  <span className="font-medium">{option.name}</span>
-                                  {option.businessId && (
-                                    <span className="text-xs text-muted-foreground mr-2">({option.businessId})</span>
-                                  )}
-                                </div>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                ) : (
-                  <div className="w-full p-3 rounded-xl border border-input bg-muted text-right text-muted-foreground">
-                    {form.companyName || 'החברה שלך'}
-                  </div>
+            {/* Company picker - hidden for private customers */}
+            {form.role !== 'private_customer' ? (
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  {isSuperAdmin ? (
+                    <Popover open={createCompanyPickerOpen} onOpenChange={setCreateCompanyPickerOpen}>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className="w-full p-3 rounded-xl border border-input bg-background flex items-center justify-between text-right"
+                        >
+                          <ChevronsUpDown size={16} className="text-muted-foreground shrink-0" />
+                          <span className="flex-1 text-right">
+                            {form.companyName || 'בחר חברה...'}
+                          </span>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[60]" align="start">
+                        <Command dir="rtl">
+                          <CommandInput placeholder="חיפוש חברה..." />
+                          <CommandList>
+                            <CommandEmpty>לא נמצאו חברות</CommandEmpty>
+                            <CommandGroup>
+                              {createCompanyOptions.map((option) => (
+                                <CommandItem
+                                  key={option.name}
+                                  value={`${option.name} ${option.businessId}`}
+                                  onSelect={() => {
+                                    setForm((prev) => ({ ...prev, companyName: option.name }));
+                                    setCreateCompanyPickerOpen(false);
+                                  }}
+                                  className="flex items-center justify-between"
+                                >
+                                  <Check size={16} className={cn("shrink-0", form.companyName === option.name ? "opacity-100" : "opacity-0")} />
+                                  <div className="flex-1 text-right">
+                                    <span className="font-medium">{option.name}</span>
+                                    {option.businessId && (
+                                      <span className="text-xs text-muted-foreground mr-2">({option.businessId})</span>
+                                    )}
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  ) : (
+                    <div className="w-full p-3 rounded-xl border border-input bg-muted text-right text-muted-foreground">
+                      {form.companyName || 'החברה שלך'}
+                    </div>
+                  )}
+                </div>
+                {isSuperAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => setShowNewCustomerDialog(true)}
+                    className="p-3 rounded-xl border border-input bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex items-center gap-1 whitespace-nowrap text-sm font-bold"
+                  >
+                    <Plus size={16} />
+                    לקוח חדש
+                  </button>
                 )}
               </div>
-              {isSuperAdmin && (
-                <button
-                  type="button"
-                  onClick={() => setShowNewCustomerDialog(true)}
-                  className="p-3 rounded-xl border border-input bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex items-center gap-1 whitespace-nowrap text-sm font-bold"
-                >
-                  <Plus size={16} />
-                  לקוח חדש
-                </button>
-              )}
-            </div>
+            ) : (
+              <div className="w-full p-3 rounded-xl border border-input bg-muted/50 text-right text-muted-foreground text-sm">
+                👤 לקוח פרטי – ללא שיוך לחברה
+              </div>
+            )}
 
             <select
               value={form.role}
