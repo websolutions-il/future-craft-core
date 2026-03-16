@@ -116,6 +116,7 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
   const [showCreateUserModal, setShowCreateUserModal] = useState(false);
   const [showFleetCompanyPicker, setShowFleetCompanyPicker] = useState(false);
   const [showCreatePassword, setShowCreatePassword] = useState(false);
+  const [showCreateAlert, setShowCreateAlert] = useState(false);
   const [stats, setStats] = useState<SuperAdminStats>({
     companiesCount: 0,
     usersCount: 0,
