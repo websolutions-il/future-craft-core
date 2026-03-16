@@ -556,7 +556,7 @@ function FaultForm({ fault, onDone, onBack, user }: { fault: FaultRow | null; on
     });
   }, []);
 
-  const isValid = vehiclePlate && faultType && description;
+  const isValid = vehiclePlate && driverName && faultType && description;
   const inputClass = "w-full p-4 text-lg rounded-2xl border-2 border-input bg-background focus:border-primary focus:outline-none transition-colors";
 
   const handleSubmit = async () => {
