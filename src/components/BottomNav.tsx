@@ -120,7 +120,7 @@ export default function BottomNav() {
 
   return (
     <>
-      {showMore && !isDriver && (
+      {showMore && !isDriver && !isPrivateCustomer && (
         <div className="fixed inset-0 z-40 bg-foreground/50" onClick={() => setShowMore(false)}>
           <div className="absolute bottom-[80px] left-0 right-0 bg-card rounded-t-3xl shadow-2xl p-4 animate-fade-in max-h-[60vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4 px-2">
