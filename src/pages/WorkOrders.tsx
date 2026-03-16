@@ -56,6 +56,12 @@ export default function WorkOrders() {
   const [showForm, setShowForm] = useState(false);
   const [selected, setSelected] = useState<Assignment | null>(null);
 
+  // Drivers get dedicated weekly schedule view
+  const isDriver = user?.role === 'driver';
+  if (isDriver) {
+    return <DriverWorkSchedule />;
+  }
+
   const loadData = async () => {
     const { data } = await applyCompanyScope(
       supabase.from('work_assignments').select('*').order('scheduled_date', { ascending: true }).order('scheduled_time', { ascending: true }),
@@ -67,7 +73,6 @@ export default function WorkOrders() {
   useEffect(() => { loadData(); }, [companyFilter]);
 
   const isManager = user?.role === 'fleet_manager' || user?.role === 'super_admin';
-  const isDriver = user?.role === 'driver';
 
   const filtered = assignments.filter(a => {
     const matchSearch = !search || a.title?.includes(search) || a.driver_name?.includes(search) || a.vehicle_plate?.includes(search) || a.customer_name?.includes(search);
