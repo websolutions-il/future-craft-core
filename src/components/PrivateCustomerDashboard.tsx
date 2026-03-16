@@ -1,63 +1,106 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertTriangle, Car, Wrench, Phone, Shield, FileText,
-  ClipboardList, Bell, RefreshCw, BarChart3, Scale, Tag,
+  AlertTriangle, Car, Wrench, Phone, Shield,
+  ClipboardList, Bell, Tag, Truck, Scale,
+  History, Upload, CarFront, MessageCircle,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useDriverVehicle } from '@/hooks/useDriverVehicle';
 
-interface QuickAction {
+interface ServiceAction {
   label: string;
   description: string;
   icon: any;
   link: string;
   color: string;
+  category: 'primary' | 'service' | 'info';
 }
 
-const quickActions: QuickAction[] = [
+const serviceActions: ServiceAction[] = [
+  // Primary actions
   {
-    label: 'דיווח על תקלה',
+    label: 'דיווח תקלה / תאונה',
     description: 'דיווח על פנצ\'ר, תאונה או בעיה טכנית',
     icon: AlertTriangle,
     link: '/faults',
     color: 'bg-destructive/10 text-destructive border-destructive/20',
+    category: 'primary',
   },
   {
-    label: 'בקשת טיפול',
-    description: 'הזמנת שירות או תחזוקה',
+    label: 'הזמנת טיפול',
+    description: 'הזמנת שירות או תחזוקה לרכב',
     icon: Wrench,
     link: '/service-orders',
     color: 'bg-primary/10 text-primary border-primary/20',
+    category: 'primary',
+  },
+  // Service actions
+  {
+    label: 'שינוע רכב לטסט',
+    description: 'בקשת שינוע הרכב לבדיקת טסט',
+    icon: Truck,
+    link: '/towing',
+    color: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+    category: 'service',
   },
   {
-    label: 'היסטוריית רכב',
+    label: 'חידוש ביטוח',
+    description: 'בקשה לחידוש פוליסת ביטוח',
+    icon: Shield,
+    link: '/service-orders',
+    color: 'bg-sky-500/10 text-sky-600 border-sky-500/20',
+    category: 'service',
+  },
+  {
+    label: 'השוואת מחירים לביטוח',
+    description: 'בקשת השוואת מחירים בין חברות ביטוח',
+    icon: Scale,
+    link: '/service-orders',
+    color: 'bg-violet-500/10 text-violet-600 border-violet-500/20',
+    category: 'service',
+  },
+  {
+    label: 'בקשה ידנית אחרת',
+    description: 'שליחת בקשה מותאמת אישית',
+    icon: MessageCircle,
+    link: '/service-orders',
+    color: 'bg-muted text-muted-foreground border-border',
+    category: 'service',
+  },
+  // Info actions
+  {
+    label: 'היסטוריית טיפולים',
     description: 'צפייה בהיסטוריית טיפולים ואירועים',
-    icon: ClipboardList,
+    icon: History,
     link: '/history',
     color: 'bg-muted text-muted-foreground border-border',
+    category: 'info',
   },
   {
-    label: 'אנשי קשר',
+    label: 'העלאת חשבוניות',
+    description: 'צירוף חשבוניות דלק והוצאות',
+    icon: Upload,
+    link: '/expenses',
+    color: 'bg-muted text-muted-foreground border-border',
+    category: 'info',
+  },
+  {
+    label: 'הכנת הרכב למכירה',
+    description: 'בקשה להכנת הרכב למכירה',
+    icon: CarFront,
+    link: '/service-orders',
+    color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+    category: 'info',
+  },
+  {
+    label: 'אנשי קשר וחירום',
     description: 'מספרי חירום ואנשי קשר',
     icon: Phone,
     link: '/emergency',
     color: 'bg-muted text-muted-foreground border-border',
-  },
-  {
-    label: 'דלקן',
-    description: 'העלאת חשבוניות דלק',
-    icon: FileText,
-    link: '/expenses',
-    color: 'bg-muted text-muted-foreground border-border',
-  },
-  {
-    label: 'מבצעים',
-    description: 'מבצעים והטבות',
-    icon: Tag,
-    link: '/promotions',
-    color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+    category: 'info',
   },
 ];
 
@@ -71,7 +114,7 @@ interface RecentActivity {
 
 export default function PrivateCustomerDashboard() {
   const { user } = useAuth();
-  const { vehicle, loading: vehicleLoading } = useDriverVehicle();
+  const { vehicle } = useDriverVehicle();
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -81,12 +124,12 @@ export default function PrivateCustomerDashboard() {
     const loadRecent = async () => {
       const [faultsRes, ordersRes, notifRes] = await Promise.all([
         supabase.from('faults')
-          .select('id, description, status, created_at, vehicle_plate')
+          .select('id, description, status, created_at')
           .eq('created_by', user.id)
           .order('created_at', { ascending: false })
           .limit(5),
         supabase.from('service_orders')
-          .select('id, description, treatment_status, created_at, vehicle_plate')
+          .select('id, description, treatment_status, created_at')
           .eq('created_by', user.id)
           .order('created_at', { ascending: false })
           .limit(5),
@@ -98,18 +141,10 @@ export default function PrivateCustomerDashboard() {
 
       const activities: RecentActivity[] = [];
       (faultsRes.data || []).forEach(f => activities.push({
-        id: f.id,
-        title: f.description || 'תקלה',
-        status: f.status || 'new',
-        date: f.created_at || '',
-        type: 'fault',
+        id: f.id, title: f.description || 'תקלה', status: f.status || 'new', date: f.created_at || '', type: 'fault',
       }));
       (ordersRes.data || []).forEach(o => activities.push({
-        id: o.id,
-        title: o.description || 'הזמנת שירות',
-        status: o.treatment_status || 'new',
-        date: o.created_at || '',
-        type: 'service',
+        id: o.id, title: o.description || 'הזמנת שירות', status: o.treatment_status || 'new', date: o.created_at || '', type: 'service',
       }));
       activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setRecentActivities(activities.slice(0, 5));
@@ -122,10 +157,16 @@ export default function PrivateCustomerDashboard() {
   const STATUS_MAP: Record<string, { label: string; class: string }> = {
     new: { label: 'חדש', class: 'bg-primary/10 text-primary' },
     open: { label: 'פתוח', class: 'bg-warning/10 text-warning' },
+    opened: { label: 'נפתח', class: 'bg-primary/10 text-primary' },
     in_progress: { label: 'בטיפול', class: 'bg-sky-500/10 text-sky-600' },
+    in_treatment: { label: 'בטיפול', class: 'bg-sky-500/10 text-sky-600' },
     completed: { label: 'הושלם', class: 'bg-emerald-500/10 text-emerald-600' },
     closed: { label: 'נסגר', class: 'bg-muted text-muted-foreground' },
   };
+
+  const primaryActions = serviceActions.filter(a => a.category === 'primary');
+  const serviceGroup = serviceActions.filter(a => a.category === 'service');
+  const infoGroup = serviceActions.filter(a => a.category === 'info');
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -165,42 +206,71 @@ export default function PrivateCustomerDashboard() {
         </div>
       )}
 
-      {/* Quick actions */}
+      {/* Primary Actions - full width */}
+      <div className="space-y-3">
+        {primaryActions.map(action => {
+          const Icon = action.icon;
+          return (
+            <Link key={action.label} to={action.link}
+              className={`flex items-center gap-4 p-5 rounded-2xl border-2 ${action.color} hover:shadow-md transition-shadow`}>
+              <div className="w-14 h-14 rounded-2xl bg-background/50 flex items-center justify-center flex-shrink-0">
+                <Icon size={28} />
+              </div>
+              <div>
+                <p className="text-lg font-bold">{action.label}</p>
+                <p className="text-sm opacity-75">{action.description}</p>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Service Actions */}
       <div>
-        <h2 className="text-lg font-bold text-foreground mb-3">פעולות מהירות</h2>
-        <div className="space-y-3">
-          {(() => {
-            const PrimaryAction = quickActions[0];
-            const PrimaryIcon = PrimaryAction.icon;
+        <h2 className="text-lg font-bold text-foreground mb-3">שירותים</h2>
+        <div className="grid grid-cols-2 gap-3">
+          {serviceGroup.map(action => {
+            const Icon = action.icon;
             return (
-              <Link to={PrimaryAction.link}
-                className={`flex items-center justify-between p-5 rounded-2xl border-2 ${PrimaryAction.color} hover:shadow-md transition-shadow`}>
-                <div className="flex items-center gap-3">
-                  <PrimaryIcon size={28} />
-                  <div>
-                    <p className="text-lg font-bold">{PrimaryAction.label}</p>
-                    <p className="text-sm opacity-75">{PrimaryAction.description}</p>
-                  </div>
-                </div>
+              <Link key={action.label} to={action.link}
+                className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 ${action.color} hover:shadow-md transition-shadow text-center min-h-[100px]`}>
+                <Icon size={26} className="mb-2" />
+                <p className="font-bold text-xs leading-tight">{action.label}</p>
               </Link>
             );
-          })()}
-
-          {/* Grid actions */}
-          <div className="grid grid-cols-2 gap-3">
-            {quickActions.slice(1).map(action => {
-              const ActionIcon = action.icon;
-              return (
-                <Link key={action.label} to={action.link}
-                  className={`flex flex-col items-center justify-center p-5 rounded-2xl border-2 ${action.color} hover:shadow-md transition-shadow text-center min-h-[110px]`}>
-                  <ActionIcon size={28} className="mb-2" />
-                  <p className="font-bold text-sm">{action.label}</p>
-                </Link>
-              );
-            })}
-          </div>
+          })}
         </div>
       </div>
+
+      {/* Info & Management */}
+      <div>
+        <h2 className="text-lg font-bold text-foreground mb-3">ניהול ומידע</h2>
+        <div className="grid grid-cols-2 gap-3">
+          {infoGroup.map(action => {
+            const Icon = action.icon;
+            return (
+              <Link key={action.label} to={action.link}
+                className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 ${action.color} hover:shadow-md transition-shadow text-center min-h-[100px]`}>
+                <Icon size={26} className="mb-2" />
+                <p className="font-bold text-xs leading-tight">{action.label}</p>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Promotions banner */}
+      <Link to="/promotions" className="block card-elevated bg-gradient-to-l from-emerald-500/10 to-primary/10 border-2 border-emerald-500/20 hover:shadow-lg transition-shadow">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+            <Tag size={28} className="text-emerald-600" />
+          </div>
+          <div>
+            <p className="text-lg font-bold text-emerald-600">מבצעים והטבות</p>
+            <p className="text-sm text-muted-foreground">צפייה במבצעים והטבות ייחודיות</p>
+          </div>
+        </div>
+      </Link>
 
       {/* Recent activity */}
       <div>

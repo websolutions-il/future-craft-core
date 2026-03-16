@@ -16,6 +16,7 @@ import {
   Check,
   ChevronsUpDown,
   Eye,
+  Plus,
 } from 'lucide-react';
 import { useAuth, type AppRole } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +24,7 @@ import DriverDashboard from '@/components/DriverDashboard';
 import PrivateCustomerDashboard from '@/components/PrivateCustomerDashboard';
 import DashboardCharts from '@/components/DashboardCharts';
 import CreateUserModal from '@/components/CreateUserModal';
+import CreateAlertModal from '@/components/CreateAlertModal';
 import type { CreateUserFormState } from '@/components/CreateUserModal';
 import { toast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -629,6 +631,7 @@ function FleetManagerDashboard({
   };
 
   // Fleet manager create user state
+  const [showCreateAlert, setShowCreateAlert] = useState(false);
   const [showFleetCreateUser, setShowFleetCreateUser] = useState(false);
   const [fleetCreatingUser, setFleetCreatingUser] = useState(false);
   const [showFleetCreatePassword, setShowFleetCreatePassword] = useState(false);
@@ -815,10 +818,24 @@ function FleetManagerDashboard({
         </div>
       </section>
 
+      {/* Custom Alert Modal */}
+      {showCreateAlert && (
+        <CreateAlertModal onClose={() => setShowCreateAlert(false)} onCreated={() => {}} />
+      )}
+
       <DashboardCharts
         companyName={isSuperAdminView ? selectedCompany : (user?.company_name || '')}
         isSuperAdminView={isSuperAdminView}
       />
+
+      {/* Floating + button for alerts */}
+      <button
+        onClick={() => setShowCreateAlert(true)}
+        className="fixed bottom-24 left-6 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-xl hover:shadow-2xl transition-all flex items-center justify-center text-3xl font-bold hover:scale-110"
+        title="יצירת התראה חדשה"
+      >
+        <Plus size={28} />
+      </button>
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {fleetActions.map((action) => (

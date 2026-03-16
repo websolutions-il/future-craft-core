@@ -263,6 +263,51 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_alerts: {
+        Row: {
+          alert_date: string
+          alert_type: string
+          company_name: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          next_trigger_at: string | null
+          recurrence: string | null
+          recurrence_interval: number | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          alert_date: string
+          alert_type?: string
+          company_name?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          next_trigger_at?: string | null
+          recurrence?: string | null
+          recurrence_interval?: number | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          alert_date?: string
+          alert_type?: string
+          company_name?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          next_trigger_at?: string | null
+          recurrence?: string | null
+          recurrence_interval?: number | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
@@ -1451,11 +1496,15 @@ export type Database = {
           comprehensive_insurance_start: string | null
           created_at: string | null
           created_by: string | null
+          has_no_claims: boolean | null
           id: string
+          insurance_cost: number | null
           insurance_doc_url: string | null
           insurance_expiry: string | null
           insurance_start: string | null
+          is_leasing: boolean | null
           last_service_date: string | null
+          leasing_end_date: string | null
           license_doc_url: string | null
           license_plate: string
           manufacturer: string | null
@@ -1479,11 +1528,15 @@ export type Database = {
           comprehensive_insurance_start?: string | null
           created_at?: string | null
           created_by?: string | null
+          has_no_claims?: boolean | null
           id?: string
+          insurance_cost?: number | null
           insurance_doc_url?: string | null
           insurance_expiry?: string | null
           insurance_start?: string | null
+          is_leasing?: boolean | null
           last_service_date?: string | null
+          leasing_end_date?: string | null
           license_doc_url?: string | null
           license_plate: string
           manufacturer?: string | null
@@ -1507,11 +1560,15 @@ export type Database = {
           comprehensive_insurance_start?: string | null
           created_at?: string | null
           created_by?: string | null
+          has_no_claims?: boolean | null
           id?: string
+          insurance_cost?: number | null
           insurance_doc_url?: string | null
           insurance_expiry?: string | null
           insurance_start?: string | null
+          is_leasing?: boolean | null
           last_service_date?: string | null
+          leasing_end_date?: string | null
           license_doc_url?: string | null
           license_plate?: string
           manufacturer?: string | null

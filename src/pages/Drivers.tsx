@@ -196,7 +196,7 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
   const [notes, setNotes] = useState(driver?.notes || '');
   const [loading, setLoading] = useState(false);
 
-  const isValid = fullName.trim().length > 0;
+  const isValid = fullName.trim().length > 0 && phone.trim().length > 0 && licenseNumber.trim().length > 0;
   const inputClass = "w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
 
   const toggleLicense = (type: string) => {
@@ -246,12 +246,12 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
 
       <div className="space-y-5">
         <div>
-          <label className="block text-lg font-medium mb-2">שם מלא *</label>
+          <label className="block text-lg font-medium mb-2">שם מלא <span className="text-destructive">*</span></label>
           <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="שם הנהג..." className={inputClass} />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-lg font-medium mb-2">טלפון</label>
+            <label className="block text-lg font-medium mb-2">טלפון <span className="text-destructive">*</span></label>
             <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="050-..." className={inputClass} dir="ltr" style={{ textAlign: 'right' }} />
           </div>
           <div>
@@ -261,7 +261,7 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-lg font-medium mb-2">מספר רישיון</label>
+            <label className="block text-lg font-medium mb-2">מספר רישיון <span className="text-destructive">*</span></label>
             <input value={licenseNumber} onChange={e => setLicenseNumber(e.target.value)} placeholder="מספר רישיון..." className={inputClass} />
           </div>
           <div>
