@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import AssignmentChat from '@/components/work-assignments/AssignmentChat';
 import AssignmentStatusLog from '@/components/work-assignments/AssignmentStatusLog';
 import { ORDERED_STATUSES, STATUS_LABELS, STATUS_COLORS } from '@/components/work-assignments/statusConfig';
+import DriverWorkSchedule from '@/components/work-assignments/DriverWorkSchedule';
 
 interface Assignment {
   id: string;
