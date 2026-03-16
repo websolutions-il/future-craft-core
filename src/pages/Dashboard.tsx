@@ -631,7 +631,7 @@ function FleetManagerDashboard({
   };
 
   // Fleet manager create user state
-  const [showFleetCreateUser, setShowFleetCreateUser] = useState(false);
+  const [showCreateAlert, setShowCreateAlert] = useState(false);
   const [fleetCreatingUser, setFleetCreatingUser] = useState(false);
   const [showFleetCreatePassword, setShowFleetCreatePassword] = useState(false);
   const [fleetForm, setFleetForm] = useState<CreateUserFormState>({
