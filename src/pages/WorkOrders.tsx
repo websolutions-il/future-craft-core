@@ -206,8 +206,8 @@ function ManagerWorkOrders() {
     }).eq('id', assignment.id);
     await logStatusChange(assignment.id, assignment.status, 'rejected', `נדחה ע״י ${user?.full_name}: ${reason}`);
 
-    // Notify relevant parties
-    if (isDriver && assignment.driver_id) {
+    // Notify relevant parties (manager rejecting -> notify driver)
+    if (isManager && assignment.driver_id) {
       // Notify managers
       const { data: managers } = await supabase.from('user_roles').select('user_id').eq('role', 'fleet_manager');
       if (managers) {
