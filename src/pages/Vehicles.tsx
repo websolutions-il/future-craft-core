@@ -419,12 +419,18 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
   const [notes, setNotes] = useState(vehicle?.notes || '');
   const [loading, setLoading] = useState(false);
 
+  // New fields
+  const [isLeasing, setIsLeasing] = useState((vehicle as any)?.is_leasing || false);
+  const [leasingEndDate, setLeasingEndDate] = useState((vehicle as any)?.leasing_end_date || '');
+  const [insuranceCost, setInsuranceCost] = useState((vehicle as any)?.insurance_cost?.toString() || '');
+  const [hasNoClaims, setHasNoClaims] = useState((vehicle as any)?.has_no_claims || false);
+
   // Document uploads
   const [licenseDocUrl, setLicenseDocUrl] = useState(vehicle?.license_doc_url || '');
   const [insuranceDocUrl, setInsuranceDocUrl] = useState(vehicle?.insurance_doc_url || '');
   const [compInsDocUrl, setCompInsDocUrl] = useState(vehicle?.comprehensive_insurance_doc_url || '');
 
-  // Validation: all fields required for new vehicles
+  // Validation
   const allFieldsFilled = licensePlate && manufacturer && model && year && vehicleType && odometer && assignedDriver;
   const allDocsFilled = isEdit || (licenseDocUrl && insuranceDocUrl && compInsDocUrl);
   const isValid = allFieldsFilled && allDocsFilled;
