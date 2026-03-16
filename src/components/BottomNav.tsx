@@ -154,7 +154,7 @@ export default function BottomNav() {
               <span className="text-xs">{item.label}</span>
             </NavLink>
           ))}
-          {!isDriver && (
+          {!isDriver && !isPrivateCustomer && (
             <button onClick={() => setShowMore(!showMore)} className={`nav-item-mobile flex-1 ${isMoreActive ? 'text-primary font-bold' : 'text-muted-foreground'}`}>
               <Menu size={26} /><span className="text-xs">עוד</span>
             </button>
