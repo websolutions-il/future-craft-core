@@ -169,17 +169,22 @@ export default function PrivateCustomerDashboard() {
       <div>
         <h2 className="text-lg font-bold text-foreground mb-3">פעולות מהירות</h2>
         <div className="space-y-3">
-          {/* Primary action - full width */}
-          <Link to={quickActions[0].link}
-            className={`flex items-center justify-between p-5 rounded-2xl border-2 ${quickActions[0].color} hover:shadow-md transition-shadow`}>
-            <div className="flex items-center gap-3">
-              <quickActions[0].icon size={28} />
-              <div>
-                <p className="text-lg font-bold">{quickActions[0].label}</p>
-                <p className="text-sm opacity-75">{quickActions[0].description}</p>
-              </div>
-            </div>
-          </Link>
+          {(() => {
+            const PrimaryAction = quickActions[0];
+            const PrimaryIcon = PrimaryAction.icon;
+            return (
+              <Link to={PrimaryAction.link}
+                className={`flex items-center justify-between p-5 rounded-2xl border-2 ${PrimaryAction.color} hover:shadow-md transition-shadow`}>
+                <div className="flex items-center gap-3">
+                  <PrimaryIcon size={28} />
+                  <div>
+                    <p className="text-lg font-bold">{PrimaryAction.label}</p>
+                    <p className="text-sm opacity-75">{PrimaryAction.description}</p>
+                  </div>
+                </div>
+              </Link>
+            );
+          })()}
 
           {/* Grid actions */}
           <div className="grid grid-cols-2 gap-3">
