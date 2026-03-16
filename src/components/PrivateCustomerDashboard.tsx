@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertTriangle, Car, Wrench, Phone, Shield, FileText,
-  ClipboardList, Bell, Tag, Truck, ShoppingCart, Scale,
+  AlertTriangle, Car, Wrench, Phone, Shield,
+  ClipboardList, Bell, Tag, Truck, Scale,
   History, Upload, CarFront, MessageCircle,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
