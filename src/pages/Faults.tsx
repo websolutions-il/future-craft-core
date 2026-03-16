@@ -601,7 +601,7 @@ function FaultForm({ fault, onDone, onBack, user }: { fault: FaultRow | null; on
           </select>
         </div>
         <div>
-          <label className="block text-lg font-medium mb-2">👤 נהג</label>
+          <label className="block text-lg font-medium mb-2">👤 נהג <span className="text-destructive">*</span></label>
           <select value={driverName} onChange={e => setDriverName(e.target.value)} className={inputClass}>
             <option value="">בחר נהג...</option>
             {drivers.map(d => <option key={d.full_name} value={d.full_name}>{d.full_name}</option>)}
