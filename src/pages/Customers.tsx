@@ -37,7 +37,12 @@ export default function Customers() {
 
   const loadData = async () => {
     setLoading(true);
-    const { data } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
+    let query = supabase.from('customers').select('*').order('created_at', { ascending: false });
+    // Fleet managers only see their own company customers
+    if (user?.role === 'fleet_manager') {
+      query = query.eq('company_name', user.company_name || '');
+    }
+    const { data } = await query;
     if (data) setCustomers(data as unknown as CustomerRow[]);
     setLoading(false);
   };
