@@ -93,6 +93,14 @@ const driverMobileNav: NavItem[] = [
   { path: '/expenses', label: 'חשבוניות', icon: FileText },
 ];
 
+// Private customer mobile bottom nav
+const privateCustomerMobileNav: NavItem[] = [
+  { path: '/dashboard', label: 'לוח בקרה', icon: Home },
+  { path: '/service-orders', label: 'הבקשות שלי', icon: ClipboardList },
+  { path: '/driver-notifications', label: 'התראות', icon: Bell },
+  { path: '/settings', label: 'הגדרות', icon: Settings },
+];
+
 const allManagerItems = managerCategories.flatMap(c => c.items);
 
 export default function BottomNav() {
