@@ -334,16 +334,7 @@ function ManagerWorkOrders() {
                       </div>
                     </button>
 
-                    {/* Driver approval */}
-                    {isDriver && ['sent_for_approval', 'pending_driver_approval'].includes(a.status) && a.driver_id === user?.id && !a.driver_approved_at && (
-                      <div className="mt-3 pt-3 border-t border-border flex gap-2">
-                        <button onClick={() => handleDriverApprove(a)}
-                          className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-bold text-lg">
-                          ✅ אישור
-                        </button>
-                        <RejectButton onReject={(reason: string) => handleReject(a, reason)} />
-                      </div>
-                    )}
+                    {/* Driver approval - drivers use dedicated view */}
 
                     {/* Manager approval */}
                     {isManager && ['sent_for_approval', 'pending_manager_approval'].includes(a.status) && !a.manager_approved_at && (
