@@ -85,6 +85,10 @@ export default function Dashboard() {
     return <DriverDashboard />;
   }
 
+  if (user.role === 'private_customer') {
+    return <PrivateCustomerDashboard />;
+  }
+
   if (user.role === 'super_admin') {
     const isFleetMode = searchParams.get('mode') === 'fleet';
     const fleetCompany = searchParams.get('company') || '';
