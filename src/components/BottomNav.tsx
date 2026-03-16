@@ -93,6 +93,14 @@ const driverMobileNav: NavItem[] = [
   { path: '/expenses', label: 'חשבוניות', icon: FileText },
 ];
 
+// Private customer mobile bottom nav
+const privateCustomerMobileNav: NavItem[] = [
+  { path: '/dashboard', label: 'לוח בקרה', icon: Home },
+  { path: '/service-orders', label: 'הבקשות שלי', icon: ClipboardList },
+  { path: '/driver-notifications', label: 'התראות', icon: Bell },
+  { path: '/settings', label: 'הגדרות', icon: Settings },
+];
+
 const allManagerItems = managerCategories.flatMap(c => c.items);
 
 export default function BottomNav() {
@@ -102,8 +110,9 @@ export default function BottomNav() {
   const unreadCount = useUnreadNotifications();
 
   const isDriver = user?.role === 'driver';
-  const mobileNav = isDriver ? driverMobileNav : managerMobileNav;
-  const moreItems = isDriver ? [] : allManagerItems.filter(
+  const isPrivateCustomer = user?.role === 'private_customer';
+  const mobileNav = isDriver ? driverMobileNav : isPrivateCustomer ? privateCustomerMobileNav : managerMobileNav;
+  const moreItems = (isDriver || isPrivateCustomer) ? [] : allManagerItems.filter(
     item => !managerMobileNav.some(m => m.path === item.path)
   );
 
@@ -111,7 +120,7 @@ export default function BottomNav() {
 
   return (
     <>
-      {showMore && !isDriver && (
+      {showMore && !isDriver && !isPrivateCustomer && (
         <div className="fixed inset-0 z-40 bg-foreground/50" onClick={() => setShowMore(false)}>
           <div className="absolute bottom-[80px] left-0 right-0 bg-card rounded-t-3xl shadow-2xl p-4 animate-fade-in max-h-[60vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4 px-2">
@@ -145,7 +154,7 @@ export default function BottomNav() {
               <span className="text-xs">{item.label}</span>
             </NavLink>
           ))}
-          {!isDriver && (
+          {!isDriver && !isPrivateCustomer && (
             <button onClick={() => setShowMore(!showMore)} className={`nav-item-mobile flex-1 ${isMoreActive ? 'text-primary font-bold' : 'text-muted-foreground'}`}>
               <Menu size={26} /><span className="text-xs">עוד</span>
             </button>

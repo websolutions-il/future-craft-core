@@ -26,12 +26,14 @@ const ROLE_LABELS: Record<string, string> = {
   super_admin: 'מנהל על',
   fleet_manager: 'מנהל צי',
   driver: 'נהג',
+  private_customer: 'לקוח פרטי',
 };
 
 const ROLE_COLORS: Record<string, string> = {
   super_admin: 'bg-destructive/10 text-destructive border-destructive/30',
   fleet_manager: 'bg-primary/10 text-primary border-primary/30',
   driver: 'bg-muted text-muted-foreground border-border',
+  private_customer: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30',
 };
 
 export default function UserManagement() {
