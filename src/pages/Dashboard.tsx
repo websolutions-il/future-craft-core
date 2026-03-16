@@ -116,6 +116,7 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
   const [showCreateUserModal, setShowCreateUserModal] = useState(false);
   const [showFleetCompanyPicker, setShowFleetCompanyPicker] = useState(false);
   const [showCreatePassword, setShowCreatePassword] = useState(false);
+  const [showCreateAlert, setShowCreateAlert] = useState(false);
   const [stats, setStats] = useState<SuperAdminStats>({
     companiesCount: 0,
     usersCount: 0,
@@ -412,6 +413,19 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
             </button>
           </div>
         </div>
+      )}
+
+      {/* Floating + button for alerts */}
+      <button
+        onClick={() => setShowCreateAlert(true)}
+        className="fixed bottom-24 left-6 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-xl hover:shadow-2xl transition-all flex items-center justify-center text-3xl font-bold hover:scale-110"
+        title="יצירת התראה חדשה"
+      >
+        <Plus size={28} />
+      </button>
+
+      {showCreateAlert && (
+        <CreateAlertModal onClose={() => setShowCreateAlert(false)} onCreated={() => {}} />
       )}
     </div>
   );

@@ -40,7 +40,7 @@ export default function CreateAlertModal({ onClose, onCreated }: { onClose: () =
 
     const dateTime = new Date(`${alertDate}T${alertTime}`).toISOString();
 
-    const { error } = await supabase.from('custom_alerts' as any).insert({
+    const { error } = await supabase.from('custom_alerts').insert({
       user_id: user.id,
       company_name: user.company_name || '',
       alert_type: alertType,
