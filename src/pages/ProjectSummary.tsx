@@ -154,17 +154,24 @@ const ProjectSummary = () => {
         </table>
         
         <h2>תוספות מעבר לתוכנית (${additions.length})</h2>
-        <p style="margin-bottom:8px;color:#666;">סה"כ ${TOTAL_ADDITION_HOURS} שעות פיתוח + 30% בדיקות ותיקונים = ${withQA} שעות</p>
+        <p style="margin-bottom:8px;color:#666;">סה"כ ${totalDevHours} שעות פיתוח + 30% בדיקות ותיקונים = ${totalWithQA} שעות</p>
         <table>
           <tr><th>#</th><th>תוספת</th><th>פירוט</th></tr>
           ${additions.map((item, i) => `<tr><td>${i + 1}</td><td>${item.feature}</td><td>${item.desc}</td></tr>`).join('')}
         </table>
         
+        <h3>סיכום תקופתי</h3>
+        <table>
+          <tr><th>תקופה</th><th>תאריך סיום</th><th>שעות פיתוח</th><th>כולל QA (30%)</th></tr>
+          ${hoursPeriods.map(p => `<tr><td>${p.label}</td><td>${p.endDate}</td><td>${p.devHours}</td><td>${Math.round(p.devHours * QA_MULTIPLIER)}</td></tr>`).join('')}
+          <tr style="font-weight:bold;background:#eef"><td>סה"כ</td><td></td><td>${totalDevHours}</td><td>${totalWithQA}</td></tr>
+        </table>
+
         <h3>סיכום שעות</h3>
         <div class="summary-box">
-          <div class="summary-item"><div class="num">${totalAdditionHours}</div><div class="label">שעות פיתוח נטו</div></div>
+          <div class="summary-item"><div class="num">${totalDevHours}</div><div class="label">שעות פיתוח נטו</div></div>
           <div class="summary-item"><div class="num">30%</div><div class="label">בדיקות ותיקונים</div></div>
-          <div class="summary-item"><div class="num">${withQA}</div><div class="label">סה"כ שעות</div></div>
+          <div class="summary-item"><div class="num">${totalWithQA}</div><div class="label">סה"כ שעות</div></div>
         </div>
         
         <div class="footer">מסמך זה נוצר אוטומטית | ${new Date().toLocaleDateString('he-IL')}</div>
