@@ -62,7 +62,7 @@ export default function SupplierOrders() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterSupplier, setFilterSupplier] = useState(supplierIdParam || '');
-  const [showForm, setShowForm] = useState(!!supplierIdParam && false);
+  const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<SupplierOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCalendar, setShowCalendar] = useState(false);
