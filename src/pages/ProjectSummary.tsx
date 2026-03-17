@@ -46,7 +46,6 @@ const completedItems = [
   { module: 'איפוס סיסמה', desc: 'Edge Function לשליחת קישור איפוס באימייל' },
 ];
 
-const TOTAL_ADDITION_HOURS = 9;
 const QA_MULTIPLIER = 1.3;
 
 const additions = [
@@ -72,8 +71,37 @@ const additions = [
   { feature: 'RLS Policies מלאות', desc: 'מדיניות אבטחה לכל הטבלאות, has_role, get_user_company' },
 ];
 
-const totalAdditionHours = TOTAL_ADDITION_HOURS;
-const withQA = Math.round(totalAdditionHours * QA_MULTIPLIER);
+// Periodic hours summary - each period starts after the previous one ends
+const hoursPeriods = [
+  {
+    label: 'תקופה ראשונה',
+    endDate: '2026-03-10',
+    devHours: 9,
+    items: [
+      'התחזות, תקלות מורחב, הזמנות שירות, התראות אוטומטיות',
+      'סידורי עבודה, מסירות רכב, בקשות אישור, דוחות',
+      'צ\'אט פנימי, ספקים, מלווים, מנויים, מבצעים',
+      'חירום, יומן מערכת, ניהול משתמשים, דשבורד נהג',
+      'מסמכים, איפוס סיסמה, RLS Policies',
+    ],
+  },
+  {
+    label: 'תקופה שנייה',
+    endDate: '2026-03-17',
+    devHours: 4,
+    items: [
+      'הזמנות עבודה לספקים – מודול שלם עם CRUD, מספור אוטומטי, שיוך ספק',
+      'דשבורד אנליטי ספקים – גרפים, מגמות, סינון מתקדם',
+      'דוחות ספקים מורחבים – ייצוא CSV, פילטרים',
+      'כפתור + צף (FAB) בכל הדפים',
+      'לקוח פרטי – תפקיד + דשבורד + Edge Function',
+      'תיקוני באגים ושיפורי UX',
+    ],
+  },
+];
+
+const totalDevHours = hoursPeriods.reduce((sum, p) => sum + p.devHours, 0);
+const totalWithQA = Math.round(totalDevHours * QA_MULTIPLIER);
 
 const ProjectSummary = () => {
   const { user } = useAuth();
