@@ -227,7 +227,7 @@ export default function HelpButton() {
   return (
     <>
       {!dismissed && (
-        <div className="fixed bottom-28 left-4 md:bottom-6 md:left-6 z-50">
+        <div className="fixed bottom-28 right-4 md:bottom-6 md:right-6 z-50">
           <button
             onClick={handleOpen}
             className={`relative h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-lg ring-2 ring-primary/20 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform ${showPulse ? 'animate-[help-bounce_1.5s_ease-in-out_infinite]' : ''}`}
