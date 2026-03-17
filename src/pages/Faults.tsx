@@ -417,9 +417,6 @@ export default function Faults() {
           ], filtered)} className="flex items-center gap-2 px-4 py-3 rounded-xl border border-border bg-card text-foreground text-sm font-bold min-h-[48px] hover:bg-muted transition-colors">
             <Download size={18} />
           </button>
-          <button onClick={() => { setEditFault(null); setViewMode('form'); }} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px] shadow-lg hover:shadow-xl transition-shadow">
-            <Plus size={22} /> תקלה חדשה
-          </button>
         </div>
       </div>
 
