@@ -473,3 +473,104 @@ function OrderForm({ order, suppliers, defaultSupplierId, onDone, onBack, user }
     </div>
   );
 }
+
+function WeeklyCalendar({ orders, week, onWeekChange, isManager, onEdit, onDelete, onStatusChange, onEmail, onPdf }: {
+  orders: SupplierOrder[];
+  week: Date;
+  onWeekChange: (d: Date) => void;
+  isManager: boolean;
+  onEdit: (o: SupplierOrder) => void;
+  onDelete: (id: string) => void;
+  onStatusChange: (o: SupplierOrder, s: string) => void;
+  onEmail: (o: SupplierOrder) => void;
+  onPdf: (o: SupplierOrder) => void;
+}) {
+  const weekStart = startOfWeek(week, { weekStartsOn: 0 });
+  const weekEnd = endOfWeek(week, { weekStartsOn: 0 });
+  const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+  const noDateOrders = orders.filter(o => !o.execution_date);
+
+  return (
+    <div className="space-y-4">
+      {/* Week navigation */}
+      <div className="flex items-center justify-between bg-card rounded-xl p-3 border border-border">
+        <button onClick={() => onWeekChange(addWeeks(week, 1))} className="p-2 rounded-lg bg-muted min-h-[40px]">
+          <ChevronRight size={20} />
+        </button>
+        <div className="text-center">
+          <p className="text-sm font-bold">
+            {format(weekStart, 'd/M', { locale: he })} - {format(weekEnd, 'd/M/yyyy', { locale: he })}
+          </p>
+          <button onClick={() => onWeekChange(new Date())} className="text-xs text-primary font-medium">
+            השבוע
+          </button>
+        </div>
+        <button onClick={() => onWeekChange(addWeeks(week, -1))} className="p-2 rounded-lg bg-muted min-h-[40px]">
+          <ChevronLeft size={20} />
+        </button>
+      </div>
+
+      {/* Days */}
+      {days.map(day => {
+        const dayOrders = orders.filter(o =>
+          o.execution_date && isSameDay(new Date(o.execution_date), day)
+        );
+        const today = isToday(day);
+
+        return (
+          <div key={day.toISOString()} className={`rounded-xl border ${today ? 'border-primary bg-primary/5' : 'border-border bg-card'}`}>
+            <div className={`flex items-center justify-between px-4 py-2 border-b ${today ? 'border-primary/20' : 'border-border'}`}>
+              <div className="flex items-center gap-2">
+                <span className={`text-sm font-bold ${today ? 'text-primary' : 'text-foreground'}`}>
+                  {format(day, 'EEEE', { locale: he })}
+                </span>
+                <span className="text-xs text-muted-foreground">{format(day, 'd/M')}</span>
+                {today && <span className="text-[10px] bg-primary text-primary-foreground px-2 py-0.5 rounded-full">היום</span>}
+              </div>
+              {dayOrders.length > 0 && (
+                <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-lg">{dayOrders.length} הזמנות</span>
+              )}
+            </div>
+            {dayOrders.length === 0 ? (
+              <div className="px-4 py-3 text-xs text-muted-foreground">אין הזמנות</div>
+            ) : (
+              <div className="p-2 space-y-2">
+                {dayOrders.map(o => (
+                  <OrderCard key={o.id} order={o} isManager={isManager}
+                    onEdit={() => onEdit(o)}
+                    onDelete={() => onDelete(o.id)}
+                    onStatusChange={onStatusChange}
+                    onEmail={() => onEmail(o)}
+                    onPdf={() => onPdf(o)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Orders without date */}
+      {noDateOrders.length > 0 && (
+        <div className="rounded-xl border border-dashed border-border bg-card">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+            <span className="text-sm font-bold text-muted-foreground">ללא תאריך ביצוע</span>
+            <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-lg">{noDateOrders.length}</span>
+          </div>
+          <div className="p-2 space-y-2">
+            {noDateOrders.map(o => (
+              <OrderCard key={o.id} order={o} isManager={isManager}
+                onEdit={() => onEdit(o)}
+                onDelete={() => onDelete(o.id)}
+                onStatusChange={onStatusChange}
+                onEmail={() => onEmail(o)}
+                onPdf={() => onPdf(o)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
