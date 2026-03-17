@@ -150,44 +150,40 @@ export default function SupplierOrders() {
       toast.error('לספק אין כתובת אימייל');
       return;
     }
-    const subject = encodeURIComponent(`הזמנת עבודה ${order.order_number} - ${order.description}`);
-    const body = encodeURIComponent(
-      `שלום,\n\nמצורפים פרטי הזמנת עבודה:\n\n` +
-      `מספר הזמנה: ${order.order_number}\n` +
-      `תיאור: ${order.description}\n` +
-      `סוג עבודה: ${order.work_type}\n` +
-      `סכום מאושר: ₪${order.approved_amount?.toLocaleString()}\n` +
-      `תאריך ביצוע: ${order.execution_date || 'לא נקבע'}\n` +
-      `מוציא הזמנה: ${order.ordering_user}\n\n` +
-      `בברכה`
-    );
-    window.open(`mailto:${supplier.email}?subject=${subject}&body=${body}`, '_blank');
-    toast.success('נפתח חלון שליחת אימייל');
+    toast.loading('שולח מייל...');
+    try {
+      const { data, error } = await supabase.functions.invoke('send-supplier-order-email', {
+        body: { to: supplier.email, order },
+      });
+      toast.dismiss();
+      if (error) throw error;
+      if (data?.success) {
+        toast.success('המייל נשלח בהצלחה ל-' + supplier.email);
+      } else {
+        throw new Error(data?.error || 'שגיאה בשליחה');
+      }
+    } catch (err: any) {
+      toast.dismiss();
+      // Fallback to mailto
+      const subject = encodeURIComponent(`הזמנת עבודה ${order.order_number} - ${order.description}`);
+      const body = encodeURIComponent(
+        `שלום,\n\nמצורפים פרטי הזמנת עבודה:\n\n` +
+        `מספר הזמנה: ${order.order_number}\n` +
+        `תיאור: ${order.description}\n` +
+        `סוג עבודה: ${order.work_type}\n` +
+        `סכום מאושר: ₪${order.approved_amount?.toLocaleString()}\n` +
+        `תאריך ביצוע: ${order.execution_date || 'לא נקבע'}\n` +
+        `מוציא הזמנה: ${order.ordering_user}\n\n` +
+        `בברכה`
+      );
+      window.open(`mailto:${supplier.email}?subject=${subject}&body=${body}`, '_blank');
+      toast.info('נפתח חלון מייל (שליחה ישירה לא זמינה כרגע)');
+    }
   };
 
   const handleExportPdf = (order: SupplierOrder) => {
-    const content = `
-הזמנת עבודה
-============
-מספר הזמנה: ${order.order_number}
-ספק: ${order.supplier_name} (${order.supplier_number})
-תיאור: ${order.description}
-סוג עבודה: ${order.work_type}
-סכום מאושר: ₪${order.approved_amount?.toLocaleString()}
-תאריך ביצוע: ${order.execution_date || 'לא נקבע'}
-סטטוס: ${statusLabels[order.status]}
-מוציא הזמנה: ${order.ordering_user}
-הערות: ${order.notes || ''}
-    `.trim();
-
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `work-order-${order.order_number}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success('הקובץ הורד בהצלחה');
+    generateWorkOrderPdf(order, statusLabels[order.status]);
+    toast.success('PDF נפתח להדפסה');
   };
 
   if (showForm) {
