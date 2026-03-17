@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { BarChart3, Car, Users, FileText, Wrench, AlertTriangle, Download, Filter, ChevronDown, ChevronUp, ShoppingCart, TrendingUp, Package, Mail, MessageSquare, Share2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
@@ -16,6 +17,7 @@ interface RawData {
   accidents: any[];
   expenses: any[];
   serviceOrders: any[];
+  supplierOrders: any[];
 }
 
 const reportTypes = [
@@ -31,7 +33,7 @@ const reportTypes = [
 
 export default function Reports() {
   const { user } = useAuth();
-  const [raw, setRaw] = useState<RawData>({ vehicles: [], drivers: [], faults: [], accidents: [], expenses: [], serviceOrders: [] });
+  const [raw, setRaw] = useState<RawData>({ vehicles: [], drivers: [], faults: [], accidents: [], expenses: [], serviceOrders: [], supplierOrders: [] });
   const [loading, setLoading] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [expandedReport, setExpandedReport] = useState<string | null>(null);
@@ -49,13 +51,14 @@ export default function Reports() {
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
-    const [vRes, dRes, fRes, aRes, eRes, soRes] = await Promise.all([
+    const [vRes, dRes, fRes, aRes, eRes, soRes, woRes] = await Promise.all([
       supabase.from('vehicles').select('*'),
       supabase.from('drivers').select('*'),
       supabase.from('faults').select('*'),
       supabase.from('accidents').select('*'),
       supabase.from('expenses').select('*'),
       supabase.from('service_orders').select('*'),
+      supabase.from('supplier_work_orders').select('*'),
     ]);
     setRaw({
       vehicles: vRes.data || [],
@@ -64,6 +67,7 @@ export default function Reports() {
       accidents: aRes.data || [],
       expenses: eRes.data || [],
       serviceOrders: soRes.data || [],
+      supplierOrders: woRes.data || [],
     });
     setLoading(false);
   };
@@ -96,6 +100,7 @@ export default function Reports() {
       accidents: raw.accidents.filter(a => matchCompany(a.company_name) && matchVehicle(a.vehicle_plate) && matchDriver(a.driver_name) && inDateRange(a.date)),
       expenses: raw.expenses.filter(e => matchCompany(e.company_name) && matchVehicle(e.vehicle_plate) && matchDriver(e.driver_name) && inDateRange(e.date) && (!filterVendor || e.vendor === filterVendor)),
       serviceOrders: raw.serviceOrders.filter(s => matchCompany(s.company_name) && matchVehicle(s.vehicle_plate) && matchDriver(s.driver_name) && inDateRange(s.created_at) && (!filterVendor || s.vendor_name === filterVendor)),
+      supplierOrders: raw.supplierOrders.filter(o => matchCompany(o.company_name) && inDateRange(o.created_at) && (!filterVendor || o.supplier_name === filterVendor)),
     };
   }, [raw, filterCompany, filterDateFrom, filterDateTo, filterVendor, filterVehicle, filterDriver]);
 
@@ -118,20 +123,36 @@ export default function Reports() {
   const totalAccidentCost = filtered.accidents.reduce((s, a) => s + (a.estimated_cost || 0), 0);
 
   const vendorSummary = useMemo(() => {
-    const map: Record<string, { count: number; total: number }> = {};
+    const map: Record<string, { count: number; total: number; workOrders: number; workOrderTotal: number }> = {};
     filtered.expenses.forEach(e => {
       if (!e.vendor) return;
-      if (!map[e.vendor]) map[e.vendor] = { count: 0, total: 0 };
+      if (!map[e.vendor]) map[e.vendor] = { count: 0, total: 0, workOrders: 0, workOrderTotal: 0 };
       map[e.vendor].count++;
       map[e.vendor].total += e.amount || 0;
     });
     filtered.serviceOrders.forEach(s => {
       if (!s.vendor_name) return;
-      if (!map[s.vendor_name]) map[s.vendor_name] = { count: 0, total: 0 };
+      if (!map[s.vendor_name]) map[s.vendor_name] = { count: 0, total: 0, workOrders: 0, workOrderTotal: 0 };
       map[s.vendor_name].count++;
+    });
+    filtered.supplierOrders.forEach(o => {
+      const name = o.supplier_name;
+      if (!name) return;
+      if (!map[name]) map[name] = { count: 0, total: 0, workOrders: 0, workOrderTotal: 0 };
+      map[name].workOrders++;
+      map[name].workOrderTotal += o.approved_amount || 0;
+      map[name].total += o.approved_amount || 0;
     });
     return Object.entries(map).sort((a, b) => b[1].total - a[1].total);
   }, [filtered]);
+
+  const totalSupplierOrdersAmount = useMemo(() =>
+    filtered.supplierOrders.reduce((s: number, o: any) => s + (o.approved_amount || 0), 0), [filtered]);
+
+  const CHART_COLORS = [
+    'hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))',
+    'hsl(var(--chart-4))', 'hsl(var(--chart-5))', '#6366f1', '#ec4899', '#14b8a6',
+  ];
 
   // Build CSV content for export/share
   const buildReportText = () => {
@@ -562,27 +583,69 @@ export default function Reports() {
 
         {/* Vendor Summary */}
         {showReport('vendors') && (
-          <div className="card-elevated">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-primary/10 text-primary"><Package size={24} /></div>
-              <h2 className="text-xl font-bold">סיכום לפי ספקים</h2>
-            </div>
-            {vendorSummary.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">אין נתונים</p>
-            ) : (
-              <div className="space-y-3">
-                {vendorSummary.map(([name, data]) => (
-                  <div key={name} className="flex items-center justify-between bg-muted rounded-xl p-3">
-                    <span className="font-bold">{name}</span>
-                    <div className="flex items-center gap-4 text-sm">
-                      <span className="text-muted-foreground">{data.count} פריטים</span>
-                      {data.total > 0 && <span className="font-bold text-primary">₪{data.total.toLocaleString()}</span>}
-                    </div>
+          <ExpandableReport
+            expanded={expandedReport === 'vendors'}
+            onToggle={() => toggleExpand('vendors')}
+            card={
+              <ReportCard title="דוח ספקים מרכזי" icon={Package} color="bg-primary/10 text-primary"
+                expanded={expandedReport === 'vendors'}
+                stats={[
+                  { label: 'ספקים פעילים', value: vendorSummary.length.toString() },
+                  { label: 'הזמנות עבודה', value: filtered.supplierOrders.length.toString() },
+                  { label: 'סה"כ הוצאות', value: `₪${totalSupplierOrdersAmount.toLocaleString()}` },
+                ]}
+              />
+            }
+            table={vendorSummary.length > 0 ? (
+              <div className="card-elevated -mt-2 border-t-2 border-primary/20 space-y-6 animate-fade-in">
+                {/* Bar Chart - Top suppliers by expense */}
+                <div>
+                  <h3 className="text-sm font-bold text-muted-foreground mb-3">הוצאות לפי ספק (₪)</h3>
+                  <div style={{ width: '100%', height: 260 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={vendorSummary.slice(0, 8).map(([name, d]) => ({ name: name.length > 12 ? name.slice(0, 12) + '…' : name, total: d.total }))} layout="vertical" margin={{ right: 10, left: 0 }}>
+                        <XAxis type="number" tickFormatter={(v: number) => `₪${v.toLocaleString()}`} fontSize={11} />
+                        <YAxis type="category" dataKey="name" width={100} fontSize={12} tick={{ fill: 'hsl(var(--foreground))' }} />
+                        <Tooltip formatter={(v: number) => [`₪${v.toLocaleString()}`, 'סכום']} />
+                        <Bar dataKey="total" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
-                ))}
+                </div>
+
+                {/* Pie Chart - Distribution */}
+                <div>
+                  <h3 className="text-sm font-bold text-muted-foreground mb-3">התפלגות הוצאות ספקים</h3>
+                  <div style={{ width: '100%', height: 250 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={vendorSummary.slice(0, 6).map(([name, d]) => ({ name, value: d.total }))}
+                          dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }: any) => `${name.slice(0, 10)} (${(percent * 100).toFixed(0)}%)`}
+                          fontSize={11}>
+                          {vendorSummary.slice(0, 6).map((_, i) => (
+                            <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(v: number) => [`₪${v.toLocaleString()}`, 'סכום']} />
+                        <Legend fontSize={12} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Detailed table */}
+                <DetailTable headers={['ספק', 'הוצאות', 'הזמנות עבודה', 'סכום הזמנות', 'סה"כ']}
+                  rows={vendorSummary.map(([name, d]) => [
+                    name,
+                    d.count.toString(),
+                    d.workOrders.toString(),
+                    `₪${d.workOrderTotal.toLocaleString()}`,
+                    `₪${d.total.toLocaleString()}`,
+                  ])}
+                />
               </div>
-            )}
-          </div>
+            ) : null}
+          />
         )}
       </div>
 
