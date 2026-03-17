@@ -223,7 +223,7 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
   const submitCreateUser = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!form.email || !form.password || !form.fullName || !form.companyName) {
+    if (!form.email || !form.password || !form.fullName || (form.role !== 'private_customer' && !form.companyName)) {
       toast({
         title: 'חסרים פרטים',
         description: 'יש למלא את כל השדות לפני יצירת המשתמש.',
