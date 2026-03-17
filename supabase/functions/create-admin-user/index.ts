@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
@@ -17,34 +17,37 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const supabaseUser = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      {
-        global: {
-          headers: {
-            Authorization: req.headers.get('Authorization') || '',
-          },
-        },
-      }
-    );
-
-    const {
-      data: { user: caller },
-      error: authError,
-    } = await supabaseUser.auth.getUser();
-
-    if (authError || !caller) {
+    // Validate caller using getClaims (more resilient than getUser)
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
+    const supabaseUser = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabaseUser.auth.getClaims(token);
+
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const callerId = claimsData.claims.sub;
+
     const { data: roleRow, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
-      .eq('user_id', caller.id)
+      .eq('user_id', callerId)
       .single();
 
     const callerRole = roleRow?.role;
@@ -241,7 +244,7 @@ Deno.serve(async (req) => {
       const { data: callerProfile } = await supabaseAdmin
         .from('profiles')
         .select('company_name')
-        .eq('id', caller.id)
+        .eq('id', callerId)
         .single();
       
       if (callerProfile?.company_name) {
@@ -285,7 +288,7 @@ Deno.serve(async (req) => {
       const { data: callerProfile } = await supabaseAdmin
         .from('profiles')
         .select('full_name, company_name')
-        .eq('id', caller.id)
+        .eq('id', callerId)
         .single();
 
       const { data: superAdmins } = await supabaseAdmin
