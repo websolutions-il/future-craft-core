@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     const { data: roleRow, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
-      .eq('user_id', caller.id)
+      .eq('user_id', callerId)
       .single();
 
     const callerRole = roleRow?.role;
@@ -244,7 +244,7 @@ Deno.serve(async (req) => {
       const { data: callerProfile } = await supabaseAdmin
         .from('profiles')
         .select('company_name')
-        .eq('id', caller.id)
+        .eq('id', callerId)
         .single();
       
       if (callerProfile?.company_name) {
@@ -288,7 +288,7 @@ Deno.serve(async (req) => {
       const { data: callerProfile } = await supabaseAdmin
         .from('profiles')
         .select('full_name, company_name')
-        .eq('id', caller.id)
+        .eq('id', callerId)
         .single();
 
       const { data: superAdmins } = await supabaseAdmin
