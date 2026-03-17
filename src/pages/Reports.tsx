@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { BarChart3, Car, Users, FileText, Wrench, AlertTriangle, Download, Filter, ChevronDown, ChevronUp, ShoppingCart, TrendingUp, Package, Mail, MessageSquare, Share2 } from 'lucide-react';
+import { BarChart3, Car, Users, FileText, Wrench, AlertTriangle, Download, Filter, ChevronDown, ChevronUp, ShoppingCart, TrendingUp, Package, Mail, MessageSquare, Share2, ClipboardList } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
