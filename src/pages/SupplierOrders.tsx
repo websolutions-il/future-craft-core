@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { ClipboardList, Plus, Search, ArrowRight, Edit2, Trash2, Calendar, FileText, Mail, Download, Building2 } from 'lucide-react';
+import { ClipboardList, Plus, Search, ArrowRight, Edit2, Trash2, Calendar, FileText, Mail, Download, Building2, ChevronRight, ChevronLeft, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { toast } from 'sonner';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addWeeks, eachDayOfInterval, isSameDay, isToday } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { exportToCsv } from '@/utils/exportCsv';
+import { generateWorkOrderPdf } from '@/utils/generateWorkOrderPdf';
 
 interface SupplierOrder {
   id: string;
