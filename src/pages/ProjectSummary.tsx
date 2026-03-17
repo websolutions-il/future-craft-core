@@ -257,7 +257,7 @@ const ProjectSummary = () => {
           <p className="text-muted-foreground mb-4">
             כל הפיצ'רים הבאים לא היו חלק מהתוכנית המקורית (שכללה דף נחיתה + Multi-Tenancy).
             <br />
-            סה"כ {TOTAL_ADDITION_HOURS} שעות פיתוח + 30% בדיקות ותיקונים = {withQA} שעות.
+            סה"כ {totalDevHours} שעות פיתוח + 30% בדיקות ותיקונים = {totalWithQA} שעות.
           </p>
 
           <div className="border border-border rounded-lg overflow-hidden overflow-x-auto">
@@ -282,23 +282,66 @@ const ProjectSummary = () => {
           </div>
         </section>
 
+        {/* Periodic hours summary */}
+        <section>
+          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+            <Clock className="h-6 w-6 text-orange-500" />
+            סיכום תקופתי של שעות
+          </h2>
+          <div className="border border-border rounded-lg overflow-hidden overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-muted">
+                  <th className="text-right p-3 font-semibold">תקופה</th>
+                  <th className="text-right p-3 font-semibold">תאריך סיום</th>
+                  <th className="text-right p-3 font-semibold">שעות פיתוח</th>
+                  <th className="text-right p-3 font-semibold">כולל QA (30%)</th>
+                  <th className="text-right p-3 font-semibold">מה נעשה</th>
+                </tr>
+              </thead>
+              <tbody>
+                {hoursPeriods.map((period, i) => (
+                  <tr key={i} className={i % 2 === 0 ? 'bg-background' : 'bg-muted/30'}>
+                    <td className="p-3 font-medium">{period.label}</td>
+                    <td className="p-3 text-muted-foreground">{period.endDate}</td>
+                    <td className="p-3 font-medium">{period.devHours}</td>
+                    <td className="p-3 font-medium">{Math.round(period.devHours * QA_MULTIPLIER)}</td>
+                    <td className="p-3 text-muted-foreground text-xs">
+                      <ul className="list-disc list-inside space-y-0.5">
+                        {period.items.map((item, j) => <li key={j}>{item}</li>)}
+                      </ul>
+                    </td>
+                  </tr>
+                ))}
+                <tr className="bg-muted font-bold">
+                  <td className="p-3">סה"כ</td>
+                  <td className="p-3"></td>
+                  <td className="p-3">{totalDevHours}</td>
+                  <td className="p-3">{totalWithQA}</td>
+                  <td className="p-3"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         {/* Summary box */}
         <section className="bg-muted/50 border border-border rounded-lg p-6">
           <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
             <Clock className="h-5 w-5 text-orange-500" />
-            סיכום שעות
+            סיכום שעות כולל
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-background rounded-lg p-4 text-center border border-border">
-              <div className="text-3xl font-bold text-green-600">{totalAdditionHours}</div>
+              <div className="text-3xl font-bold text-primary">{totalDevHours}</div>
               <div className="text-sm text-muted-foreground mt-1">שעות פיתוח נטו</div>
             </div>
             <div className="bg-background rounded-lg p-4 text-center border border-border">
-              <div className="text-3xl font-bold text-orange-500">30%</div>
+              <div className="text-3xl font-bold text-primary">30%</div>
               <div className="text-sm text-muted-foreground mt-1">בדיקות ותיקונים</div>
             </div>
             <div className="bg-background rounded-lg p-4 text-center border border-border">
-              <div className="text-3xl font-bold text-primary">{withQA}</div>
+              <div className="text-3xl font-bold text-primary">{totalWithQA}</div>
               <div className="text-sm text-muted-foreground mt-1">סה"כ שעות</div>
             </div>
           </div>
