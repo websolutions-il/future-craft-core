@@ -33,7 +33,7 @@ const reportTypes = [
 
 export default function Reports() {
   const { user } = useAuth();
-  const [raw, setRaw] = useState<RawData>({ vehicles: [], drivers: [], faults: [], accidents: [], expenses: [], serviceOrders: [] });
+  const [raw, setRaw] = useState<RawData>({ vehicles: [], drivers: [], faults: [], accidents: [], expenses: [], serviceOrders: [], supplierOrders: [] });
   const [loading, setLoading] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [expandedReport, setExpandedReport] = useState<string | null>(null);
