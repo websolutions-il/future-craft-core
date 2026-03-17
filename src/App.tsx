@@ -44,6 +44,7 @@ import Permissions from "@/pages/Permissions";
 import AlertSettings from "@/pages/AlertSettings";
 import ApprovalSettings from "@/pages/ApprovalSettings";
 import Suppliers from "@/pages/Suppliers";
+import SupplierOrders from "@/pages/SupplierOrders";
 import EmailTemplates from "@/pages/EmailTemplates";
 import Promotions from "@/pages/Promotions";
 import InternalChat from "@/pages/InternalChat";
