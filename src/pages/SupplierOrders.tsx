@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { ClipboardList, Plus, Search, ArrowRight, Edit2, Trash2, Calendar, FileText, Mail, Download, Building2 } from 'lucide-react';
+import { ClipboardList, Plus, Search, ArrowRight, Edit2, Trash2, Calendar, FileText, Mail, Download, Building2, ChevronRight, ChevronLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { toast } from 'sonner';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addWeeks, eachDayOfInterval, isSameDay, isToday } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { exportToCsv } from '@/utils/exportCsv';
+import { generateWorkOrderPdf } from '@/utils/generateWorkOrderPdf';
 
 interface SupplierOrder {
   id: string;
@@ -66,6 +67,7 @@ export default function SupplierOrders() {
   const [editItem, setEditItem] = useState<SupplierOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarWeek, setCalendarWeek] = useState(new Date());
 
   const loadData = async () => {
     setLoading(true);
@@ -95,17 +97,7 @@ export default function SupplierOrders() {
     return matchSearch && matchStatus && matchSupplier;
   });
 
-  // Group by date for calendar view
-  const grouped: Record<string, SupplierOrder[]> = {};
-  if (showCalendar) {
-    filtered.forEach(o => {
-      const day = o.execution_date
-        ? format(new Date(o.execution_date), 'EEEE, d בMMMM yyyy', { locale: he })
-        : 'ללא תאריך';
-      if (!grouped[day]) grouped[day] = [];
-      grouped[day].push(o);
-    });
-  }
+  // (calendar grouping moved to WeeklyCalendar component)
 
   const handleDelete = async (id: string) => {
     if (!confirm('האם למחוק הזמנה זו?')) return;
@@ -149,44 +141,40 @@ export default function SupplierOrders() {
       toast.error('לספק אין כתובת אימייל');
       return;
     }
-    const subject = encodeURIComponent(`הזמנת עבודה ${order.order_number} - ${order.description}`);
-    const body = encodeURIComponent(
-      `שלום,\n\nמצורפים פרטי הזמנת עבודה:\n\n` +
-      `מספר הזמנה: ${order.order_number}\n` +
-      `תיאור: ${order.description}\n` +
-      `סוג עבודה: ${order.work_type}\n` +
-      `סכום מאושר: ₪${order.approved_amount?.toLocaleString()}\n` +
-      `תאריך ביצוע: ${order.execution_date || 'לא נקבע'}\n` +
-      `מוציא הזמנה: ${order.ordering_user}\n\n` +
-      `בברכה`
-    );
-    window.open(`mailto:${supplier.email}?subject=${subject}&body=${body}`, '_blank');
-    toast.success('נפתח חלון שליחת אימייל');
+    toast.loading('שולח מייל...');
+    try {
+      const { data, error } = await supabase.functions.invoke('send-supplier-order-email', {
+        body: { to: supplier.email, order },
+      });
+      toast.dismiss();
+      if (error) throw error;
+      if (data?.success) {
+        toast.success('המייל נשלח בהצלחה ל-' + supplier.email);
+      } else {
+        throw new Error(data?.error || 'שגיאה בשליחה');
+      }
+    } catch (_err) {
+      toast.dismiss();
+      // Fallback to mailto
+      const subject = encodeURIComponent(`הזמנת עבודה ${order.order_number} - ${order.description}`);
+      const body = encodeURIComponent(
+        `שלום,\n\nמצורפים פרטי הזמנת עבודה:\n\n` +
+        `מספר הזמנה: ${order.order_number}\n` +
+        `תיאור: ${order.description}\n` +
+        `סוג עבודה: ${order.work_type}\n` +
+        `סכום מאושר: ₪${order.approved_amount?.toLocaleString()}\n` +
+        `תאריך ביצוע: ${order.execution_date || 'לא נקבע'}\n` +
+        `מוציא הזמנה: ${order.ordering_user}\n\n` +
+        `בברכה`
+      );
+      window.open(`mailto:${supplier.email}?subject=${subject}&body=${body}`, '_blank');
+      toast.info('נפתח חלון מייל (שליחה ישירה לא זמינה כרגע)');
+    }
   };
 
   const handleExportPdf = (order: SupplierOrder) => {
-    const content = `
-הזמנת עבודה
-============
-מספר הזמנה: ${order.order_number}
-ספק: ${order.supplier_name} (${order.supplier_number})
-תיאור: ${order.description}
-סוג עבודה: ${order.work_type}
-סכום מאושר: ₪${order.approved_amount?.toLocaleString()}
-תאריך ביצוע: ${order.execution_date || 'לא נקבע'}
-סטטוס: ${statusLabels[order.status]}
-מוציא הזמנה: ${order.ordering_user}
-הערות: ${order.notes || ''}
-    `.trim();
-
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `work-order-${order.order_number}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success('הקובץ הורד בהצלחה');
+    generateWorkOrderPdf(order, statusLabels[order.status]);
+    toast.success('PDF נפתח להדפסה');
   };
 
   if (showForm) {
@@ -280,27 +268,17 @@ export default function SupplierOrders() {
           <p className="text-xl">אין הזמנות עבודה</p>
         </div>
       ) : showCalendar ? (
-        // Calendar/grouped view
-        <div className="space-y-6">
-          {Object.entries(grouped).map(([day, dayOrders]) => (
-            <div key={day}>
-              <div className="flex items-center gap-2 mb-3">
-                <Calendar size={16} className="text-primary" />
-                <h2 className="text-sm font-bold text-muted-foreground">{day}</h2>
-                <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-lg">{dayOrders.length}</span>
-              </div>
-              <div className="space-y-3">
-                {dayOrders.map(o => <OrderCard key={o.id} order={o} isManager={isManager}
-                  onEdit={() => { setEditItem(o); setShowForm(true); }}
-                  onDelete={() => handleDelete(o.id)}
-                  onStatusChange={handleStatusChange}
-                  onEmail={() => handleSendEmail(o)}
-                  onPdf={() => handleExportPdf(o)}
-                />)}
-              </div>
-            </div>
-          ))}
-        </div>
+        <WeeklyCalendar
+          orders={filtered}
+          week={calendarWeek}
+          onWeekChange={setCalendarWeek}
+          isManager={isManager}
+          onEdit={(o) => { setEditItem(o); setShowForm(true); }}
+          onDelete={(id) => handleDelete(id)}
+          onStatusChange={handleStatusChange}
+          onEmail={handleSendEmail}
+          onPdf={handleExportPdf}
+        />
       ) : (
         <div className="space-y-3">
           {filtered.map(o => <OrderCard key={o.id} order={o} isManager={isManager}
@@ -492,6 +470,107 @@ function OrderForm({ order, suppliers, defaultSupplierId, onDone, onBack, user }
           {loading ? 'שומר...' : isEdit ? '✅ עדכן הזמנה' : '➕ צור הזמנת עבודה'}
         </button>
       </div>
+    </div>
+  );
+}
+
+function WeeklyCalendar({ orders, week, onWeekChange, isManager, onEdit, onDelete, onStatusChange, onEmail, onPdf }: {
+  orders: SupplierOrder[];
+  week: Date;
+  onWeekChange: (d: Date) => void;
+  isManager: boolean;
+  onEdit: (o: SupplierOrder) => void;
+  onDelete: (id: string) => void;
+  onStatusChange: (o: SupplierOrder, s: string) => void;
+  onEmail: (o: SupplierOrder) => void;
+  onPdf: (o: SupplierOrder) => void;
+}) {
+  const weekStart = startOfWeek(week, { weekStartsOn: 0 });
+  const weekEnd = endOfWeek(week, { weekStartsOn: 0 });
+  const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+  const noDateOrders = orders.filter(o => !o.execution_date);
+
+  return (
+    <div className="space-y-4">
+      {/* Week navigation */}
+      <div className="flex items-center justify-between bg-card rounded-xl p-3 border border-border">
+        <button onClick={() => onWeekChange(addWeeks(week, 1))} className="p-2 rounded-lg bg-muted min-h-[40px]">
+          <ChevronRight size={20} />
+        </button>
+        <div className="text-center">
+          <p className="text-sm font-bold">
+            {format(weekStart, 'd/M', { locale: he })} - {format(weekEnd, 'd/M/yyyy', { locale: he })}
+          </p>
+          <button onClick={() => onWeekChange(new Date())} className="text-xs text-primary font-medium">
+            השבוע
+          </button>
+        </div>
+        <button onClick={() => onWeekChange(addWeeks(week, -1))} className="p-2 rounded-lg bg-muted min-h-[40px]">
+          <ChevronLeft size={20} />
+        </button>
+      </div>
+
+      {/* Days */}
+      {days.map(day => {
+        const dayOrders = orders.filter(o =>
+          o.execution_date && isSameDay(new Date(o.execution_date), day)
+        );
+        const today = isToday(day);
+
+        return (
+          <div key={day.toISOString()} className={`rounded-xl border ${today ? 'border-primary bg-primary/5' : 'border-border bg-card'}`}>
+            <div className={`flex items-center justify-between px-4 py-2 border-b ${today ? 'border-primary/20' : 'border-border'}`}>
+              <div className="flex items-center gap-2">
+                <span className={`text-sm font-bold ${today ? 'text-primary' : 'text-foreground'}`}>
+                  {format(day, 'EEEE', { locale: he })}
+                </span>
+                <span className="text-xs text-muted-foreground">{format(day, 'd/M')}</span>
+                {today && <span className="text-[10px] bg-primary text-primary-foreground px-2 py-0.5 rounded-full">היום</span>}
+              </div>
+              {dayOrders.length > 0 && (
+                <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-lg">{dayOrders.length} הזמנות</span>
+              )}
+            </div>
+            {dayOrders.length === 0 ? (
+              <div className="px-4 py-3 text-xs text-muted-foreground">אין הזמנות</div>
+            ) : (
+              <div className="p-2 space-y-2">
+                {dayOrders.map(o => (
+                  <OrderCard key={o.id} order={o} isManager={isManager}
+                    onEdit={() => onEdit(o)}
+                    onDelete={() => onDelete(o.id)}
+                    onStatusChange={onStatusChange}
+                    onEmail={() => onEmail(o)}
+                    onPdf={() => onPdf(o)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Orders without date */}
+      {noDateOrders.length > 0 && (
+        <div className="rounded-xl border border-dashed border-border bg-card">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+            <span className="text-sm font-bold text-muted-foreground">ללא תאריך ביצוע</span>
+            <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-lg">{noDateOrders.length}</span>
+          </div>
+          <div className="p-2 space-y-2">
+            {noDateOrders.map(o => (
+              <OrderCard key={o.id} order={o} isManager={isManager}
+                onEdit={() => onEdit(o)}
+                onDelete={() => onDelete(o.id)}
+                onStatusChange={onStatusChange}
+                onEmail={() => onEmail(o)}
+                onPdf={() => onPdf(o)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
