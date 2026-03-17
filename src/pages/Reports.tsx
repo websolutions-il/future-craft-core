@@ -17,6 +17,7 @@ interface RawData {
   accidents: any[];
   expenses: any[];
   serviceOrders: any[];
+  supplierOrders: any[];
 }
 
 const reportTypes = [
