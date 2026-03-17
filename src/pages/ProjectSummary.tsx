@@ -46,7 +46,6 @@ const completedItems = [
   { module: 'איפוס סיסמה', desc: 'Edge Function לשליחת קישור איפוס באימייל' },
 ];
 
-const TOTAL_ADDITION_HOURS = 9;
 const QA_MULTIPLIER = 1.3;
 
 const additions = [
@@ -72,8 +71,37 @@ const additions = [
   { feature: 'RLS Policies מלאות', desc: 'מדיניות אבטחה לכל הטבלאות, has_role, get_user_company' },
 ];
 
-const totalAdditionHours = TOTAL_ADDITION_HOURS;
-const withQA = Math.round(totalAdditionHours * QA_MULTIPLIER);
+// Periodic hours summary - each period starts after the previous one ends
+const hoursPeriods = [
+  {
+    label: 'תקופה ראשונה',
+    endDate: '2026-03-10',
+    devHours: 9,
+    items: [
+      'התחזות, תקלות מורחב, הזמנות שירות, התראות אוטומטיות',
+      'סידורי עבודה, מסירות רכב, בקשות אישור, דוחות',
+      'צ\'אט פנימי, ספקים, מלווים, מנויים, מבצעים',
+      'חירום, יומן מערכת, ניהול משתמשים, דשבורד נהג',
+      'מסמכים, איפוס סיסמה, RLS Policies',
+    ],
+  },
+  {
+    label: 'תקופה שנייה',
+    endDate: '2026-03-17',
+    devHours: 4,
+    items: [
+      'הזמנות עבודה לספקים – מודול שלם עם CRUD, מספור אוטומטי, שיוך ספק',
+      'דשבורד אנליטי ספקים – גרפים, מגמות, סינון מתקדם',
+      'דוחות ספקים מורחבים – ייצוא CSV, פילטרים',
+      'כפתור + צף (FAB) בכל הדפים',
+      'לקוח פרטי – תפקיד + דשבורד + Edge Function',
+      'תיקוני באגים ושיפורי UX',
+    ],
+  },
+];
+
+const totalDevHours = hoursPeriods.reduce((sum, p) => sum + p.devHours, 0);
+const totalWithQA = Math.round(totalDevHours * QA_MULTIPLIER);
 
 const ProjectSummary = () => {
   const { user } = useAuth();
@@ -126,17 +154,24 @@ const ProjectSummary = () => {
         </table>
         
         <h2>תוספות מעבר לתוכנית (${additions.length})</h2>
-        <p style="margin-bottom:8px;color:#666;">סה"כ ${TOTAL_ADDITION_HOURS} שעות פיתוח + 30% בדיקות ותיקונים = ${withQA} שעות</p>
+        <p style="margin-bottom:8px;color:#666;">סה"כ ${totalDevHours} שעות פיתוח + 30% בדיקות ותיקונים = ${totalWithQA} שעות</p>
         <table>
           <tr><th>#</th><th>תוספת</th><th>פירוט</th></tr>
           ${additions.map((item, i) => `<tr><td>${i + 1}</td><td>${item.feature}</td><td>${item.desc}</td></tr>`).join('')}
         </table>
         
+        <h3>סיכום תקופתי</h3>
+        <table>
+          <tr><th>תקופה</th><th>תאריך סיום</th><th>שעות פיתוח</th><th>כולל QA (30%)</th></tr>
+          ${hoursPeriods.map(p => `<tr><td>${p.label}</td><td>${p.endDate}</td><td>${p.devHours}</td><td>${Math.round(p.devHours * QA_MULTIPLIER)}</td></tr>`).join('')}
+          <tr style="font-weight:bold;background:#eef"><td>סה"כ</td><td></td><td>${totalDevHours}</td><td>${totalWithQA}</td></tr>
+        </table>
+
         <h3>סיכום שעות</h3>
         <div class="summary-box">
-          <div class="summary-item"><div class="num">${totalAdditionHours}</div><div class="label">שעות פיתוח נטו</div></div>
+          <div class="summary-item"><div class="num">${totalDevHours}</div><div class="label">שעות פיתוח נטו</div></div>
           <div class="summary-item"><div class="num">30%</div><div class="label">בדיקות ותיקונים</div></div>
-          <div class="summary-item"><div class="num">${withQA}</div><div class="label">סה"כ שעות</div></div>
+          <div class="summary-item"><div class="num">${totalWithQA}</div><div class="label">סה"כ שעות</div></div>
         </div>
         
         <div class="footer">מסמך זה נוצר אוטומטית | ${new Date().toLocaleDateString('he-IL')}</div>
@@ -222,7 +257,7 @@ const ProjectSummary = () => {
           <p className="text-muted-foreground mb-4">
             כל הפיצ'רים הבאים לא היו חלק מהתוכנית המקורית (שכללה דף נחיתה + Multi-Tenancy).
             <br />
-            סה"כ {TOTAL_ADDITION_HOURS} שעות פיתוח + 30% בדיקות ותיקונים = {withQA} שעות.
+            סה"כ {totalDevHours} שעות פיתוח + 30% בדיקות ותיקונים = {totalWithQA} שעות.
           </p>
 
           <div className="border border-border rounded-lg overflow-hidden overflow-x-auto">
@@ -247,23 +282,66 @@ const ProjectSummary = () => {
           </div>
         </section>
 
+        {/* Periodic hours summary */}
+        <section>
+          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+            <Clock className="h-6 w-6 text-orange-500" />
+            סיכום תקופתי של שעות
+          </h2>
+          <div className="border border-border rounded-lg overflow-hidden overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-muted">
+                  <th className="text-right p-3 font-semibold">תקופה</th>
+                  <th className="text-right p-3 font-semibold">תאריך סיום</th>
+                  <th className="text-right p-3 font-semibold">שעות פיתוח</th>
+                  <th className="text-right p-3 font-semibold">כולל QA (30%)</th>
+                  <th className="text-right p-3 font-semibold">מה נעשה</th>
+                </tr>
+              </thead>
+              <tbody>
+                {hoursPeriods.map((period, i) => (
+                  <tr key={i} className={i % 2 === 0 ? 'bg-background' : 'bg-muted/30'}>
+                    <td className="p-3 font-medium">{period.label}</td>
+                    <td className="p-3 text-muted-foreground">{period.endDate}</td>
+                    <td className="p-3 font-medium">{period.devHours}</td>
+                    <td className="p-3 font-medium">{Math.round(period.devHours * QA_MULTIPLIER)}</td>
+                    <td className="p-3 text-muted-foreground text-xs">
+                      <ul className="list-disc list-inside space-y-0.5">
+                        {period.items.map((item, j) => <li key={j}>{item}</li>)}
+                      </ul>
+                    </td>
+                  </tr>
+                ))}
+                <tr className="bg-muted font-bold">
+                  <td className="p-3">סה"כ</td>
+                  <td className="p-3"></td>
+                  <td className="p-3">{totalDevHours}</td>
+                  <td className="p-3">{totalWithQA}</td>
+                  <td className="p-3"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         {/* Summary box */}
         <section className="bg-muted/50 border border-border rounded-lg p-6">
           <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
             <Clock className="h-5 w-5 text-orange-500" />
-            סיכום שעות
+            סיכום שעות כולל
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-background rounded-lg p-4 text-center border border-border">
-              <div className="text-3xl font-bold text-green-600">{totalAdditionHours}</div>
+              <div className="text-3xl font-bold text-primary">{totalDevHours}</div>
               <div className="text-sm text-muted-foreground mt-1">שעות פיתוח נטו</div>
             </div>
             <div className="bg-background rounded-lg p-4 text-center border border-border">
-              <div className="text-3xl font-bold text-orange-500">30%</div>
+              <div className="text-3xl font-bold text-primary">30%</div>
               <div className="text-sm text-muted-foreground mt-1">בדיקות ותיקונים</div>
             </div>
             <div className="bg-background rounded-lg p-4 text-center border border-border">
-              <div className="text-3xl font-bold text-primary">{withQA}</div>
+              <div className="text-3xl font-bold text-primary">{totalWithQA}</div>
               <div className="text-sm text-muted-foreground mt-1">סה"כ שעות</div>
             </div>
           </div>
