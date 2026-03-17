@@ -97,17 +97,7 @@ export default function SupplierOrders() {
     return matchSearch && matchStatus && matchSupplier;
   });
 
-  // Group by date for calendar view
-  const grouped: Record<string, SupplierOrder[]> = {};
-  if (showCalendar) {
-    filtered.forEach(o => {
-      const day = o.execution_date
-        ? format(new Date(o.execution_date), 'EEEE, d בMMMM yyyy', { locale: he })
-        : 'ללא תאריך';
-      if (!grouped[day]) grouped[day] = [];
-      grouped[day].push(o);
-    });
-  }
+  // (calendar grouping moved to WeeklyCalendar component)
 
   const handleDelete = async (id: string) => {
     if (!confirm('האם למחוק הזמנה זו?')) return;
