@@ -332,10 +332,6 @@ export default function ServiceOrders() {
             className="flex items-center gap-2 px-4 py-3 rounded-xl bg-muted text-foreground font-bold text-sm min-h-[48px]">
             <History size={18} /> היסטוריה
           </button>
-          <button onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]">
-            <Plus size={22} /> הזמנה חדשה
-          </button>
         </div>
       </div>
 
@@ -453,6 +449,15 @@ export default function ServiceOrders() {
           })}
         </div>
       )}
+
+      {/* Floating + button */}
+      <button
+        onClick={() => setShowForm(true)}
+        className="fixed bottom-24 left-6 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-xl hover:shadow-2xl transition-all flex items-center justify-center hover:scale-110"
+        title="הזמנה חדשה"
+      >
+        <Plus size={28} />
+      </button>
     </div>
   );
 }
