@@ -51,13 +51,14 @@ export default function Reports() {
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
-    const [vRes, dRes, fRes, aRes, eRes, soRes] = await Promise.all([
+    const [vRes, dRes, fRes, aRes, eRes, soRes, woRes] = await Promise.all([
       supabase.from('vehicles').select('*'),
       supabase.from('drivers').select('*'),
       supabase.from('faults').select('*'),
       supabase.from('accidents').select('*'),
       supabase.from('expenses').select('*'),
       supabase.from('service_orders').select('*'),
+      supabase.from('supplier_work_orders').select('*'),
     ]);
     setRaw({
       vehicles: vRes.data || [],
@@ -66,6 +67,7 @@ export default function Reports() {
       accidents: aRes.data || [],
       expenses: eRes.data || [],
       serviceOrders: soRes.data || [],
+      supplierOrders: woRes.data || [],
     });
     setLoading(false);
   };
