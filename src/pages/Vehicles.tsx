@@ -270,11 +270,6 @@ export default function Vehicles() {
           ], filtered)} className="flex items-center gap-2 px-4 py-3 rounded-xl border border-border bg-card text-foreground text-sm font-bold min-h-[48px] hover:bg-muted transition-colors">
             <Download size={18} /> ייצוא
           </button>
-          {isManager && (
-            <button onClick={() => handleOpenForm()} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]">
-              <Plus size={22} /> רכב חדש
-            </button>
-          )}
         </div>
       </div>
 

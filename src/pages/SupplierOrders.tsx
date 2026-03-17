@@ -220,12 +220,6 @@ export default function SupplierOrders() {
           ], filtered)} className="flex items-center gap-1 px-3 py-2 rounded-xl bg-muted text-muted-foreground text-sm font-medium min-h-[48px]">
             <Download size={18} /> ייצוא
           </button>
-          {isManager && (
-            <button onClick={() => { setEditItem(null); setShowForm(true); }}
-              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]">
-              <Plus size={22} /> הזמנה חדשה
-            </button>
-          )}
         </div>
       </div>
 

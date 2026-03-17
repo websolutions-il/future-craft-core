@@ -196,6 +196,17 @@ export default function Suppliers() {
             </div>
           ))}
         </div>
+       )}
+
+      {/* Floating + button */}
+      {isManager && (
+        <button
+          onClick={() => { setEditItem(null); setShowForm(true); }}
+          className="fixed bottom-24 left-6 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-xl hover:shadow-2xl transition-all flex items-center justify-center hover:scale-110"
+          title="ספק חדש"
+        >
+          <Plus size={28} />
+        </button>
       )}
     </div>
   );
