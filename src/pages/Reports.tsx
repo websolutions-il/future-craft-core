@@ -583,27 +583,69 @@ export default function Reports() {
 
         {/* Vendor Summary */}
         {showReport('vendors') && (
-          <div className="card-elevated">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-primary/10 text-primary"><Package size={24} /></div>
-              <h2 className="text-xl font-bold">סיכום לפי ספקים</h2>
-            </div>
-            {vendorSummary.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">אין נתונים</p>
-            ) : (
-              <div className="space-y-3">
-                {vendorSummary.map(([name, data]) => (
-                  <div key={name} className="flex items-center justify-between bg-muted rounded-xl p-3">
-                    <span className="font-bold">{name}</span>
-                    <div className="flex items-center gap-4 text-sm">
-                      <span className="text-muted-foreground">{data.count} פריטים</span>
-                      {data.total > 0 && <span className="font-bold text-primary">₪{data.total.toLocaleString()}</span>}
-                    </div>
+          <ExpandableReport
+            expanded={expandedReport === 'vendors'}
+            onToggle={() => toggleExpand('vendors')}
+            card={
+              <ReportCard title="דוח ספקים מרכזי" icon={Package} color="bg-primary/10 text-primary"
+                expanded={expandedReport === 'vendors'}
+                stats={[
+                  { label: 'ספקים פעילים', value: vendorSummary.length.toString() },
+                  { label: 'הזמנות עבודה', value: filtered.supplierOrders.length.toString() },
+                  { label: 'סה"כ הוצאות', value: `₪${totalSupplierOrdersAmount.toLocaleString()}` },
+                ]}
+              />
+            }
+            table={vendorSummary.length > 0 ? (
+              <div className="card-elevated -mt-2 border-t-2 border-primary/20 space-y-6 animate-fade-in">
+                {/* Bar Chart - Top suppliers by expense */}
+                <div>
+                  <h3 className="text-sm font-bold text-muted-foreground mb-3">הוצאות לפי ספק (₪)</h3>
+                  <div style={{ width: '100%', height: 260 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={vendorSummary.slice(0, 8).map(([name, d]) => ({ name: name.length > 12 ? name.slice(0, 12) + '…' : name, total: d.total }))} layout="vertical" margin={{ right: 10, left: 0 }}>
+                        <XAxis type="number" tickFormatter={(v: number) => `₪${v.toLocaleString()}`} fontSize={11} />
+                        <YAxis type="category" dataKey="name" width={100} fontSize={12} tick={{ fill: 'hsl(var(--foreground))' }} />
+                        <Tooltip formatter={(v: number) => [`₪${v.toLocaleString()}`, 'סכום']} />
+                        <Bar dataKey="total" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
-                ))}
+                </div>
+
+                {/* Pie Chart - Distribution */}
+                <div>
+                  <h3 className="text-sm font-bold text-muted-foreground mb-3">התפלגות הוצאות ספקים</h3>
+                  <div style={{ width: '100%', height: 250 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={vendorSummary.slice(0, 6).map(([name, d]) => ({ name, value: d.total }))}
+                          dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }: any) => `${name.slice(0, 10)} (${(percent * 100).toFixed(0)}%)`}
+                          fontSize={11}>
+                          {vendorSummary.slice(0, 6).map((_, i) => (
+                            <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(v: number) => [`₪${v.toLocaleString()}`, 'סכום']} />
+                        <Legend fontSize={12} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Detailed table */}
+                <DetailTable headers={['ספק', 'הוצאות', 'הזמנות עבודה', 'סכום הזמנות', 'סה"כ']}
+                  rows={vendorSummary.map(([name, d]) => [
+                    name,
+                    d.count.toString(),
+                    d.workOrders.toString(),
+                    `₪${d.workOrderTotal.toLocaleString()}`,
+                    `₪${d.total.toLocaleString()}`,
+                  ])}
+                />
               </div>
-            )}
-          </div>
+            ) : null}
+          />
         )}
       </div>
 
