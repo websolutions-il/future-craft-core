@@ -123,20 +123,36 @@ export default function Reports() {
   const totalAccidentCost = filtered.accidents.reduce((s, a) => s + (a.estimated_cost || 0), 0);
 
   const vendorSummary = useMemo(() => {
-    const map: Record<string, { count: number; total: number }> = {};
+    const map: Record<string, { count: number; total: number; workOrders: number; workOrderTotal: number }> = {};
     filtered.expenses.forEach(e => {
       if (!e.vendor) return;
-      if (!map[e.vendor]) map[e.vendor] = { count: 0, total: 0 };
+      if (!map[e.vendor]) map[e.vendor] = { count: 0, total: 0, workOrders: 0, workOrderTotal: 0 };
       map[e.vendor].count++;
       map[e.vendor].total += e.amount || 0;
     });
     filtered.serviceOrders.forEach(s => {
       if (!s.vendor_name) return;
-      if (!map[s.vendor_name]) map[s.vendor_name] = { count: 0, total: 0 };
+      if (!map[s.vendor_name]) map[s.vendor_name] = { count: 0, total: 0, workOrders: 0, workOrderTotal: 0 };
       map[s.vendor_name].count++;
+    });
+    filtered.supplierOrders.forEach(o => {
+      const name = o.supplier_name;
+      if (!name) return;
+      if (!map[name]) map[name] = { count: 0, total: 0, workOrders: 0, workOrderTotal: 0 };
+      map[name].workOrders++;
+      map[name].workOrderTotal += o.approved_amount || 0;
+      map[name].total += o.approved_amount || 0;
     });
     return Object.entries(map).sort((a, b) => b[1].total - a[1].total);
   }, [filtered]);
+
+  const totalSupplierOrdersAmount = useMemo(() =>
+    filtered.supplierOrders.reduce((s: number, o: any) => s + (o.approved_amount || 0), 0), [filtered]);
+
+  const CHART_COLORS = [
+    'hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))',
+    'hsl(var(--chart-4))', 'hsl(var(--chart-5))', '#6366f1', '#ec4899', '#14b8a6',
+  ];
 
   // Build CSV content for export/share
   const buildReportText = () => {
