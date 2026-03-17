@@ -153,7 +153,7 @@ export default function SupplierOrders() {
       } else {
         throw new Error(data?.error || 'שגיאה בשליחה');
       }
-    } catch (err: any) {
+    } catch (_err) {
       toast.dismiss();
       // Fallback to mailto
       const subject = encodeURIComponent(`הזמנת עבודה ${order.order_number} - ${order.description}`);
