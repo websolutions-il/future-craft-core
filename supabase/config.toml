@@ -1,9 +1,21 @@
 project_id = "kuenhflklivaxrmqbsee"
 
+[functions.create-admin-user]
+verify_jwt = false
+
+[functions.change-user-password]
+verify_jwt = false
+
 [functions.send-password-reset]
 verify_jwt = false
 
 [functions.notify-service-order-email]
+verify_jwt = false
+
+[functions.notify-accident-email]
+verify_jwt = false
+
+[functions.send-supplier-order-email]
 verify_jwt = false
 
 [functions.paypal-charge]
