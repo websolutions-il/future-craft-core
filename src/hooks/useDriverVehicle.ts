@@ -22,7 +22,7 @@ export function useDriverVehicle() {
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
-    if (user.role !== 'driver') { setLoading(false); return; }
+    if (user.role !== 'driver' && user.role !== 'private_customer') { setLoading(false); return; }
 
     supabase
       .from('vehicles')
