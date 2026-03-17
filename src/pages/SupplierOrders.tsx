@@ -67,6 +67,7 @@ export default function SupplierOrders() {
   const [editItem, setEditItem] = useState<SupplierOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarWeek, setCalendarWeek] = useState(new Date());
 
   const loadData = async () => {
     setLoading(true);
