@@ -222,7 +222,7 @@ Deno.serve(async (req) => {
     }
 
     // === CREATE USER ===
-    if (!email || !password || !full_name || !company_name || !role) {
+    if (!email || !password || !full_name || (role !== 'private_customer' && !company_name) || !role) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
