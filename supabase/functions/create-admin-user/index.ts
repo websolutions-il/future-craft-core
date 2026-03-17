@@ -17,29 +17,32 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const supabaseUser = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      {
-        global: {
-          headers: {
-            Authorization: req.headers.get('Authorization') || '',
-          },
-        },
-      }
-    );
-
-    const {
-      data: { user: caller },
-      error: authError,
-    } = await supabaseUser.auth.getUser();
-
-    if (authError || !caller) {
+    // Validate caller using getClaims (more resilient than getUser)
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    const supabaseUser = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabaseUser.auth.getClaims(token);
+
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const callerId = claimsData.claims.sub;
 
     const { data: roleRow, error: roleError } = await supabaseAdmin
       .from('user_roles')
