@@ -100,6 +100,7 @@ export default function Reports() {
       accidents: raw.accidents.filter(a => matchCompany(a.company_name) && matchVehicle(a.vehicle_plate) && matchDriver(a.driver_name) && inDateRange(a.date)),
       expenses: raw.expenses.filter(e => matchCompany(e.company_name) && matchVehicle(e.vehicle_plate) && matchDriver(e.driver_name) && inDateRange(e.date) && (!filterVendor || e.vendor === filterVendor)),
       serviceOrders: raw.serviceOrders.filter(s => matchCompany(s.company_name) && matchVehicle(s.vehicle_plate) && matchDriver(s.driver_name) && inDateRange(s.created_at) && (!filterVendor || s.vendor_name === filterVendor)),
+      supplierOrders: raw.supplierOrders.filter(o => matchCompany(o.company_name) && inDateRange(o.created_at) && (!filterVendor || o.supplier_name === filterVendor)),
     };
   }, [raw, filterCompany, filterDateFrom, filterDateTo, filterVendor, filterVehicle, filterDriver]);
 
