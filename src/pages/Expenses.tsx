@@ -71,9 +71,6 @@ export default function Expenses() {
           ], filtered)} className="flex items-center gap-2 px-4 py-3 rounded-xl border border-border bg-card text-foreground text-sm font-bold min-h-[48px] hover:bg-muted transition-colors">
             <Download size={18} /> ייצוא
           </button>
-          <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-lg font-bold min-h-[48px]">
-            <Plus size={22} /> הוצאה חדשה
-          </button>
         </div>
       </div>
 
