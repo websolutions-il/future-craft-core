@@ -1186,49 +1186,132 @@ export type Database = {
         }
         Relationships: []
       }
+      supplier_work_orders: {
+        Row: {
+          approved_amount: number | null
+          company_name: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          execution_date: string | null
+          expense_id: string | null
+          id: string
+          notes: string | null
+          order_number: string | null
+          ordering_user: string | null
+          ordering_user_id: string | null
+          status: string
+          supplier_id: string
+          supplier_name: string | null
+          supplier_number: string | null
+          updated_at: string
+          work_type: string | null
+        }
+        Insert: {
+          approved_amount?: number | null
+          company_name?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          execution_date?: string | null
+          expense_id?: string | null
+          id?: string
+          notes?: string | null
+          order_number?: string | null
+          ordering_user?: string | null
+          ordering_user_id?: string | null
+          status?: string
+          supplier_id: string
+          supplier_name?: string | null
+          supplier_number?: string | null
+          updated_at?: string
+          work_type?: string | null
+        }
+        Update: {
+          approved_amount?: number | null
+          company_name?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          execution_date?: string | null
+          expense_id?: string | null
+          id?: string
+          notes?: string | null
+          order_number?: string | null
+          ordering_user?: string | null
+          ordering_user_id?: string | null
+          status?: string
+          supplier_id?: string
+          supplier_name?: string | null
+          supplier_number?: string | null
+          updated_at?: string
+          work_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_work_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           address: string | null
+          business_id: string | null
           company_name: string
           contact_person: string | null
           created_at: string
           created_by: string | null
           email: string | null
+          entity_type: string | null
           id: string
           name: string
           notes: string | null
           phone: string | null
           status: string
+          supplier_kind: string
+          supplier_number: string | null
           supplier_type: string
           updated_at: string
         }
         Insert: {
           address?: string | null
+          business_id?: string | null
           company_name?: string
           contact_person?: string | null
           created_at?: string
           created_by?: string | null
           email?: string | null
+          entity_type?: string | null
           id?: string
           name?: string
           notes?: string | null
           phone?: string | null
           status?: string
+          supplier_kind?: string
+          supplier_number?: string | null
           supplier_type?: string
           updated_at?: string
         }
         Update: {
           address?: string | null
+          business_id?: string | null
           company_name?: string
           contact_person?: string | null
           created_at?: string
           created_by?: string | null
           email?: string | null
+          entity_type?: string | null
           id?: string
           name?: string
           notes?: string | null
           phone?: string | null
           status?: string
+          supplier_kind?: string
+          supplier_number?: string | null
           supplier_type?: string
           updated_at?: string
         }
