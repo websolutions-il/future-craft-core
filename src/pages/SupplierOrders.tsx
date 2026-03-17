@@ -278,27 +278,17 @@ export default function SupplierOrders() {
           <p className="text-xl">אין הזמנות עבודה</p>
         </div>
       ) : showCalendar ? (
-        // Calendar/grouped view
-        <div className="space-y-6">
-          {Object.entries(grouped).map(([day, dayOrders]) => (
-            <div key={day}>
-              <div className="flex items-center gap-2 mb-3">
-                <Calendar size={16} className="text-primary" />
-                <h2 className="text-sm font-bold text-muted-foreground">{day}</h2>
-                <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-lg">{dayOrders.length}</span>
-              </div>
-              <div className="space-y-3">
-                {dayOrders.map(o => <OrderCard key={o.id} order={o} isManager={isManager}
-                  onEdit={() => { setEditItem(o); setShowForm(true); }}
-                  onDelete={() => handleDelete(o.id)}
-                  onStatusChange={handleStatusChange}
-                  onEmail={() => handleSendEmail(o)}
-                  onPdf={() => handleExportPdf(o)}
-                />)}
-              </div>
-            </div>
-          ))}
-        </div>
+        <WeeklyCalendar
+          orders={filtered}
+          week={calendarWeek}
+          onWeekChange={setCalendarWeek}
+          isManager={isManager}
+          onEdit={(o) => { setEditItem(o); setShowForm(true); }}
+          onDelete={(id) => handleDelete(id)}
+          onStatusChange={handleStatusChange}
+          onEmail={handleSendEmail}
+          onPdf={handleExportPdf}
+        />
       ) : (
         <div className="space-y-3">
           {filtered.map(o => <OrderCard key={o.id} order={o} isManager={isManager}
