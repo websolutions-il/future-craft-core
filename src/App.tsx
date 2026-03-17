@@ -117,6 +117,7 @@ function AppRoutes() {
         <Route path="/alert-settings" element={<AlertSettings />} />
         <Route path="/approval-settings" element={<ApprovalSettings />} />
         <Route path="/suppliers" element={<Suppliers />} />
+        <Route path="/supplier-orders" element={<SupplierOrders />} />
         <Route path="/email-templates" element={<EmailTemplates />} />
         <Route path="/promotions" element={<Promotions />} />
         <Route path="/internal-chat" element={<InternalChat />} />
