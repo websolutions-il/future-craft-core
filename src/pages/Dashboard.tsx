@@ -655,7 +655,7 @@ function FleetManagerDashboard({
   const [showFleetCreatePassword, setShowFleetCreatePassword] = useState(false);
   const [fleetForm, setFleetForm] = useState<CreateUserFormState>({
     email: '', password: '', fullName: '', phone: '',
-    companyName: user?.company_name || '', role: 'driver', isActive: false, userNumber: '',
+    companyName: user?.company_name || '', role: 'driver', isActive: false, userNumber: '', noEmail: false,
   });
   const [fleetCompanyPickerOpen, setFleetCompanyPickerOpen] = useState(false);
 
