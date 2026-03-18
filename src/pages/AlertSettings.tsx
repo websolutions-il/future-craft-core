@@ -123,7 +123,16 @@ export default function AlertSettings() {
                   <span className="text-sm font-medium">חובה להצמיד נהג/משתמש לרכב</span>
                 </label>
                 {!config.require_driver_assignment && (
-                  <p className="text-xs text-muted-foreground mr-8">ניתן להכניס רכבים ללא הצמדת נהג או משתמש</p>
+                  <div className="mr-8 space-y-2">
+                    <p className="text-xs text-muted-foreground">ניתן להכניס רכבים ללא הצמדת נהג או משתמש, עד למכסה שהוגדרה</p>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">כמות רכבים ללא חובת הצמדה</label>
+                      <input type="number" value={config.max_vehicles_without_assignment} min={0} max={9999}
+                        onChange={e => updateConfig(config.id, 'max_vehicles_without_assignment', parseInt(e.target.value) || 0)}
+                        className="w-32 p-3 rounded-xl border-2 border-input bg-background text-sm focus:border-primary focus:outline-none" />
+                      <p className="text-xs text-muted-foreground mt-1">0 = ללא הגבלה (כל הרכבים פטורים)</p>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
