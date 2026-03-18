@@ -35,7 +35,10 @@ export default function Login() {
         setSuccess('נרשמת בהצלחה! החשבון ממתין לאישור מנהל המערכת.');
       }
     } else {
-      const { error } = await login(email, password);
+      const loginEmail = loginByPhone
+        ? `${email.replace(/[^0-9]/g, '')}@nomail.fleet.local`
+        : email;
+      const { error } = await login(loginEmail, password);
       if (error) setError('שם משתמש או סיסמה שגויים');
     }
     setLoading(false);
