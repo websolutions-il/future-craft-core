@@ -228,22 +228,22 @@ export function DesktopSidebar() {
                 <ChevronsUpDown size={14} className="shrink-0 opacity-60" />
               </button>
             </PopoverTrigger>
-            <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[60]" align="start">
-              <Command dir="rtl">
-                <CommandInput placeholder="חיפוש חברה..." />
-                <CommandList>
-                  <CommandEmpty>לא נמצאו חברות</CommandEmpty>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[60] bg-[hsl(218,58%,12%)] border-primary-foreground/20 rounded-xl shadow-2xl" align="start">
+              <Command dir="rtl" className="bg-transparent text-primary-foreground">
+                <CommandInput placeholder="חיפוש חברה..." className="border-primary-foreground/15 text-primary-foreground placeholder:text-primary-foreground/40" />
+                <CommandList className="max-h-[260px]">
+                  <CommandEmpty className="text-primary-foreground/50 py-4 text-center text-sm">לא נמצאו חברות</CommandEmpty>
                   <CommandGroup>
-                    <CommandItem value="__all__" onSelect={() => { setSelectedCompany(null); setCompanyPickerOpen(false); }} className="flex items-center justify-between">
+                    <CommandItem value="__all__" onSelect={() => { setSelectedCompany(null); setCompanyPickerOpen(false); }} className="flex items-center justify-between text-primary-foreground hover:bg-primary-foreground/10 data-[selected=true]:bg-primary-foreground/15 data-[selected=true]:text-primary-foreground rounded-lg mx-1">
                       <Check size={16} className={cn("shrink-0", !selectedCompany ? "opacity-100" : "opacity-0")} />
                       <span className="flex-1 text-right font-medium">כל החברות</span>
                     </CommandItem>
                     {companyOptions.map((option) => (
-                      <CommandItem key={option.name} value={`${option.name} ${option.businessId}`} onSelect={() => { setSelectedCompany(option.name); setCompanyPickerOpen(false); }} className="flex items-center justify-between">
+                      <CommandItem key={option.name} value={`${option.name} ${option.businessId}`} onSelect={() => { setSelectedCompany(option.name); setCompanyPickerOpen(false); }} className="flex items-center justify-between text-primary-foreground hover:bg-primary-foreground/10 data-[selected=true]:bg-primary-foreground/15 data-[selected=true]:text-primary-foreground rounded-lg mx-1">
                         <Check size={16} className={cn("shrink-0", selectedCompany === option.name ? "opacity-100" : "opacity-0")} />
                         <div className="flex-1 text-right">
                           <span className="font-medium">{option.name}</span>
-                          {option.businessId && <span className="text-xs opacity-60 mr-2">({option.businessId})</span>}
+                          {option.businessId && <span className="text-xs opacity-40 mr-2">({option.businessId})</span>}
                         </div>
                       </CommandItem>
                     ))}
