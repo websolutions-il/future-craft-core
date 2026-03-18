@@ -11,6 +11,8 @@ interface CompanyAlertConfig {
   reminder_30_days: boolean;
   reminder_7_days: boolean;
   reminder_1_day: boolean;
+  require_driver_assignment: boolean;
+  vehicle_approval_required: boolean;
 }
 
 export default function AlertSettings() {
