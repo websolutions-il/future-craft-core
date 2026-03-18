@@ -38,6 +38,8 @@ export default function AlertSettings() {
       reminder_30_days: config.reminder_30_days,
       reminder_7_days: config.reminder_7_days,
       reminder_1_day: config.reminder_1_day,
+      require_driver_assignment: config.require_driver_assignment,
+      vehicle_approval_required: config.vehicle_approval_required,
     }).eq('id', config.id);
     if (error) toast.error('שגיאה בשמירה');
     else toast.success(`הגדרות ${config.company_name} עודכנו`);
