@@ -132,6 +132,7 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
     role: 'fleet_manager',
     isActive: true,
     userNumber: '',
+    noEmail: false,
   });
   const [createCompanyOptions, setCreateCompanyOptions] = useState<{ name: string; businessId: string }[]>([]);
   const [createCompanyPickerOpen, setCreateCompanyPickerOpen] = useState(false);
