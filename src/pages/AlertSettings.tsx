@@ -11,6 +11,8 @@ interface CompanyAlertConfig {
   reminder_30_days: boolean;
   reminder_7_days: boolean;
   reminder_1_day: boolean;
+  require_driver_assignment: boolean;
+  vehicle_approval_required: boolean;
 }
 
 export default function AlertSettings() {
@@ -25,7 +27,7 @@ export default function AlertSettings() {
 
   const loadConfigs = async () => {
     setLoading(true);
-    const { data } = await supabase.from('company_settings').select('id, company_name, alert_days_before, reminder_30_days, reminder_7_days, reminder_1_day');
+    const { data } = await supabase.from('company_settings').select('id, company_name, alert_days_before, reminder_30_days, reminder_7_days, reminder_1_day, require_driver_assignment, vehicle_approval_required');
     if (data) setConfigs(data as CompanyAlertConfig[]);
     setLoading(false);
   };
@@ -36,6 +38,8 @@ export default function AlertSettings() {
       reminder_30_days: config.reminder_30_days,
       reminder_7_days: config.reminder_7_days,
       reminder_1_day: config.reminder_1_day,
+      require_driver_assignment: config.require_driver_assignment,
+      vehicle_approval_required: config.vehicle_approval_required,
     }).eq('id', config.id);
     if (error) toast.error('שגיאה בשמירה');
     else toast.success(`הגדרות ${config.company_name} עודכנו`);
@@ -56,8 +60,8 @@ export default function AlertSettings() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <h1 className="page-header flex items-center gap-3"><Bell size={28} /> הגדרות התראות</h1>
-      <p className="text-muted-foreground">הגדר תזכורות אוטומטיות לפי חברה — 30 יום, 7 ימים ויום לפני תפוגה.</p>
+      <h1 className="page-header flex items-center gap-3"><Bell size={28} /> הגדרות חברות</h1>
+      <p className="text-muted-foreground">הגדרות התראות, אישורים והצמדת נהגים לפי חברה.</p>
 
       {loading ? (
         <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" /></div>
@@ -97,6 +101,28 @@ export default function AlertSettings() {
                     <span className="text-sm font-medium">{label}</span>
                   </label>
                 ))}
+              </div>
+
+              {/* Company-level settings */}
+              <div className="border-t border-border pt-4 space-y-2">
+                <p className="text-sm font-bold">הגדרות רכב:</p>
+                <label className="flex items-center gap-3 p-3 rounded-xl bg-muted cursor-pointer">
+                  <input type="checkbox"
+                    checked={config.vehicle_approval_required}
+                    onChange={e => updateConfig(config.id, 'vehicle_approval_required', e.target.checked)}
+                    className="rounded" />
+                  <span className="text-sm font-medium">אישור מנהל על נדרש להפעלת רכב חדש</span>
+                </label>
+                <label className="flex items-center gap-3 p-3 rounded-xl bg-muted cursor-pointer">
+                  <input type="checkbox"
+                    checked={config.require_driver_assignment}
+                    onChange={e => updateConfig(config.id, 'require_driver_assignment', e.target.checked)}
+                    className="rounded" />
+                  <span className="text-sm font-medium">חובה להצמיד נהג/משתמש לרכב</span>
+                </label>
+                {!config.require_driver_assignment && (
+                  <p className="text-xs text-muted-foreground mr-8">ניתן להכניס רכבים ללא הצמדת נהג או משתמש</p>
+                )}
               </div>
             </div>
           ))}
