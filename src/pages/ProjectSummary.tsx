@@ -70,6 +70,7 @@ const additions = [
   { feature: 'מסמכים + Storage', desc: 'העלאה ל-Storage, קטגוריות, שיוך לרכב/נהג' },
   { feature: 'איפוס סיסמה באימייל', desc: 'Edge Function עם Resend לשליחת קישור איפוס' },
   { feature: 'RLS Policies מלאות', desc: 'מדיניות אבטחה לכל הטבלאות, has_role, get_user_company' },
+  { feature: 'הצמדת נהג גמישה + מכסה', desc: 'הגדרה ברמת לקוח: חובה/לא חובה להצמיד נהג לרכב, מכסת רכבים פטורים, שיוך חלקי' },
 ];
 
 // Periodic hours summary - each period starts after the previous one ends
