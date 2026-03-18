@@ -441,13 +441,36 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
 
   useEffect(() => {
     const checkSetting = async () => {
-      const { data } = await supabase
+      const companyName = user?.company_name || '';
+      const { data: settings } = await supabase
         .from('company_settings')
-        .select('require_driver_assignment')
-        .eq('company_name', user?.company_name || '')
+        .select('require_driver_assignment, max_vehicles_without_assignment')
+        .eq('company_name', companyName)
         .maybeSingle();
-      if (data && data.require_driver_assignment === false) {
-        setDriverRequired(false);
+      
+      if (settings && settings.require_driver_assignment === false) {
+        const maxExempt = settings.max_vehicles_without_assignment || 0;
+        
+        if (maxExempt === 0) {
+          // 0 = unlimited exempt vehicles
+          setDriverRequired(false);
+        } else {
+          // Count existing vehicles without driver for this company
+          const { count } = await supabase
+            .from('vehicles')
+            .select('id', { count: 'exact', head: true })
+            .eq('company_name', companyName)
+            .is('assigned_driver_id', null);
+          
+          const currentExempt = count || 0;
+          // If editing a vehicle that already has no driver, it doesn't count against limit
+          const isEditingExempt = isEdit && !vehicle?.assigned_driver_id;
+          const effectiveCount = isEditingExempt ? currentExempt - 1 : currentExempt;
+          
+          if (effectiveCount < maxExempt) {
+            setDriverRequired(false);
+          }
+        }
       }
     };
     checkSetting();
