@@ -693,7 +693,7 @@ function FleetManagerDashboard({
       return;
     }
     toast({ title: '✅ הבקשה נשלחה', description: 'המשתמש נוצר בסטטוס "ממתין לאישור". מנהל על יקבל התראה ויאשר.' });
-    setFleetForm({ email: '', password: '', fullName: '', phone: '', companyName: user?.company_name || '', role: 'driver', isActive: false, userNumber: '' });
+    setFleetForm({ email: '', password: '', fullName: '', phone: '', companyName: user?.company_name || '', role: 'driver', isActive: false, userNumber: '', noEmail: false });
     setShowFleetCreateUser(false);
   };
 
