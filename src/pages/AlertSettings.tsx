@@ -12,6 +12,7 @@ interface CompanyAlertConfig {
   reminder_7_days: boolean;
   reminder_1_day: boolean;
   require_driver_assignment: boolean;
+  max_vehicles_without_assignment: number;
   vehicle_approval_required: boolean;
 }
 
@@ -27,7 +28,7 @@ export default function AlertSettings() {
 
   const loadConfigs = async () => {
     setLoading(true);
-    const { data } = await supabase.from('company_settings').select('id, company_name, alert_days_before, reminder_30_days, reminder_7_days, reminder_1_day, require_driver_assignment, vehicle_approval_required');
+    const { data } = await supabase.from('company_settings').select('id, company_name, alert_days_before, reminder_30_days, reminder_7_days, reminder_1_day, require_driver_assignment, max_vehicles_without_assignment, vehicle_approval_required');
     if (data) setConfigs(data as CompanyAlertConfig[]);
     setLoading(false);
   };
@@ -39,6 +40,7 @@ export default function AlertSettings() {
       reminder_7_days: config.reminder_7_days,
       reminder_1_day: config.reminder_1_day,
       require_driver_assignment: config.require_driver_assignment,
+      max_vehicles_without_assignment: config.max_vehicles_without_assignment,
       vehicle_approval_required: config.vehicle_approval_required,
     }).eq('id', config.id);
     if (error) toast.error('שגיאה בשמירה');
@@ -121,7 +123,16 @@ export default function AlertSettings() {
                   <span className="text-sm font-medium">חובה להצמיד נהג/משתמש לרכב</span>
                 </label>
                 {!config.require_driver_assignment && (
-                  <p className="text-xs text-muted-foreground mr-8">ניתן להכניס רכבים ללא הצמדת נהג או משתמש</p>
+                  <div className="mr-8 space-y-2">
+                    <p className="text-xs text-muted-foreground">ניתן להכניס רכבים ללא הצמדת נהג או משתמש, עד למכסה שהוגדרה</p>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">כמות רכבים ללא חובת הצמדה</label>
+                      <input type="number" value={config.max_vehicles_without_assignment} min={0} max={9999}
+                        onChange={e => updateConfig(config.id, 'max_vehicles_without_assignment', parseInt(e.target.value) || 0)}
+                        className="w-32 p-3 rounded-xl border-2 border-input bg-background text-sm focus:border-primary focus:outline-none" />
+                      <p className="text-xs text-muted-foreground mt-1">0 = ללא הגבלה (כל הרכבים פטורים)</p>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

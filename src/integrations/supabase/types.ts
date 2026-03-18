@@ -176,6 +176,7 @@ export type Database = {
           company_name: string
           created_at: string | null
           id: string
+          max_vehicles_without_assignment: number
           reminder_1_day: boolean | null
           reminder_30_days: boolean | null
           reminder_7_days: boolean | null
@@ -192,6 +193,7 @@ export type Database = {
           company_name: string
           created_at?: string | null
           id?: string
+          max_vehicles_without_assignment?: number
           reminder_1_day?: boolean | null
           reminder_30_days?: boolean | null
           reminder_7_days?: boolean | null
@@ -208,6 +210,7 @@ export type Database = {
           company_name?: string
           created_at?: string | null
           id?: string
+          max_vehicles_without_assignment?: number
           reminder_1_day?: boolean | null
           reminder_30_days?: boolean | null
           reminder_7_days?: boolean | null
