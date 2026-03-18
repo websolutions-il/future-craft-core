@@ -17,6 +17,7 @@ interface CreateUserFormState {
   role: AppRole;
   isActive: boolean;
   userNumber: string;
+  noEmail: boolean;
 }
 
 interface CreateUserModalProps {
