@@ -43,7 +43,7 @@ export default function AttachCar() {
   useEffect(() => { loadData(); }, []);
 
   const handleAssign = async () => {
-    if (!selectedVehicle || !selectedDriver) return;
+    if (!selectedVehicle || (!selectedDriver && !selectedUser)) return;
     setLoading(true);
     const { error } = await supabase
       .from('vehicles')
