@@ -40,6 +40,7 @@ export default function AlertSettings() {
       reminder_7_days: config.reminder_7_days,
       reminder_1_day: config.reminder_1_day,
       require_driver_assignment: config.require_driver_assignment,
+      max_vehicles_without_assignment: config.max_vehicles_without_assignment,
       vehicle_approval_required: config.vehicle_approval_required,
     }).eq('id', config.id);
     if (error) toast.error('שגיאה בשמירה');
