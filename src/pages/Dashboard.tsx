@@ -132,6 +132,7 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
     role: 'fleet_manager',
     isActive: true,
     userNumber: '',
+    noEmail: false,
   });
   const [createCompanyOptions, setCreateCompanyOptions] = useState<{ name: string; businessId: string }[]>([]);
   const [createCompanyPickerOpen, setCreateCompanyPickerOpen] = useState(false);
@@ -223,12 +224,16 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
   const submitCreateUser = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!form.email || !form.password || !form.fullName || (form.role !== 'private_customer' && !form.companyName)) {
+    if ((!form.noEmail && !form.email) || !form.password || !form.fullName || (form.role !== 'private_customer' && !form.companyName)) {
       toast({
         title: 'חסרים פרטים',
         description: 'יש למלא את כל השדות לפני יצירת המשתמש.',
         variant: 'destructive',
       });
+      return;
+    }
+    if (form.noEmail && !form.phone) {
+      toast({ title: 'חסר טלפון', description: 'כשאין אימייל, יש למלא מספר טלפון.', variant: 'destructive' });
       return;
     }
 
@@ -248,9 +253,12 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
     }
 
     setCreatingUser(true);
+    const effectiveEmail = form.noEmail
+      ? `${form.phone.replace(/[^0-9]/g, '')}@nomail.fleet.local`
+      : form.email;
     const { data, error } = await supabase.functions.invoke('create-admin-user', {
       body: {
-        email: form.email,
+        email: effectiveEmail,
         password: form.password,
         full_name: form.fullName,
         phone: form.phone,
@@ -283,7 +291,7 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
       description: `מזהה משתמש: ${data?.user_id?.slice(0, 8) || '-'} | ניתן להתחבר עם הפרטים החדשים מיד.`,
     });
 
-    setForm({ email: '', password: '', fullName: '', phone: '', companyName: '', role: 'fleet_manager', isActive: true, userNumber: '' });
+    setForm({ email: '', password: '', fullName: '', phone: '', companyName: '', role: 'fleet_manager', isActive: true, userNumber: '', noEmail: false });
     setShowCreateUserModal(false);
     loadSuperAdminStats();
   };
@@ -651,7 +659,7 @@ function FleetManagerDashboard({
   const [showFleetCreatePassword, setShowFleetCreatePassword] = useState(false);
   const [fleetForm, setFleetForm] = useState<CreateUserFormState>({
     email: '', password: '', fullName: '', phone: '',
-    companyName: user?.company_name || '', role: 'driver', isActive: false, userNumber: '',
+    companyName: user?.company_name || '', role: 'driver', isActive: false, userNumber: '', noEmail: false,
   });
   const [fleetCompanyPickerOpen, setFleetCompanyPickerOpen] = useState(false);
 
@@ -659,14 +667,21 @@ function FleetManagerDashboard({
 
   const submitFleetCreateUser = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!fleetForm.email || !fleetForm.password || !fleetForm.fullName) {
+    if ((!fleetForm.noEmail && !fleetForm.email) || !fleetForm.password || !fleetForm.fullName) {
       toast({ title: 'חסרים פרטים', description: 'יש למלא את כל השדות.', variant: 'destructive' });
       return;
     }
+    if (fleetForm.noEmail && !fleetForm.phone) {
+      toast({ title: 'חסר טלפון', description: 'כשאין אימייל, יש למלא מספר טלפון.', variant: 'destructive' });
+      return;
+    }
     setFleetCreatingUser(true);
+    const effectiveEmail = fleetForm.noEmail
+      ? `${fleetForm.phone.replace(/[^0-9]/g, '')}@nomail.fleet.local`
+      : fleetForm.email;
     const { data, error } = await supabase.functions.invoke('create-admin-user', {
       body: {
-        email: fleetForm.email, password: fleetForm.password, full_name: fleetForm.fullName,
+        email: effectiveEmail, password: fleetForm.password, full_name: fleetForm.fullName,
         phone: fleetForm.phone, company_name: user?.company_name || '',
         role: fleetForm.role, is_active: false, user_number: fleetForm.userNumber || null,
       },
@@ -682,7 +697,7 @@ function FleetManagerDashboard({
       return;
     }
     toast({ title: '✅ הבקשה נשלחה', description: 'המשתמש נוצר בסטטוס "ממתין לאישור". מנהל על יקבל התראה ויאשר.' });
-    setFleetForm({ email: '', password: '', fullName: '', phone: '', companyName: user?.company_name || '', role: 'driver', isActive: false, userNumber: '' });
+    setFleetForm({ email: '', password: '', fullName: '', phone: '', companyName: user?.company_name || '', role: 'driver', isActive: false, userNumber: '', noEmail: false });
     setShowFleetCreateUser(false);
   };
 

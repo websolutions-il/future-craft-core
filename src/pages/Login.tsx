@@ -17,6 +17,7 @@ export default function Login() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loginByPhone, setLoginByPhone] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +35,10 @@ export default function Login() {
         setSuccess('נרשמת בהצלחה! החשבון ממתין לאישור מנהל המערכת.');
       }
     } else {
-      const { error } = await login(email, password);
+      const loginEmail = loginByPhone
+        ? `${email.replace(/[^0-9]/g, '')}@nomail.fleet.local`
+        : email;
+      const { error } = await login(loginEmail, password);
       if (error) setError('שם משתמש או סיסמה שגויים');
     }
     setLoading(false);
@@ -88,11 +92,33 @@ export default function Login() {
             </>
           )}
 
+          {!isSignup && (
+            <div className="flex items-center gap-3 justify-center">
+              <button type="button" onClick={() => { setLoginByPhone(false); setEmail(''); }}
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${!loginByPhone ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                אימייל
+              </button>
+              <button type="button" onClick={() => { setLoginByPhone(true); setEmail(''); }}
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${loginByPhone ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                📱 טלפון
+              </button>
+            </div>
+          )}
+
           <div>
-            <label className="block text-lg font-medium mb-2">אימייל</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
+            <label className="block text-lg font-medium mb-2">
+              {!isSignup && loginByPhone ? 'מספר טלפון' : 'אימייל'}
+            </label>
+            <input
+              type={!isSignup && loginByPhone ? 'tel' : 'email'}
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
               className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none transition-colors"
-              placeholder="הכנס אימייל..." dir="ltr" style={{ textAlign: 'right' }} />
+              placeholder={!isSignup && loginByPhone ? '050-1234567' : 'הכנס אימייל...'}
+              dir="ltr"
+              style={{ textAlign: 'right' }}
+            />
           </div>
 
           <div>

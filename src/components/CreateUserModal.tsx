@@ -17,6 +17,7 @@ interface CreateUserFormState {
   role: AppRole;
   isActive: boolean;
   userNumber: string;
+  noEmail: boolean;
 }
 
 interface CreateUserModalProps {
@@ -94,15 +95,34 @@ export default function CreateUserModal({
               className={inputClass}
               required
             />
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-              placeholder="אימייל"
-              className={cn(inputClass, "text-left")}
-              dir="ltr"
-              required
-            />
+            {/* No email toggle */}
+            <div className="flex items-center gap-3 p-3 rounded-xl border border-input bg-background">
+              <input
+                type="checkbox"
+                id="noEmail"
+                checked={form.noEmail}
+                onChange={(e) => setForm((prev) => ({
+                  ...prev,
+                  noEmail: e.target.checked,
+                  email: e.target.checked ? '' : prev.email,
+                }))}
+                className="w-5 h-5 accent-primary"
+              />
+              <label htmlFor="noEmail" className="text-sm font-medium cursor-pointer flex-1 text-right">
+                📱 אין לנהג אימייל – זיהוי לפי טלפון נייד
+              </label>
+            </div>
+            {!form.noEmail && (
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+                placeholder="אימייל"
+                className={cn(inputClass, "text-left")}
+                dir="ltr"
+                required
+              />
+            )}
             <div className="relative">
               <input
                 type={showCreatePassword ? 'text' : 'password'}
@@ -120,9 +140,10 @@ export default function CreateUserModal({
             <input
               value={form.phone}
               onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
-              placeholder="מספר טלפון"
+              placeholder={form.noEmail ? "מספר טלפון (חובה) *" : "מספר טלפון"}
               className={cn(inputClass, "text-left")}
               dir="ltr"
+              required={form.noEmail}
             />
 
             {/* Company picker - hidden for private customers */}
