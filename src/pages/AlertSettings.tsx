@@ -60,8 +60,8 @@ export default function AlertSettings() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <h1 className="page-header flex items-center gap-3"><Bell size={28} /> הגדרות התראות</h1>
-      <p className="text-muted-foreground">הגדר תזכורות אוטומטיות לפי חברה — 30 יום, 7 ימים ויום לפני תפוגה.</p>
+      <h1 className="page-header flex items-center gap-3"><Bell size={28} /> הגדרות חברות</h1>
+      <p className="text-muted-foreground">הגדרות התראות, אישורים והצמדת נהגים לפי חברה.</p>
 
       {loading ? (
         <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" /></div>
