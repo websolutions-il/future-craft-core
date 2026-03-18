@@ -436,8 +436,25 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
   const [insuranceDocUrl, setInsuranceDocUrl] = useState(vehicle?.insurance_doc_url || '');
   const [compInsDocUrl, setCompInsDocUrl] = useState(vehicle?.comprehensive_insurance_doc_url || '');
 
+  // Company setting: is driver assignment required?
+  const [driverRequired, setDriverRequired] = useState(true);
+
+  useEffect(() => {
+    const checkSetting = async () => {
+      const { data } = await supabase
+        .from('company_settings')
+        .select('require_driver_assignment')
+        .eq('company_name', user?.company_name || '')
+        .maybeSingle();
+      if (data && data.require_driver_assignment === false) {
+        setDriverRequired(false);
+      }
+    };
+    checkSetting();
+  }, [user?.company_name]);
+
   // Validation
-  const allFieldsFilled = licensePlate && manufacturer && model && year && vehicleType && odometer && assignedDriver;
+  const allFieldsFilled = licensePlate && manufacturer && model && year && vehicleType && odometer && (driverRequired ? assignedDriver : true);
   const allDocsFilled = isEdit || (licenseDocUrl && insuranceDocUrl && compInsDocUrl);
   const isValid = allFieldsFilled && allDocsFilled;
 
