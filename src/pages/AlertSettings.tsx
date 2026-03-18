@@ -12,6 +12,7 @@ interface CompanyAlertConfig {
   reminder_7_days: boolean;
   reminder_1_day: boolean;
   require_driver_assignment: boolean;
+  max_vehicles_without_assignment: number;
   vehicle_approval_required: boolean;
 }
 
