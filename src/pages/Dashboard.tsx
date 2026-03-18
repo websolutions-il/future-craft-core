@@ -663,14 +663,21 @@ function FleetManagerDashboard({
 
   const submitFleetCreateUser = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!fleetForm.email || !fleetForm.password || !fleetForm.fullName) {
+    if ((!fleetForm.noEmail && !fleetForm.email) || !fleetForm.password || !fleetForm.fullName) {
       toast({ title: 'חסרים פרטים', description: 'יש למלא את כל השדות.', variant: 'destructive' });
       return;
     }
+    if (fleetForm.noEmail && !fleetForm.phone) {
+      toast({ title: 'חסר טלפון', description: 'כשאין אימייל, יש למלא מספר טלפון.', variant: 'destructive' });
+      return;
+    }
     setFleetCreatingUser(true);
+    const effectiveEmail = fleetForm.noEmail
+      ? `${fleetForm.phone.replace(/[^0-9]/g, '')}@nomail.fleet.local`
+      : fleetForm.email;
     const { data, error } = await supabase.functions.invoke('create-admin-user', {
       body: {
-        email: fleetForm.email, password: fleetForm.password, full_name: fleetForm.fullName,
+        email: effectiveEmail, password: fleetForm.password, full_name: fleetForm.fullName,
         phone: fleetForm.phone, company_name: user?.company_name || '',
         role: fleetForm.role, is_active: false, user_number: fleetForm.userNumber || null,
       },
