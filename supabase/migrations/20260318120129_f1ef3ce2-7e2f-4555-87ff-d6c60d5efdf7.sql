@@ -1,0 +1,1 @@
+ALTER TABLE public.company_settings ADD COLUMN IF NOT EXISTS max_vehicles_without_assignment integer NOT NULL DEFAULT 0;
