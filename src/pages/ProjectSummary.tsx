@@ -44,6 +44,7 @@ const completedItems = [
   { module: 'רספונסיבי', desc: 'תמיכה מלאה במובייל כולל ניווט תחתון' },
   { module: 'RTL', desc: 'תמיכה מלאה בעברית מימין לשמאל' },
   { module: 'איפוס סיסמה', desc: 'Edge Function לשליחת קישור איפוס באימייל' },
+  { module: 'הצמדת נהג גמישה', desc: 'הגדרת חובה/אופציונלי להצמדת נהג ומשתמש לרכב ברמת לקוח, מכסת רכבים פטורים' },
 ];
 
 const QA_MULTIPLIER = 1.3;
@@ -69,6 +70,7 @@ const additions = [
   { feature: 'מסמכים + Storage', desc: 'העלאה ל-Storage, קטגוריות, שיוך לרכב/נהג' },
   { feature: 'איפוס סיסמה באימייל', desc: 'Edge Function עם Resend לשליחת קישור איפוס' },
   { feature: 'RLS Policies מלאות', desc: 'מדיניות אבטחה לכל הטבלאות, has_role, get_user_company' },
+  { feature: 'הצמדת נהג גמישה + מכסה', desc: 'הגדרה ברמת לקוח: חובה/לא חובה להצמיד נהג לרכב, מכסת רכבים פטורים, שיוך חלקי' },
 ];
 
 // Periodic hours summary - each period starts after the previous one ends
@@ -96,6 +98,16 @@ const hoursPeriods = [
       'כפתור + צף (FAB) בכל הדפים',
       'לקוח פרטי – תפקיד + דשבורד + Edge Function',
       'תיקוני באגים ושיפורי UX',
+    ],
+  },
+  {
+    label: 'תקופה שלישית',
+    endDate: '2026-03-18',
+    devHours: 1,
+    items: [
+      'הצמדת נהג גמישה – הגדרה ברמת לקוח (חובה/לא חובה)',
+      'מכסת רכבים פטורים מהצמדה – שדה כמותי ברמת חברה',
+      'ולידציה דינמית בטופס רכבים לפי מכסה והגדרה',
     ],
   },
 ];
