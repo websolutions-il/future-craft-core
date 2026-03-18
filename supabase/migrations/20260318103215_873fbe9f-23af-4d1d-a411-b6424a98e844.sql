@@ -1,0 +1,1 @@
+ALTER TABLE public.company_settings ADD COLUMN IF NOT EXISTS require_driver_assignment boolean NOT NULL DEFAULT true;
