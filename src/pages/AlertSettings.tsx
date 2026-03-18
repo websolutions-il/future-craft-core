@@ -102,6 +102,28 @@ export default function AlertSettings() {
                   </label>
                 ))}
               </div>
+
+              {/* Company-level settings */}
+              <div className="border-t border-border pt-4 space-y-2">
+                <p className="text-sm font-bold">הגדרות רכב:</p>
+                <label className="flex items-center gap-3 p-3 rounded-xl bg-muted cursor-pointer">
+                  <input type="checkbox"
+                    checked={config.vehicle_approval_required}
+                    onChange={e => updateConfig(config.id, 'vehicle_approval_required', e.target.checked)}
+                    className="rounded" />
+                  <span className="text-sm font-medium">אישור מנהל על נדרש להפעלת רכב חדש</span>
+                </label>
+                <label className="flex items-center gap-3 p-3 rounded-xl bg-muted cursor-pointer">
+                  <input type="checkbox"
+                    checked={config.require_driver_assignment}
+                    onChange={e => updateConfig(config.id, 'require_driver_assignment', e.target.checked)}
+                    className="rounded" />
+                  <span className="text-sm font-medium">חובה להצמיד נהג/משתמש לרכב</span>
+                </label>
+                {!config.require_driver_assignment && (
+                  <p className="text-xs text-muted-foreground mr-8">ניתן להכניס רכבים ללא הצמדת נהג או משתמש</p>
+                )}
+              </div>
             </div>
           ))}
         </div>
