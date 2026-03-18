@@ -287,7 +287,7 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
       description: `מזהה משתמש: ${data?.user_id?.slice(0, 8) || '-'} | ניתן להתחבר עם הפרטים החדשים מיד.`,
     });
 
-    setForm({ email: '', password: '', fullName: '', phone: '', companyName: '', role: 'fleet_manager', isActive: true, userNumber: '' });
+    setForm({ email: '', password: '', fullName: '', phone: '', companyName: '', role: 'fleet_manager', isActive: true, userNumber: '', noEmail: false });
     setShowCreateUserModal(false);
     loadSuperAdminStats();
   };
