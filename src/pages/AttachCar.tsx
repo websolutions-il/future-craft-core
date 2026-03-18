@@ -149,8 +149,8 @@ export default function AttachCar() {
           </div>
           <button
             onClick={handleAssign}
-            disabled={!selectedVehicle || !selectedDriver || loading}
-            className={`w-full py-5 rounded-xl text-xl font-bold transition-colors ${selectedVehicle && selectedDriver && !loading ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
+            disabled={!selectedVehicle || (!selectedDriver && !selectedUser) || loading}
+            className={`w-full py-5 rounded-xl text-xl font-bold transition-colors ${selectedVehicle && (selectedDriver || selectedUser) && !loading ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
           >
             <Save size={24} className="inline ml-2" />
             {loading ? 'שומר...' : 'שמור הצמדה'}
