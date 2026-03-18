@@ -249,9 +249,12 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
     }
 
     setCreatingUser(true);
+    const effectiveEmail = form.noEmail
+      ? `${form.phone.replace(/[^0-9]/g, '')}@nomail.fleet.local`
+      : form.email;
     const { data, error } = await supabase.functions.invoke('create-admin-user', {
       body: {
-        email: form.email,
+        email: effectiveEmail,
         password: form.password,
         full_name: form.fullName,
         phone: form.phone,
