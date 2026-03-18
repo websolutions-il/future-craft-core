@@ -28,7 +28,7 @@ export default function AlertSettings() {
 
   const loadConfigs = async () => {
     setLoading(true);
-    const { data } = await supabase.from('company_settings').select('id, company_name, alert_days_before, reminder_30_days, reminder_7_days, reminder_1_day, require_driver_assignment, vehicle_approval_required');
+    const { data } = await supabase.from('company_settings').select('id, company_name, alert_days_before, reminder_30_days, reminder_7_days, reminder_1_day, require_driver_assignment, max_vehicles_without_assignment, vehicle_approval_required');
     if (data) setConfigs(data as CompanyAlertConfig[]);
     setLoading(false);
   };
