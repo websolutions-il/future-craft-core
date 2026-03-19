@@ -194,7 +194,51 @@ export default function Vehicles() {
             <InfoField label='ק"מ' value={`${(v.odometer || 0).toLocaleString()}`} />
             <InfoField label="חברה" value={v.company_name || '—'} />
             <InfoField label="נהג משויך" value={getDriverName(v.assigned_driver_id)} />
+            <InfoField label="סוג ניהול" value={
+              v.management_type === 'operational_leasing' ? 'ליסינג תפעולי' :
+              v.management_type === 'financial_leasing' ? 'ליסינג מימוני' :
+              v.management_type === 'self_maintained' ? 'תחזוקה עצמאית' : '—'
+            } />
           </div>
+
+          {/* Management Type Details */}
+          {v.management_type === 'operational_leasing' && (
+            <div className="mt-4 p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-2">
+              <h3 className="font-bold text-primary">🏢 ליסינג תפעולי</h3>
+              <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                <InfoField label="עלות חודשית" value={v.monthly_leasing_cost ? `₪${v.monthly_leasing_cost.toLocaleString()}` : '—'} />
+                <InfoField label="מועד סיום ליסינג" value={v.leasing_end_date ? new Date(v.leasing_end_date).toLocaleDateString('he-IL') : '—'} />
+                <InfoField label="מועד החזרת הרכב" value={v.vehicle_return_date ? new Date(v.vehicle_return_date).toLocaleDateString('he-IL') : '—'} />
+              </div>
+            </div>
+          )}
+
+          {v.management_type === 'financial_leasing' && (
+            <div className="mt-4 p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-2">
+              <h3 className="font-bold text-primary">💳 ליסינג מימוני</h3>
+              <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                <InfoField label="החזר חודשי" value={v.monthly_loan_payment ? `₪${v.monthly_loan_payment.toLocaleString()}` : '—'} />
+                <InfoField label="תאריך סיום הלוואה" value={v.loan_end_date ? new Date(v.loan_end_date).toLocaleDateString('he-IL') : '—'} />
+                <InfoField label="מועד מתוכנן להחלפה" value={v.planned_replacement_date ? new Date(v.planned_replacement_date).toLocaleDateString('he-IL') : '—'} />
+              </div>
+            </div>
+          )}
+
+          {v.management_type === 'self_maintained' && (
+            <div className="mt-4 p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-2">
+              <h3 className="font-bold text-primary">🔧 תחזוקה עצמאית</h3>
+              <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                <InfoField label="הלוואה" value={v.has_loan ? 'כן' : 'אין'} />
+                {v.has_loan && (
+                  <>
+                    <InfoField label="החזר חודשי" value={v.monthly_loan_payment ? `₪${v.monthly_loan_payment.toLocaleString()}` : '—'} />
+                    <InfoField label="תאריך סיום הלוואה" value={v.loan_end_date ? new Date(v.loan_end_date).toLocaleDateString('he-IL') : '—'} />
+                  </>
+                )}
+                <InfoField label="מועד מתוכנן להחלפה" value={v.planned_replacement_date ? new Date(v.planned_replacement_date).toLocaleDateString('he-IL') : '—'} />
+              </div>
+            </div>
+          )}
 
           {/* Driver quick actions */}
           {driver && (
