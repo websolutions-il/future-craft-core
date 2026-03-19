@@ -1575,6 +1575,53 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_insurance_history: {
+        Row: {
+          company_name: string | null
+          comprehensive_insurance_cost: number | null
+          created_at: string | null
+          has_no_claims: boolean | null
+          id: string
+          insurer_name: string | null
+          mandatory_insurance_cost: number | null
+          updated_at: string | null
+          vehicle_id: string
+          year: number
+        }
+        Insert: {
+          company_name?: string | null
+          comprehensive_insurance_cost?: number | null
+          created_at?: string | null
+          has_no_claims?: boolean | null
+          id?: string
+          insurer_name?: string | null
+          mandatory_insurance_cost?: number | null
+          updated_at?: string | null
+          vehicle_id: string
+          year: number
+        }
+        Update: {
+          company_name?: string | null
+          comprehensive_insurance_cost?: number | null
+          created_at?: string | null
+          has_no_claims?: boolean | null
+          id?: string
+          insurer_name?: string | null
+          mandatory_insurance_cost?: number | null
+          updated_at?: string | null
+          vehicle_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_insurance_history_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
           approval_status: string | null
@@ -1585,6 +1632,7 @@ export type Database = {
           comprehensive_insurance_start: string | null
           created_at: string | null
           created_by: string | null
+          has_loan: boolean | null
           has_no_claims: boolean | null
           id: string
           insurance_cost: number | null
@@ -1596,15 +1644,21 @@ export type Database = {
           leasing_end_date: string | null
           license_doc_url: string | null
           license_plate: string
+          loan_end_date: string | null
+          management_type: string | null
           manufacturer: string | null
           model: string | null
+          monthly_leasing_cost: number | null
+          monthly_loan_payment: number | null
           needs_transport: boolean | null
           next_service_date: string | null
           notes: string | null
           odometer: number | null
+          planned_replacement_date: string | null
           status: string | null
           test_expiry: string | null
           updated_at: string | null
+          vehicle_return_date: string | null
           vehicle_type: string | null
           year: number | null
         }
@@ -1617,6 +1671,7 @@ export type Database = {
           comprehensive_insurance_start?: string | null
           created_at?: string | null
           created_by?: string | null
+          has_loan?: boolean | null
           has_no_claims?: boolean | null
           id?: string
           insurance_cost?: number | null
@@ -1628,15 +1683,21 @@ export type Database = {
           leasing_end_date?: string | null
           license_doc_url?: string | null
           license_plate: string
+          loan_end_date?: string | null
+          management_type?: string | null
           manufacturer?: string | null
           model?: string | null
+          monthly_leasing_cost?: number | null
+          monthly_loan_payment?: number | null
           needs_transport?: boolean | null
           next_service_date?: string | null
           notes?: string | null
           odometer?: number | null
+          planned_replacement_date?: string | null
           status?: string | null
           test_expiry?: string | null
           updated_at?: string | null
+          vehicle_return_date?: string | null
           vehicle_type?: string | null
           year?: number | null
         }
@@ -1649,6 +1710,7 @@ export type Database = {
           comprehensive_insurance_start?: string | null
           created_at?: string | null
           created_by?: string | null
+          has_loan?: boolean | null
           has_no_claims?: boolean | null
           id?: string
           insurance_cost?: number | null
@@ -1660,15 +1722,21 @@ export type Database = {
           leasing_end_date?: string | null
           license_doc_url?: string | null
           license_plate?: string
+          loan_end_date?: string | null
+          management_type?: string | null
           manufacturer?: string | null
           model?: string | null
+          monthly_leasing_cost?: number | null
+          monthly_loan_payment?: number | null
           needs_transport?: boolean | null
           next_service_date?: string | null
           notes?: string | null
           odometer?: number | null
+          planned_replacement_date?: string | null
           status?: string | null
           test_expiry?: string | null
           updated_at?: string | null
+          vehicle_return_date?: string | null
           vehicle_type?: string | null
           year?: number | null
         }
