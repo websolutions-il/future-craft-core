@@ -416,6 +416,8 @@ function ExpiryRow({ label, date, daysLeft, colorCls }: { label: string; date: s
 }
 
 // === Vehicle Form (Add / Edit) ===
+type ManagementType = 'operational_leasing' | 'financial_leasing' | 'self_maintained';
+
 function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
   vehicle: VehicleRow | null;
   drivers: DriverRow[];
@@ -443,11 +445,24 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
   const [notes, setNotes] = useState(vehicle?.notes || '');
   const [loading, setLoading] = useState(false);
 
-  // New fields
-  const [isLeasing, setIsLeasing] = useState((vehicle as any)?.is_leasing || false);
+  // Management type
+  const [managementType, setManagementType] = useState<ManagementType>(
+    (vehicle?.management_type as ManagementType) || 'operational_leasing'
+  );
+
+  // Operational leasing fields
+  const [monthlyLeasingCost, setMonthlyLeasingCost] = useState(vehicle?.monthly_leasing_cost?.toString() || '');
   const [leasingEndDate, setLeasingEndDate] = useState((vehicle as any)?.leasing_end_date || '');
-  const [insuranceCost, setInsuranceCost] = useState((vehicle as any)?.insurance_cost?.toString() || '');
-  const [hasNoClaims, setHasNoClaims] = useState((vehicle as any)?.has_no_claims || false);
+  const [vehicleReturnDate, setVehicleReturnDate] = useState(vehicle?.vehicle_return_date || '');
+
+  // Financial leasing / self-maintained fields
+  const [monthlyLoanPayment, setMonthlyLoanPayment] = useState(vehicle?.monthly_loan_payment?.toString() || '');
+  const [loanEndDate, setLoanEndDate] = useState(vehicle?.loan_end_date || '');
+  const [plannedReplacementDate, setPlannedReplacementDate] = useState(vehicle?.planned_replacement_date || '');
+  const [hasLoan, setHasLoan] = useState(vehicle?.has_loan || false);
+
+  // Insurance history
+  const [insuranceHistory, setInsuranceHistory] = useState<InsuranceHistoryRow[]>([]);
 
   // Document uploads
   const [licenseDocUrl, setLicenseDocUrl] = useState(vehicle?.license_doc_url || '');
@@ -456,6 +471,9 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
 
   // Company setting: is driver assignment required?
   const [driverRequired, setDriverRequired] = useState(true);
+
+  // Show insurance section for financial_leasing or self_maintained
+  const showInsuranceSection = managementType === 'financial_leasing' || managementType === 'self_maintained';
 
   useEffect(() => {
     const checkSetting = async () => {
@@ -468,23 +486,17 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
       
       if (settings && settings.require_driver_assignment === false) {
         const maxExempt = settings.max_vehicles_without_assignment || 0;
-        
         if (maxExempt === 0) {
-          // 0 = unlimited exempt vehicles
           setDriverRequired(false);
         } else {
-          // Count existing vehicles without driver for this company
           const { count } = await supabase
             .from('vehicles')
             .select('id', { count: 'exact', head: true })
             .eq('company_name', companyName)
             .is('assigned_driver_id', null);
-          
           const currentExempt = count || 0;
-          // If editing a vehicle that already has no driver, it doesn't count against limit
           const isEditingExempt = isEdit && !vehicle?.assigned_driver_id;
           const effectiveCount = isEditingExempt ? currentExempt - 1 : currentExempt;
-          
           if (effectiveCount < maxExempt) {
             setDriverRequired(false);
           }
@@ -494,10 +506,58 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
     checkSetting();
   }, [user?.company_name]);
 
+  // Load insurance history for edit mode
+  useEffect(() => {
+    if (isEdit && vehicle?.id) {
+      supabase
+        .from('vehicle_insurance_history')
+        .select('*')
+        .eq('vehicle_id', vehicle.id)
+        .order('year', { ascending: false })
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            setInsuranceHistory(data as InsuranceHistoryRow[]);
+          }
+        });
+    }
+  }, [isEdit, vehicle?.id]);
+
+  const addInsuranceYear = () => {
+    const currentYear = new Date().getFullYear();
+    const existingYears = insuranceHistory.map(r => r.year);
+    let newYear = currentYear;
+    while (existingYears.includes(newYear)) newYear--;
+    setInsuranceHistory(prev => [
+      { year: newYear, has_no_claims: false, insurer_name: '', mandatory_insurance_cost: 0, comprehensive_insurance_cost: 0 },
+      ...prev,
+    ]);
+  };
+
+  const updateInsuranceRow = (index: number, field: keyof InsuranceHistoryRow, value: any) => {
+    setInsuranceHistory(prev => prev.map((row, i) => i === index ? { ...row, [field]: value } : row));
+  };
+
+  const removeInsuranceRow = (index: number) => {
+    setInsuranceHistory(prev => prev.filter((_, i) => i !== index));
+  };
+
   // Validation
-  const allFieldsFilled = licensePlate && manufacturer && model && year && vehicleType && odometer && (driverRequired ? assignedDriver : true);
+  const basicFieldsFilled = licensePlate && manufacturer && model && year && vehicleType && odometer && (driverRequired ? assignedDriver : true);
+  
+  let typeFieldsFilled = true;
+  if (managementType === 'operational_leasing') {
+    typeFieldsFilled = !!leasingEndDate && !!monthlyLeasingCost && !!vehicleReturnDate;
+  } else if (managementType === 'financial_leasing') {
+    typeFieldsFilled = !!monthlyLoanPayment && !!loanEndDate && !!plannedReplacementDate;
+  } else if (managementType === 'self_maintained') {
+    // Loan fields are optional but if hasLoan then they're required
+    if (hasLoan) {
+      typeFieldsFilled = !!monthlyLoanPayment && !!loanEndDate;
+    }
+  }
+
   const allDocsFilled = isEdit || (licenseDocUrl && insuranceDocUrl && compInsDocUrl);
-  const isValid = allFieldsFilled && allDocsFilled;
+  const isValid = basicFieldsFilled && typeFieldsFilled && allDocsFilled;
 
   const inputClass = "w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
 
@@ -542,22 +602,46 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
       license_doc_url: licenseDocUrl,
       insurance_doc_url: insuranceDocUrl,
       comprehensive_insurance_doc_url: compInsDocUrl,
-      is_leasing: isLeasing,
-      leasing_end_date: isLeasing ? leasingEndDate || null : null,
-      insurance_cost: insuranceCost ? parseFloat(insuranceCost) : null,
-      has_no_claims: hasNoClaims,
+      management_type: managementType,
+      monthly_leasing_cost: managementType === 'operational_leasing' ? (parseFloat(monthlyLeasingCost) || null) : null,
+      leasing_end_date: managementType === 'operational_leasing' ? (leasingEndDate || null) : null,
+      vehicle_return_date: managementType === 'operational_leasing' ? (vehicleReturnDate || null) : null,
+      monthly_loan_payment: (managementType === 'financial_leasing' || (managementType === 'self_maintained' && hasLoan)) ? (parseFloat(monthlyLoanPayment) || null) : null,
+      loan_end_date: (managementType === 'financial_leasing' || (managementType === 'self_maintained' && hasLoan)) ? (loanEndDate || null) : null,
+      planned_replacement_date: (managementType !== 'operational_leasing') ? (plannedReplacementDate || null) : null,
+      has_loan: managementType === 'self_maintained' ? hasLoan : managementType === 'financial_leasing',
+      is_leasing: managementType === 'operational_leasing' || managementType === 'financial_leasing',
       notes,
     };
 
     let error;
+    let vehicleId = vehicle?.id;
     if (isEdit) {
       ({ error } = await supabase.from('vehicles').update(payload).eq('id', vehicle!.id));
     } else {
-      ({ error } = await supabase.from('vehicles').insert({
+      const res = await supabase.from('vehicles').insert({
         ...payload,
         company_name: user?.company_name || '',
         created_by: user?.id,
+      }).select('id').single();
+      error = res.error;
+      vehicleId = res.data?.id;
+    }
+
+    // Save insurance history
+    if (!error && vehicleId && showInsuranceSection && insuranceHistory.length > 0) {
+      // Delete existing and re-insert
+      await supabase.from('vehicle_insurance_history').delete().eq('vehicle_id', vehicleId);
+      const historyPayload = insuranceHistory.map(row => ({
+        vehicle_id: vehicleId!,
+        year: row.year,
+        has_no_claims: row.has_no_claims,
+        insurer_name: row.insurer_name,
+        mandatory_insurance_cost: row.mandatory_insurance_cost,
+        comprehensive_insurance_cost: row.comprehensive_insurance_cost,
+        company_name: user?.company_name || '',
       }));
+      await supabase.from('vehicle_insurance_history').insert(historyPayload);
     }
 
     // Generate alerts for expiring documents
@@ -576,6 +660,12 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
       toast.success(msg);
       onDone();
     }
+  };
+
+  const managementTypeLabels: Record<ManagementType, string> = {
+    operational_leasing: 'ליסינג תפעולי',
+    financial_leasing: 'ליסינג מימוני',
+    self_maintained: 'תחזוקה עצמאית',
   };
 
   return (
@@ -642,6 +732,97 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
           </select>
         </div>
 
+        {/* === Management Type Selection === */}
+        <div className="border-t border-border pt-5">
+          <h2 className="text-xl font-bold mb-4">📋 סוג ניהול רכב *</h2>
+          <div className="grid grid-cols-1 gap-3">
+            {(Object.keys(managementTypeLabels) as ManagementType[]).map(type => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setManagementType(type)}
+                className={`w-full py-4 px-5 rounded-xl text-lg font-medium text-right transition-all border-2 ${
+                  managementType === type
+                    ? 'border-primary bg-primary/10 text-primary shadow-md'
+                    : 'border-border bg-card text-foreground hover:border-primary/40'
+                }`}
+              >
+                {managementType === type && <span className="ml-2">✓</span>}
+                {managementTypeLabels[type]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* === Conditional Fields by Management Type === */}
+        {managementType === 'operational_leasing' && (
+          <div className="border border-primary/20 rounded-xl p-5 space-y-4 bg-primary/5">
+            <h3 className="font-bold text-lg text-primary">🏢 פרטי ליסינג תפעולי</h3>
+            <div>
+              <label className="block text-sm font-medium mb-1">עלות חודשית (₪) *</label>
+              <input type="number" value={monthlyLeasingCost} onChange={e => setMonthlyLeasingCost(e.target.value)} placeholder="עלות חודשית..." className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">מועד סיום הליסינג *</label>
+              <input type="date" value={leasingEndDate} onChange={e => setLeasingEndDate(e.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">מועד החזרת הרכב *</label>
+              <input type="date" value={vehicleReturnDate} onChange={e => setVehicleReturnDate(e.target.value)} className={inputClass} />
+            </div>
+          </div>
+        )}
+
+        {managementType === 'financial_leasing' && (
+          <div className="border border-primary/20 rounded-xl p-5 space-y-4 bg-primary/5">
+            <h3 className="font-bold text-lg text-primary">💳 פרטי ליסינג מימוני</h3>
+            <div>
+              <label className="block text-sm font-medium mb-1">גובה החזר חודשי (₪) *</label>
+              <input type="number" value={monthlyLoanPayment} onChange={e => setMonthlyLoanPayment(e.target.value)} placeholder="החזר חודשי..." className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">תאריך סיום ההלוואה *</label>
+              <input type="date" value={loanEndDate} onChange={e => setLoanEndDate(e.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">מועד מתוכנן להחלפת הרכב *</label>
+              <input type="date" value={plannedReplacementDate} onChange={e => setPlannedReplacementDate(e.target.value)} className={inputClass} />
+            </div>
+          </div>
+        )}
+
+        {managementType === 'self_maintained' && (
+          <div className="border border-primary/20 rounded-xl p-5 space-y-4 bg-primary/5">
+            <h3 className="font-bold text-lg text-primary">🔧 תחזוקה עצמאית</h3>
+            <div className="flex gap-3 mb-2">
+              <button type="button" onClick={() => setHasLoan(false)}
+                className={`flex-1 py-3 rounded-xl text-base font-medium transition-colors ${!hasLoan ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                ללא הלוואה
+              </button>
+              <button type="button" onClick={() => setHasLoan(true)}
+                className={`flex-1 py-3 rounded-xl text-base font-medium transition-colors ${hasLoan ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                יש הלוואה על הרכב
+              </button>
+            </div>
+            {hasLoan && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium mb-1">גובה החזר חודשי (₪) *</label>
+                  <input type="number" value={monthlyLoanPayment} onChange={e => setMonthlyLoanPayment(e.target.value)} placeholder="החזר חודשי..." className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">תאריך סיום ההלוואה *</label>
+                  <input type="date" value={loanEndDate} onChange={e => setLoanEndDate(e.target.value)} className={inputClass} />
+                </div>
+              </>
+            )}
+            <div>
+              <label className="block text-sm font-medium mb-1">מועד מתוכנן להחלפת הרכב</label>
+              <input type="date" value={plannedReplacementDate} onChange={e => setPlannedReplacementDate(e.target.value)} className={inputClass} />
+            </div>
+          </div>
+        )}
+
         {/* === Expiry & Insurance Section === */}
         <div className="border-t border-border pt-5">
           <h2 className="text-xl font-bold mb-4">📋 תוקף מסמכים</h2>
@@ -694,6 +875,89 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
           </div>
         </div>
 
+        {/* === Insurance History Table (for financial_leasing and self_maintained) === */}
+        {showInsuranceSection && (
+          <div className="border-t border-border pt-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">📊 היסטוריית ביטוחים והדר תביעות</h2>
+              <button type="button" onClick={addInsuranceYear}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors">
+                <PlusCircle size={16} /> הוסף שנה
+              </button>
+            </div>
+
+            {insuranceHistory.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground border border-dashed border-border rounded-xl">
+                <p>אין נתוני ביטוח עדיין</p>
+                <p className="text-sm mt-1">לחץ "הוסף שנה" כדי להתחיל</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {insuranceHistory.map((row, index) => (
+                  <div key={index} className="border border-border rounded-xl p-4 space-y-3 relative">
+                    <button
+                      type="button"
+                      onClick={() => removeInsuranceRow(index)}
+                      className="absolute top-2 left-2 w-7 h-7 rounded-full border border-border bg-card flex items-center justify-center text-destructive hover:bg-destructive/10 transition-colors"
+                    >
+                      <X size={14} />
+                    </button>
+                    <div className="flex items-center gap-3">
+                      <label className="font-bold text-lg">שנת</label>
+                      <input
+                        type="number"
+                        value={row.year}
+                        onChange={e => updateInsuranceRow(index, 'year', parseInt(e.target.value) || 0)}
+                        className="w-24 p-2 text-lg font-bold rounded-lg border-2 border-input bg-background focus:border-primary focus:outline-none text-center"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => updateInsuranceRow(index, 'has_no_claims', !row.has_no_claims)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                          row.has_no_claims ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {row.has_no_claims ? '✅ הדר תביעות' : 'ללא הדר'}
+                      </button>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">חברת ביטוח</label>
+                      <input
+                        value={row.insurer_name}
+                        onChange={e => updateInsuranceRow(index, 'insurer_name', e.target.value)}
+                        placeholder="שם חברת ביטוח..."
+                        className={inputClass}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">עלות ביטוח חובה (₪)</label>
+                        <input
+                          type="number"
+                          value={row.mandatory_insurance_cost || ''}
+                          onChange={e => updateInsuranceRow(index, 'mandatory_insurance_cost', parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          className={inputClass}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">עלות ביטוח מקיף (₪)</label>
+                        <input
+                          type="number"
+                          value={row.comprehensive_insurance_cost || ''}
+                          onChange={e => updateInsuranceRow(index, 'comprehensive_insurance_cost', parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          className={inputClass}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* === Document Uploads === */}
         <div className="border-t border-border pt-5">
           <h2 className="text-xl font-bold mb-4">📎 מסמכים {!isEdit && <span className="text-destructive text-sm">(חובה)</span>}</h2>
@@ -725,42 +989,6 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
           </div>
         </div>
 
-        {/* Leasing / Loan */}
-        <div className="border-t border-border pt-5">
-          <h2 className="text-xl font-bold mb-4">💰 ליסינג / הלוואה</h2>
-          <div className="flex gap-3 mb-4">
-            <button type="button" onClick={() => setIsLeasing(false)}
-              className={`flex-1 py-3 rounded-xl text-lg font-medium transition-colors ${!isLeasing ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-              ללא
-            </button>
-            <button type="button" onClick={() => setIsLeasing(true)}
-              className={`flex-1 py-3 rounded-xl text-lg font-medium transition-colors ${isLeasing ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-              ליסינג / הלוואה
-            </button>
-          </div>
-          {isLeasing && (
-            <div>
-              <label className="block text-sm font-medium mb-1">תאריך סיום עסקה</label>
-              <input type="date" value={leasingEndDate} onChange={e => setLeasingEndDate(e.target.value)} className={inputClass} />
-            </div>
-          )}
-        </div>
-
-        {/* Insurance Cost */}
-        <div className="border border-border rounded-xl p-4 space-y-4">
-          <h3 className="font-bold text-lg">💵 נתוני ביטוח</h3>
-          <div>
-            <label className="block text-sm font-medium mb-1">עלות ביטוח (₪)</label>
-            <input type="number" value={insuranceCost} onChange={e => setInsuranceCost(e.target.value)} placeholder="עלות..." className={inputClass} />
-          </div>
-          <div className="flex items-center gap-3">
-            <button type="button" onClick={() => setHasNoClaims(!hasNoClaims)}
-              className={`px-4 py-2.5 rounded-xl text-base font-medium transition-colors ${hasNoClaims ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-              {hasNoClaims ? '✅ קיימת היעדר תביעות' : 'ללא היעדר תביעות'}
-            </button>
-          </div>
-        </div>
-
         {/* Transport */}
         <div className="border-t border-border pt-5">
           <h2 className="text-xl font-bold mb-4">🚛 שינוע</h2>
@@ -785,7 +1013,8 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
         {/* Validation summary */}
         {!isValid && (
           <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-4 text-sm text-destructive space-y-1">
-            {!allFieldsFilled && <p>• יש למלא את כל שדות החובה (מסומנים ב-*)</p>}
+            {!basicFieldsFilled && <p>• יש למלא את כל שדות החובה (מסומנים ב-*)</p>}
+            {!typeFieldsFilled && <p>• יש למלא את כל שדות סוג ניהול הרכב</p>}
             {!allDocsFilled && <p>• יש לצרף את כל המסמכים הנדרשים (רישיון רכב, ביטוח חובה, ביטוח מקיף)</p>}
           </div>
         )}
@@ -801,8 +1030,6 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
 
 // Generate in-app alerts for vehicle document expiry
 async function generateVehicleAlerts(plate: string, user: any) {
-  // This function creates driver_notifications for managers about upcoming expirations
-  // The actual scheduled checking is handled by the dashboard alert logic
   try {
     const { data: managers } = await supabase
       .from('user_roles')
