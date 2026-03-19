@@ -33,11 +33,13 @@ interface VehicleRow {
   notes: string;
   management_type: string;
   monthly_leasing_cost: number | null;
+  leasing_end_date: string | null;
   vehicle_return_date: string | null;
   monthly_loan_payment: number | null;
   loan_end_date: string | null;
   planned_replacement_date: string | null;
   has_loan: boolean;
+  is_leasing: boolean;
 }
 
 interface InsuranceHistoryRow {
