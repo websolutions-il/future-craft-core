@@ -114,9 +114,10 @@ function getFleetManagerHelp(): HelpCategory[] {
           title: 'ניהול רכבים',
           content: [
             'נהל את צי הרכבים מתפריט "רכבים"',
+            'בחר סוג ניהול: ליסינג תפעולי, ליסינג מימוני או תחזוקה עצמאית',
             'עקוב אחרי טסטים, ביטוחים ותוקפי רישוי',
             'עדכן קריאות מד-אוץ ומצב הרכב',
-            'שייך רכבים לנהגים',
+            'שייך רכבים לנהגים דרך "הצמדת רכב"',
           ],
         },
         {
@@ -126,6 +127,17 @@ function getFleetManagerHelp(): HelpCategory[] {
             'צור הוראות שירות לטיפולים ותיקונים',
             'עקוב אחרי סטטוס הטיפולים',
             'אשר או דחה בקשות מנהגים',
+          ],
+        },
+        {
+          icon: <Building2 className="h-5 w-5 text-primary" />,
+          title: 'ניהול לקוחות והסכמים',
+          content: [
+            'צור לקוחות חדשים מתפריט "לקוחות"',
+            'הוסף מספר הסכמים לכל לקוח בלחיצה על "+"',
+            'כל הסכם כולל: מספר סידורי, פירוט, סכום לפני ואחרי מע"מ',
+            'ניתן לערוך ולמחוק הסכמים בכל עת',
+            'הדפס הסכם בודד בלחיצה על כפתור ההדפסה',
           ],
         },
       ],
@@ -150,13 +162,15 @@ function getFleetManagerHelp(): HelpCategory[] {
             'צפה בדוחות הוצאות וניתוחי עלויות',
             'עקוב אחרי ביצועי הצי',
             'הפק דוחות לפי נהג, רכב או תקופה',
+            'ייצא נתונים ל-CSV',
           ],
         },
         {
           icon: <Bell className="h-5 w-5 text-primary" />,
           title: 'התראות',
           content: [
-            'הגדר התראות אוטומטיות לתוקפי מסמכים',
+            'המערכת מייצרת התראות אוטומטיות על: טסט, ביטוח חובה, ביטוח מקיף',
+            'הגדר התראות מותאמות אישית',
             'קבל התראות על דיווחים חדשים מנהגים',
             'עקוב אחרי משימות פתוחות',
           ],
@@ -178,6 +192,7 @@ function getSuperAdminHelp(): HelpCategory[] {
             'מסך הדשבורד מציג סיכום של כל הפעילות במערכת',
             'ניתן לנווט בין כל המסכים דרך התפריט הצדדי',
             'כמנהל על יש לך גישה מלאה לכל הנתונים',
+            'ניתן לסנן נתונים לפי חברה מהתפריט העליון',
           ],
         },
         {
@@ -197,6 +212,7 @@ function getSuperAdminHelp(): HelpCategory[] {
             'נהל הגדרות כלליות מתפריט "הגדרות"',
             'צפה בנתונים של כל החברות במערכת',
             'הגדר הרשאות ותפקידים',
+            'נהל תבניות מייל אוטומטיות מ"תבניות מייל"',
           ],
         },
         {
@@ -206,13 +222,61 @@ function getSuperAdminHelp(): HelpCategory[] {
             'צפה בדוחות מקיפים על כל הפעילות',
             'נתח ביצועים לפי חברה, נהג או רכב',
             'הפק דוחות מותאמים אישית',
+            'ייצא נתונים ל-CSV בלחיצת כפתור',
           ],
         },
       ],
     },
     {
-      label: 'לקוח פרטי',
+      label: 'ניהול רכבים וביטוחים',
       sections: [
+        {
+          icon: <Truck className="h-5 w-5 text-primary" />,
+          title: 'פתיחת רכב חדש',
+          content: [
+            'לך ל"רכבים" → לחץ "רכב חדש"',
+            'בחר סוג ניהול: ליסינג תפעולי / ליסינג מימוני / תחזוקה עצמאית',
+            'ליסינג תפעולי: מועד סיום, עלות חודשית, מועד החזרה',
+            'ליסינג מימוני: החזר חודשי, תאריך סיום הלוואה, מועד החלפה',
+            'תחזוקה עצמאית: אפשרות לציין הלוואה, החזר חודשי, מועד החלפה',
+          ],
+        },
+        {
+          icon: <Shield className="h-5 w-5 text-info" />,
+          title: 'ביטוחים והדר תביעות',
+          content: [
+            'בליסינג מימוני ותחזוקה עצמאית – נפתח אזור ביטוחים',
+            'טבלת ביטוחים לפי שנים: חברת ביטוח, עלות חובה, עלות מקיף',
+            'סימון הדר תביעות לכל שנה',
+            'הוספת שנים חדשות בלחיצה על "הוסף שנה"',
+            'התראות אוטומטיות על: טסט, ביטוח חובה, ביטוח מקיף',
+          ],
+        },
+      ],
+    },
+    {
+      label: 'לקוחות והסכמים',
+      sections: [
+        {
+          icon: <Building2 className="h-5 w-5 text-primary" />,
+          title: 'ניהול לקוחות',
+          content: [
+            'צור לקוח חדש מתפריט "לקוחות"',
+            'מלא פרטי לקוח: שם, טלפון, מייל, כתובת, ח.פ',
+            'בחר סוג לקוח: עסקי או פרטי',
+            'ניתן לנהל מסמכי לקוח מדף "מסמכי לקוח"',
+          ],
+        },
+        {
+          icon: <FileText className="h-5 w-5 text-success" />,
+          title: 'הסכמים',
+          content: [
+            'בתוך דף עריכת/הקמת לקוח – לחץ "+ הוסף הסכם"',
+            'כל הסכם כולל: מספר סידורי, פירוט, סכום לפני ואחרי מע"מ',
+            'ניתן להוסיף מספר בלתי מוגבל של הסכמים לכל לקוח',
+            'מחק הסכם בלחיצה על X, הדפס הסכם בודד בלחיצה על אייקון ההדפסה',
+          ],
+        },
         {
           icon: <UserPlus className="h-5 w-5 text-primary" />,
           title: 'יצירת לקוח פרטי',
@@ -290,7 +354,7 @@ function getSuperAdminHelp(): HelpCategory[] {
           icon: <Scale className="h-5 w-5 text-info" />,
           title: 'ניהול ספקים',
           content: [
-            'הוסף ספקים קבועים או חד-פעמיים',
+            'הוסף ספקים קבועים או חד-פעמיים מ"ספקים"',
             'כל ספק מקבל מספר ספק אוטומטי',
             'צור הזמנות עבודה לספקים וקבל אישור',
             'שלח הזמנות עבודה במייל ישירות מהמערכת',
@@ -433,7 +497,7 @@ export default function HelpButton() {
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg max-h-[85vh] p-0 overflow-visible [&>button:last-child]:hidden">
+        <DialogContent className="w-[95vw] max-w-2xl h-[90vh] max-h-[90vh] p-0 overflow-visible [&>button:last-child]:hidden flex flex-col">
           {/* Close X circle */}
           <button
             onClick={() => setOpen(false)}
@@ -442,15 +506,15 @@ export default function HelpButton() {
           >
             <X className="h-4 w-4" />
           </button>
-          <DialogHeader className="p-6 pb-2 bg-primary text-primary-foreground rounded-t-lg">
+          <DialogHeader className="p-6 pb-2 bg-primary text-primary-foreground rounded-t-lg shrink-0">
             <DialogTitle className="text-xl text-primary-foreground">מרכז עזרה</DialogTitle>
             <DialogDescription className="text-primary-foreground/80">
               הדרכה עבור: <span className="font-bold text-primary-foreground">{roleLabel}</span>
             </DialogDescription>
           </DialogHeader>
 
-          <div className="overflow-hidden rounded-b-lg">
-          <ScrollArea className="max-h-[65vh] p-4" dir="rtl">
+          <div className="flex-1 overflow-hidden rounded-b-lg min-h-0">
+          <ScrollArea className="h-full p-4" dir="rtl">
             <div className="space-y-6">
               {categories.map((category, catIdx) => (
                 <div key={catIdx}>
