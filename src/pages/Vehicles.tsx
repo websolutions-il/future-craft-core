@@ -31,6 +31,24 @@ interface VehicleRow {
   insurance_doc_url: string;
   comprehensive_insurance_doc_url: string;
   notes: string;
+  management_type: string;
+  monthly_leasing_cost: number | null;
+  vehicle_return_date: string | null;
+  monthly_loan_payment: number | null;
+  loan_end_date: string | null;
+  planned_replacement_date: string | null;
+  has_loan: boolean;
+}
+
+interface InsuranceHistoryRow {
+  id?: string;
+  vehicle_id?: string;
+  year: number;
+  has_no_claims: boolean;
+  insurer_name: string;
+  mandatory_insurance_cost: number;
+  comprehensive_insurance_cost: number;
+  company_name?: string;
 }
 
 interface DriverRow { id: string; full_name: string; phone: string | null; }
