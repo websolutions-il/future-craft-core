@@ -454,7 +454,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
 
   // Operational leasing fields
   const [monthlyLeasingCost, setMonthlyLeasingCost] = useState(vehicle?.monthly_leasing_cost?.toString() || '');
-  const [leasingEndDate, setLeasingEndDate] = useState((vehicle as any)?.leasing_end_date || '');
+  const [leasingEndDate, setLeasingEndDate] = useState(vehicle?.leasing_end_date || '');
   const [vehicleReturnDate, setVehicleReturnDate] = useState(vehicle?.vehicle_return_date || '');
 
   // Financial leasing / self-maintained fields
