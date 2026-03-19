@@ -497,7 +497,7 @@ export default function HelpButton() {
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg max-h-[85vh] p-0 overflow-visible [&>button:last-child]:hidden">
+        <DialogContent className="w-[95vw] max-w-2xl h-[90vh] max-h-[90vh] p-0 overflow-visible [&>button:last-child]:hidden flex flex-col">
           {/* Close X circle */}
           <button
             onClick={() => setOpen(false)}
@@ -506,15 +506,15 @@ export default function HelpButton() {
           >
             <X className="h-4 w-4" />
           </button>
-          <DialogHeader className="p-6 pb-2 bg-primary text-primary-foreground rounded-t-lg">
+          <DialogHeader className="p-6 pb-2 bg-primary text-primary-foreground rounded-t-lg shrink-0">
             <DialogTitle className="text-xl text-primary-foreground">מרכז עזרה</DialogTitle>
             <DialogDescription className="text-primary-foreground/80">
               הדרכה עבור: <span className="font-bold text-primary-foreground">{roleLabel}</span>
             </DialogDescription>
           </DialogHeader>
 
-          <div className="overflow-hidden rounded-b-lg">
-          <ScrollArea className="max-h-[65vh] p-4" dir="rtl">
+          <div className="flex-1 overflow-hidden rounded-b-lg min-h-0">
+          <ScrollArea className="h-full p-4" dir="rtl">
             <div className="space-y-6">
               {categories.map((category, catIdx) => (
                 <div key={catIdx}>
