@@ -149,9 +149,7 @@ export default function Vehicles() {
 
   // === DETAIL VIEW ===
   if (viewMode === 'detail' && selectedVehicle) {
-    const v = selectedVehicle;
-    const sl = statusLabel(v.status);
-    const driver = drivers.find(d => d.id === v.assigned_driver_id);
+    return <VehicleDetail vehicle={selectedVehicle} drivers={drivers} isManager={isManager} onBack={handleBack} onEdit={handleOpenForm} onDelete={handleDelete} getDriverName={getDriverName} />;
     const daysUntil = (dateStr: string | null) => {
       if (!dateStr) return null;
       return Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86400000);
