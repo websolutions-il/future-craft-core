@@ -314,6 +314,47 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_agreements: {
+        Row: {
+          amount_before_vat: number | null
+          amount_with_vat: number | null
+          company_name: string | null
+          created_at: string | null
+          customer_id: string
+          description: string | null
+          id: string
+          serial_number: string | null
+        }
+        Insert: {
+          amount_before_vat?: number | null
+          amount_with_vat?: number | null
+          company_name?: string | null
+          created_at?: string | null
+          customer_id: string
+          description?: string | null
+          id?: string
+          serial_number?: string | null
+        }
+        Update: {
+          amount_before_vat?: number | null
+          amount_with_vat?: number | null
+          company_name?: string | null
+          created_at?: string | null
+          customer_id?: string
+          description?: string | null
+          id?: string
+          serial_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_agreements_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null

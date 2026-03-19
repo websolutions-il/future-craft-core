@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, User, Search, ArrowRight, Phone, Mail, Plus, Edit2, Trash2, FileText, Printer, KeyRound, Send, Eye, EyeOff, Loader2, Lock } from 'lucide-react';
+import { Building2, User, Search, ArrowRight, Phone, Mail, Plus, Edit2, Trash2, FileText, Printer, KeyRound, Send, Eye, EyeOff, Loader2, Lock, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -24,6 +24,17 @@ interface CustomerRow {
   agreement_serial_number: string;
 }
 
+interface AgreementRow {
+  id: string;
+  customer_id: string;
+  serial_number: string;
+  description: string;
+  amount_before_vat: number | null;
+  amount_with_vat: number | null;
+  company_name: string;
+  created_at: string;
+}
+
 type ViewMode = 'list' | 'detail' | 'form';
 
 export default function Customers() {
@@ -38,7 +49,6 @@ export default function Customers() {
   const loadData = async () => {
     setLoading(true);
     let query = supabase.from('customers').select('*').order('created_at', { ascending: false });
-    // Fleet managers only see their own company customers
     if (user?.role === 'fleet_manager') {
       query = query.eq('company_name', user.company_name || '');
     }
@@ -110,117 +120,24 @@ export default function Customers() {
   if (viewMode === 'detail' && selected) {
     const c = selected;
     return (
-      <div className="animate-fade-in">
-        <button onClick={() => { setViewMode('list'); setSelected(null); }} className="flex items-center gap-2 text-primary text-lg font-medium mb-4 min-h-[48px]"><ArrowRight size={20} /> חזרה</button>
-        <div className="card-elevated">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold">{c.name}</h1>
-              {c.customer_number && <p className="text-muted-foreground text-sm">מס׳ לקוח: {c.customer_number}</p>}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`status-badge ${c.status === 'active' ? 'status-active' : 'status-inactive'}`}>{c.status === 'active' ? 'פעיל' : 'לא פעיל'}</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 text-lg">
-            <div><span className="text-muted-foreground text-sm">סוג</span><p className="font-bold">{c.customer_type === 'company' ? 'חברה' : 'פרטי'}</p></div>
-            {c.business_id && <div><span className="text-muted-foreground text-sm">עוסק מורשה / ח.פ</span><p className="font-bold">{c.business_id}</p></div>}
-            <div><span className="text-muted-foreground text-sm">איש קשר</span><p className="font-bold">{c.contact_person}</p></div>
-            <div><span className="text-muted-foreground text-sm">טלפון</span><p className="font-bold" dir="ltr">{c.phone}</p></div>
-            {c.fax && <div><span className="text-muted-foreground text-sm">פקס</span><p className="font-bold" dir="ltr">{c.fax}</p></div>}
-            <div><span className="text-muted-foreground text-sm">אימייל</span><p className="font-bold" dir="ltr">{c.email}</p></div>
-            {c.address && <div className="col-span-2"><span className="text-muted-foreground text-sm">כתובת</span><p className="font-bold">{c.address}</p></div>}
-          </div>
-
-          {c.notes && <p className="mt-4 p-3 bg-muted rounded-xl text-muted-foreground">{c.notes}</p>}
-
-          <div className="flex gap-3 mt-6">
-            {c.phone && <a href={`tel:${c.phone}`} className="flex-1 bg-primary text-primary-foreground rounded-2xl p-4 flex items-center justify-center gap-2 text-lg font-bold"><Phone size={22} /> התקשר</a>}
-            {c.email && <a href={`mailto:${c.email}`} className="flex-1 bg-muted text-foreground rounded-2xl p-4 flex items-center justify-center gap-2 text-lg font-bold"><Mail size={22} /> מייל</a>}
-          </div>
-
-          {/* Password management section */}
-          {isManager && c.email && (
-            <div className="border-2 border-primary/20 rounded-2xl p-5 mt-4 space-y-3">
-              <div className="flex items-center gap-2 text-primary mb-1">
-                <Lock size={20} />
-                <h3 className="text-lg font-bold">ניהול סיסמה</h3>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => handleSendResetEmail(c.email)}
-                  disabled={resetLoading}
-                  className="flex-1 py-4 rounded-xl bg-accent text-accent-foreground font-bold flex items-center justify-center gap-2 text-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-                >
-                  {resetLoading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
-                  שלח קישור איפוס
-                </button>
-                <button
-                  onClick={() => { setNewPassword(''); setShowPasswordDialog(true); }}
-                  className="flex-1 py-4 rounded-xl bg-primary/10 text-primary font-bold flex items-center justify-center gap-2 text-lg hover:opacity-90 transition-opacity"
-                >
-                  <KeyRound size={20} />
-                  החלף סיסמה
-                </button>
-              </div>
-            </div>
-          )}
-
-          {isManager && (
-            <div className="flex gap-3 mt-4">
-              <button onClick={() => { setEditItem(c); setViewMode('form'); }} className="flex-1 py-4 rounded-xl bg-primary/10 text-primary font-bold flex items-center justify-center gap-2 text-lg">
-                <Edit2 size={20} /> עריכת פרטי לקוח
-              </button>
-              <button onClick={() => handleDelete(c.id)} className="py-4 px-6 rounded-xl border-2 border-destructive/30 text-destructive font-bold flex items-center justify-center gap-2">
-                <Trash2 size={20} />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Change Password Dialog */}
-        <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <KeyRound size={22} className="text-primary" />
-                החלפת סיסמה - {c.name}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 pt-2">
-              <p className="text-muted-foreground text-sm">הגדר סיסמה חדשה עבור <strong dir="ltr">{c.email}</strong></p>
-              <div className="relative">
-                <label className="block text-lg font-medium mb-2">סיסמה חדשה</label>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)}
-                  className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none pl-12"
-                  placeholder="לפחות 6 תווים"
-                  dir="ltr"
-                  style={{ textAlign: 'right' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute left-3 top-[52px] text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-              <button
-                onClick={() => handleChangePassword(c.email)}
-                disabled={passwordLoading || !newPassword || newPassword.length < 6}
-                className="w-full py-4 rounded-xl bg-primary text-primary-foreground text-lg font-bold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {passwordLoading ? <Loader2 size={20} className="animate-spin" /> : <KeyRound size={20} />}
-                שמור סיסמה חדשה
-              </button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+      <CustomerDetail
+        customer={c}
+        isManager={isManager}
+        onBack={() => { setViewMode('list'); setSelected(null); }}
+        onEdit={() => { setEditItem(c); setViewMode('form'); }}
+        onDelete={() => handleDelete(c.id)}
+        onSendReset={() => handleSendResetEmail(c.email)}
+        onChangePassword={() => { setNewPassword(''); setShowPasswordDialog(true); }}
+        resetLoading={resetLoading}
+        showPasswordDialog={showPasswordDialog}
+        setShowPasswordDialog={setShowPasswordDialog}
+        newPassword={newPassword}
+        setNewPassword={setNewPassword}
+        showPassword={showPassword}
+        setShowPassword={setShowPassword}
+        passwordLoading={passwordLoading}
+        handleChangePassword={() => handleChangePassword(c.email)}
+      />
     );
   }
 
@@ -261,55 +178,23 @@ export default function Customers() {
   );
 }
 
-function CustomerForm({ customer, onDone, onBack, user }: { customer: CustomerRow | null; onDone: () => void; onBack: () => void; user: any }) {
-  const isEdit = !!customer;
-  const [name, setName] = useState(customer?.name || '');
-  const [customerType, setCustomerType] = useState(customer?.customer_type || 'company');
-  const [contactPerson, setContactPerson] = useState(customer?.contact_person || '');
-  const [phone, setPhone] = useState(customer?.phone || '');
-  const [email, setEmail] = useState(customer?.email || '');
-  const [address, setAddress] = useState(customer?.address || '');
-  const [status, setStatus] = useState(customer?.status || 'active');
-  const [notes, setNotes] = useState(customer?.notes || '');
-  const [customerNumber, setCustomerNumber] = useState(customer?.customer_number || '');
-  const [businessId, setBusinessId] = useState(customer?.business_id || '');
-  const [fax, setFax] = useState(customer?.fax || '');
-  const [agreementDesc, setAgreementDesc] = useState(customer?.agreement_description || '');
-  const [agreementBeforeVat, setAgreementBeforeVat] = useState(customer?.agreement_amount_before_vat?.toString() || '');
-  const [agreementWithVat, setAgreementWithVat] = useState(customer?.agreement_amount_with_vat?.toString() || '');
-  const [agreementSerial, setAgreementSerial] = useState(customer?.agreement_serial_number || '');
-  const [loading, setLoading] = useState(false);
+/* ───── Customer Detail ───── */
+function CustomerDetail({ customer: c, isManager, onBack, onEdit, onDelete, onSendReset, onChangePassword, resetLoading, showPasswordDialog, setShowPasswordDialog, newPassword, setNewPassword, showPassword, setShowPassword, passwordLoading, handleChangePassword }: any) {
+  const [agreements, setAgreements] = useState<AgreementRow[]>([]);
 
-  const isValid = name && contactPerson;
-  const inputClass = "w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
+  useEffect(() => {
+    supabase.from('customer_agreements').select('*').eq('customer_id', c.id).order('created_at', { ascending: true })
+      .then(({ data }) => { if (data) setAgreements(data as unknown as AgreementRow[]); });
+  }, [c.id]);
 
-  const handleSubmit = async () => {
-    if (!isValid) return;
-    setLoading(true);
-    const payload = {
-      name, customer_type: customerType, contact_person: contactPerson,
-      phone, email, address, status, notes,
-      customer_number: customerNumber, business_id: businessId, fax,
-      agreement_description: agreementDesc || null,
-      agreement_amount_before_vat: agreementBeforeVat ? parseFloat(agreementBeforeVat) : null,
-      agreement_amount_with_vat: agreementWithVat ? parseFloat(agreementWithVat) : null,
-      agreement_serial_number: agreementSerial || null,
-    } as any;
-    let error;
-    if (isEdit) { ({ error } = await supabase.from('customers').update(payload).eq('id', customer!.id)); }
-    else { ({ error } = await supabase.from('customers').insert({ ...payload, company_name: user?.company_name || '', created_by: user?.id })); }
-    setLoading(false);
-    if (error) { toast.error('שגיאה'); console.error(error); } else { toast.success(isEdit ? 'עודכן' : 'נוסף'); onDone(); }
-  };
-
-  const handlePrintAgreement = () => {
+  const handlePrintAgreement = (ag: AgreementRow) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
     const today = new Date().toLocaleDateString('he-IL');
     printWindow.document.write(`
       <html dir="rtl">
       <head>
-        <title>הסכם עבודה - ${name}</title>
+        <title>הסכם עבודה - ${c.name}</title>
         <style>
           body { font-family: Arial, sans-serif; padding: 40px; color: #222; }
           h1 { text-align: center; font-size: 24px; margin-bottom: 4px; }
@@ -335,22 +220,22 @@ function CustomerForm({ customer, onDone, onBack, user }: { customer: CustomerRo
         <div class="section">
           <div class="section-title">פרטי לקוח</div>
           <div class="info-grid">
-            <div class="info-item"><label>שם</label><p>${name}</p></div>
-            <div class="info-item"><label>מספר לקוח</label><p>${customerNumber || '—'}</p></div>
-            <div class="info-item"><label>סוג</label><p>${customerType === 'company' ? 'חברה' : 'פרטי'}</p></div>
-            <div class="info-item"><label>עוסק מורשה / ח.פ</label><p>${businessId || '—'}</p></div>
-            <div class="info-item"><label>איש קשר</label><p>${contactPerson}</p></div>
-            <div class="info-item"><label>טלפון</label><p>${phone || '—'}</p></div>
-            <div class="info-item"><label>אימייל</label><p>${email || '—'}</p></div>
-            <div class="info-item"><label>כתובת</label><p>${address || '—'}</p></div>
+            <div class="info-item"><label>שם</label><p>${c.name}</p></div>
+            <div class="info-item"><label>מספר לקוח</label><p>${c.customer_number || '—'}</p></div>
+            <div class="info-item"><label>סוג</label><p>${c.customer_type === 'company' ? 'חברה' : 'פרטי'}</p></div>
+            <div class="info-item"><label>עוסק מורשה / ח.פ</label><p>${c.business_id || '—'}</p></div>
+            <div class="info-item"><label>איש קשר</label><p>${c.contact_person}</p></div>
+            <div class="info-item"><label>טלפון</label><p>${c.phone || '—'}</p></div>
+            <div class="info-item"><label>אימייל</label><p>${c.email || '—'}</p></div>
+            <div class="info-item"><label>כתובת</label><p>${c.address || '—'}</p></div>
           </div>
         </div>
         <div class="section">
           <div class="section-title">פרטי הסכם</div>
-          ${agreementSerial ? `<div class="info-item" style="margin-bottom:12px"><label>מספר סידורי</label><p>${agreementSerial}</p></div>` : ''}
-          ${agreementDesc ? `<div class="info-item" style="margin-bottom:16px"><label>פירוט</label><p>${agreementDesc}</p></div>` : ''}
-          <div class="amount-row"><span>סכום לפני מע״מ</span><span>₪${agreementBeforeVat ? parseFloat(agreementBeforeVat).toLocaleString('he-IL') : '—'}</span></div>
-          <div class="amount-row"><span>סכום כולל מע״מ</span><span>₪${agreementWithVat ? parseFloat(agreementWithVat).toLocaleString('he-IL') : '—'}</span></div>
+          ${ag.serial_number ? `<div class="info-item" style="margin-bottom:12px"><label>מספר סידורי</label><p>${ag.serial_number}</p></div>` : ''}
+          ${ag.description ? `<div class="info-item" style="margin-bottom:16px"><label>פירוט</label><p>${ag.description}</p></div>` : ''}
+          <div class="amount-row"><span>סכום לפני מע״מ</span><span>₪${ag.amount_before_vat ? Number(ag.amount_before_vat).toLocaleString('he-IL') : '—'}</span></div>
+          <div class="amount-row"><span>סכום כולל מע״מ</span><span>₪${ag.amount_with_vat ? Number(ag.amount_with_vat).toLocaleString('he-IL') : '—'}</span></div>
         </div>
         <div class="note">מסמך זה מהווה הסכם עבודה בלבד ואינו מהווה חשבונית מס</div>
         <div class="signatures">
@@ -362,6 +247,266 @@ function CustomerForm({ customer, onDone, onBack, user }: { customer: CustomerRo
     `);
     printWindow.document.close();
     printWindow.print();
+  };
+
+  return (
+    <div className="animate-fade-in">
+      <button onClick={onBack} className="flex items-center gap-2 text-primary text-lg font-medium mb-4 min-h-[48px]"><ArrowRight size={20} /> חזרה</button>
+      <div className="card-elevated">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">{c.name}</h1>
+            {c.customer_number && <p className="text-muted-foreground text-sm">מס׳ לקוח: {c.customer_number}</p>}
+          </div>
+          <span className={`status-badge ${c.status === 'active' ? 'status-active' : 'status-inactive'}`}>{c.status === 'active' ? 'פעיל' : 'לא פעיל'}</span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 text-lg">
+          <div><span className="text-muted-foreground text-sm">סוג</span><p className="font-bold">{c.customer_type === 'company' ? 'חברה' : 'פרטי'}</p></div>
+          {c.business_id && <div><span className="text-muted-foreground text-sm">עוסק מורשה / ח.פ</span><p className="font-bold">{c.business_id}</p></div>}
+          <div><span className="text-muted-foreground text-sm">איש קשר</span><p className="font-bold">{c.contact_person}</p></div>
+          <div><span className="text-muted-foreground text-sm">טלפון</span><p className="font-bold" dir="ltr">{c.phone}</p></div>
+          {c.fax && <div><span className="text-muted-foreground text-sm">פקס</span><p className="font-bold" dir="ltr">{c.fax}</p></div>}
+          <div><span className="text-muted-foreground text-sm">אימייל</span><p className="font-bold" dir="ltr">{c.email}</p></div>
+          {c.address && <div className="col-span-2"><span className="text-muted-foreground text-sm">כתובת</span><p className="font-bold">{c.address}</p></div>}
+        </div>
+
+        {c.notes && <p className="mt-4 p-3 bg-muted rounded-xl text-muted-foreground">{c.notes}</p>}
+
+        {/* Agreements list */}
+        {agreements.length > 0 && (
+          <div className="mt-6 space-y-3">
+            <h3 className="text-lg font-bold flex items-center gap-2"><FileText size={20} className="text-primary" /> הסכמים ({agreements.length})</h3>
+            {agreements.map((ag, idx) => (
+              <div key={ag.id} className="border-2 border-primary/20 rounded-xl p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">הסכם #{idx + 1}</span>
+                  <button onClick={() => handlePrintAgreement(ag)} className="text-primary flex items-center gap-1 text-sm font-medium hover:opacity-80">
+                    <Printer size={16} /> הדפסה
+                  </button>
+                </div>
+                {ag.serial_number && <p className="text-sm"><span className="text-muted-foreground">מס׳ סידורי:</span> <strong>{ag.serial_number}</strong></p>}
+                {ag.description && <p className="text-sm"><span className="text-muted-foreground">פירוט:</span> {ag.description}</p>}
+                <div className="flex gap-6 text-sm">
+                  {ag.amount_before_vat != null && <span><span className="text-muted-foreground">לפני מע״מ:</span> <strong>₪{Number(ag.amount_before_vat).toLocaleString('he-IL')}</strong></span>}
+                  {ag.amount_with_vat != null && <span><span className="text-muted-foreground">כולל מע״מ:</span> <strong>₪{Number(ag.amount_with_vat).toLocaleString('he-IL')}</strong></span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="flex gap-3 mt-6">
+          {c.phone && <a href={`tel:${c.phone}`} className="flex-1 bg-primary text-primary-foreground rounded-2xl p-4 flex items-center justify-center gap-2 text-lg font-bold"><Phone size={22} /> התקשר</a>}
+          {c.email && <a href={`mailto:${c.email}`} className="flex-1 bg-muted text-foreground rounded-2xl p-4 flex items-center justify-center gap-2 text-lg font-bold"><Mail size={22} /> מייל</a>}
+        </div>
+
+        {/* Password management section */}
+        {isManager && c.email && (
+          <div className="border-2 border-primary/20 rounded-2xl p-5 mt-4 space-y-3">
+            <div className="flex items-center gap-2 text-primary mb-1">
+              <Lock size={20} />
+              <h3 className="text-lg font-bold">ניהול סיסמה</h3>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={onSendReset} disabled={resetLoading}
+                className="flex-1 py-4 rounded-xl bg-accent text-accent-foreground font-bold flex items-center justify-center gap-2 text-lg hover:opacity-90 transition-opacity disabled:opacity-50">
+                {resetLoading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
+                שלח קישור איפוס
+              </button>
+              <button onClick={onChangePassword}
+                className="flex-1 py-4 rounded-xl bg-primary/10 text-primary font-bold flex items-center justify-center gap-2 text-lg hover:opacity-90 transition-opacity">
+                <KeyRound size={20} />
+                החלף סיסמה
+              </button>
+            </div>
+          </div>
+        )}
+
+        {isManager && (
+          <div className="flex gap-3 mt-4">
+            <button onClick={onEdit} className="flex-1 py-4 rounded-xl bg-primary/10 text-primary font-bold flex items-center justify-center gap-2 text-lg">
+              <Edit2 size={20} /> עריכת פרטי לקוח
+            </button>
+            <button onClick={onDelete} className="py-4 px-6 rounded-xl border-2 border-destructive/30 text-destructive font-bold flex items-center justify-center gap-2">
+              <Trash2 size={20} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Change Password Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound size={22} className="text-primary" />
+              החלפת סיסמה - {c.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <p className="text-muted-foreground text-sm">הגדר סיסמה חדשה עבור <strong dir="ltr">{c.email}</strong></p>
+            <div className="relative">
+              <label className="block text-lg font-medium mb-2">סיסמה חדשה</label>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                className="w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none pl-12"
+                placeholder="לפחות 6 תווים"
+                dir="ltr"
+                style={{ textAlign: 'right' }}
+              />
+              <button type="button" onClick={() => setShowPassword(!showPassword)}
+                className="absolute left-3 top-[52px] text-muted-foreground hover:text-foreground">
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+            <button onClick={handleChangePassword}
+              disabled={passwordLoading || !newPassword || newPassword.length < 6}
+              className="w-full py-4 rounded-xl bg-primary text-primary-foreground text-lg font-bold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
+              {passwordLoading ? <Loader2 size={20} className="animate-spin" /> : <KeyRound size={20} />}
+              שמור סיסמה חדשה
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+/* ───── Customer Form ───── */
+interface AgreementDraft {
+  id?: string;
+  serial_number: string;
+  description: string;
+  amount_before_vat: string;
+  amount_with_vat: string;
+}
+
+function CustomerForm({ customer, onDone, onBack, user }: { customer: CustomerRow | null; onDone: () => void; onBack: () => void; user: any }) {
+  const isEdit = !!customer;
+  const [name, setName] = useState(customer?.name || '');
+  const [customerType, setCustomerType] = useState(customer?.customer_type || 'company');
+  const [contactPerson, setContactPerson] = useState(customer?.contact_person || '');
+  const [phone, setPhone] = useState(customer?.phone || '');
+  const [email, setEmail] = useState(customer?.email || '');
+  const [address, setAddress] = useState(customer?.address || '');
+  const [status, setStatus] = useState(customer?.status || 'active');
+  const [notes, setNotes] = useState(customer?.notes || '');
+  const [customerNumber, setCustomerNumber] = useState(customer?.customer_number || '');
+  const [businessId, setBusinessId] = useState(customer?.business_id || '');
+  const [fax, setFax] = useState(customer?.fax || '');
+  const [loading, setLoading] = useState(false);
+
+  // Multiple agreements
+  const [agreements, setAgreements] = useState<AgreementDraft[]>([]);
+  const [deletedAgreementIds, setDeletedAgreementIds] = useState<string[]>([]);
+
+  // Load existing agreements when editing
+  useEffect(() => {
+    if (isEdit && customer) {
+      supabase.from('customer_agreements').select('*').eq('customer_id', customer.id).order('created_at', { ascending: true })
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            setAgreements(data.map((a: any) => ({
+              id: a.id,
+              serial_number: a.serial_number || '',
+              description: a.description || '',
+              amount_before_vat: a.amount_before_vat?.toString() || '',
+              amount_with_vat: a.amount_with_vat?.toString() || '',
+            })));
+          } else if (customer.agreement_serial_number || customer.agreement_description || customer.agreement_amount_before_vat) {
+            // Migrate legacy single agreement
+            setAgreements([{
+              serial_number: customer.agreement_serial_number || '',
+              description: customer.agreement_description || '',
+              amount_before_vat: customer.agreement_amount_before_vat?.toString() || '',
+              amount_with_vat: customer.agreement_amount_with_vat?.toString() || '',
+            }]);
+          }
+        });
+    }
+  }, []);
+
+  const addAgreement = () => {
+    setAgreements(prev => [...prev, { serial_number: '', description: '', amount_before_vat: '', amount_with_vat: '' }]);
+  };
+
+  const removeAgreement = (idx: number) => {
+    const ag = agreements[idx];
+    if (ag.id) setDeletedAgreementIds(prev => [...prev, ag.id!]);
+    setAgreements(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const updateAgreement = (idx: number, field: keyof AgreementDraft, value: string) => {
+    setAgreements(prev => prev.map((a, i) => i === idx ? { ...a, [field]: value } : a));
+  };
+
+  const isValid = name && contactPerson;
+  const inputClass = "w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
+
+  const handleSubmit = async () => {
+    if (!isValid) return;
+    setLoading(true);
+    const payload = {
+      name, customer_type: customerType, contact_person: contactPerson,
+      phone, email, address, status, notes,
+      customer_number: customerNumber, business_id: businessId, fax,
+      // Keep legacy fields for backward compat
+      agreement_description: agreements[0]?.description || null,
+      agreement_amount_before_vat: agreements[0]?.amount_before_vat ? parseFloat(agreements[0].amount_before_vat) : null,
+      agreement_amount_with_vat: agreements[0]?.amount_with_vat ? parseFloat(agreements[0].amount_with_vat) : null,
+      agreement_serial_number: agreements[0]?.serial_number || null,
+    } as any;
+
+    let error;
+    let customerId = customer?.id;
+
+    if (isEdit) {
+      ({ error } = await supabase.from('customers').update(payload).eq('id', customer!.id));
+    } else {
+      const res = await supabase.from('customers').insert({ ...payload, company_name: user?.company_name || '', created_by: user?.id }).select('id').single();
+      error = res.error;
+      customerId = res.data?.id;
+    }
+
+    if (error) {
+      toast.error('שגיאה');
+      console.error(error);
+      setLoading(false);
+      return;
+    }
+
+    // Save agreements
+    if (customerId) {
+      // Delete removed agreements
+      if (deletedAgreementIds.length > 0) {
+        await supabase.from('customer_agreements').delete().in('id', deletedAgreementIds);
+      }
+
+      // Upsert agreements
+      for (const ag of agreements) {
+        const agPayload = {
+          customer_id: customerId,
+          serial_number: ag.serial_number,
+          description: ag.description,
+          amount_before_vat: ag.amount_before_vat ? parseFloat(ag.amount_before_vat) : null,
+          amount_with_vat: ag.amount_with_vat ? parseFloat(ag.amount_with_vat) : null,
+          company_name: user?.company_name || '',
+        };
+
+        if (ag.id) {
+          await supabase.from('customer_agreements').update(agPayload).eq('id', ag.id);
+        } else {
+          await supabase.from('customer_agreements').insert(agPayload);
+        }
+      }
+    }
+
+    setLoading(false);
+    toast.success(isEdit ? 'עודכן' : 'נוסף');
+    onDone();
   };
 
   return (
@@ -389,31 +534,48 @@ function CustomerForm({ customer, onDone, onBack, user }: { customer: CustomerRo
           <select value={status} onChange={e => setStatus(e.target.value)} className={inputClass}><option value="active">פעיל</option><option value="inactive">לא פעיל</option></select></div>
         <div><label className="block text-lg font-medium mb-2">הערות</label><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={`${inputClass} resize-none`} /></div>
 
-        {/* הסכם עבודה */}
+        {/* הסכמים */}
         <div className="border-2 border-primary/20 rounded-2xl p-5 space-y-4">
-          <div className="flex items-center gap-2 text-primary">
-            <FileText size={22} />
-            <h2 className="text-xl font-bold">הסכם עבודה</h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-primary">
+              <FileText size={22} />
+              <h2 className="text-xl font-bold">הסכמי עבודה</h2>
+            </div>
+            <button type="button" onClick={addAgreement} className="flex items-center gap-1 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-bold text-sm hover:opacity-90 transition-opacity">
+              <Plus size={18} /> הוסף הסכם
+            </button>
           </div>
           <p className="text-sm text-muted-foreground">מסמך פתיחת לקוח — אינו מהווה חשבונית</p>
-          <div><label className="block text-lg font-medium mb-2">מספר סידורי</label><input value={agreementSerial} onChange={e => setAgreementSerial(e.target.value)} className={inputClass} placeholder="מספר סידורי להסכם" /></div>
-          <div><label className="block text-lg font-medium mb-2">פירוט קצר</label><textarea value={agreementDesc} onChange={e => setAgreementDesc(e.target.value)} rows={2} className={`${inputClass} resize-none`} placeholder="תיאור השירות / ההסכם" /></div>
-          <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-lg font-medium mb-2">סכום לפני מע״מ</label><input type="number" value={agreementBeforeVat} onChange={e => setAgreementBeforeVat(e.target.value)} className={inputClass} dir="ltr" style={{ textAlign: 'right' }} placeholder="₪" /></div>
-            <div><label className="block text-lg font-medium mb-2">סכום כולל מע״מ</label><input type="number" value={agreementWithVat} onChange={e => setAgreementWithVat(e.target.value)} className={inputClass} dir="ltr" style={{ textAlign: 'right' }} placeholder="₪" /></div>
-          </div>
+
+          {agreements.length === 0 && (
+            <div className="text-center py-6 text-muted-foreground">
+              <FileText size={32} className="mx-auto mb-2 opacity-40" />
+              <p>אין הסכמים. לחץ על "הוסף הסכם" להוספת הסכם חדש.</p>
+            </div>
+          )}
+
+          {agreements.map((ag, idx) => (
+            <div key={idx} className="border border-border rounded-xl p-4 space-y-3 relative">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-primary">הסכם #{idx + 1}</span>
+                <button type="button" onClick={() => removeAgreement(idx)} className="text-destructive hover:opacity-70 p-1">
+                  <X size={18} />
+                </button>
+              </div>
+              <div><label className="block text-base font-medium mb-1">מספר סידורי</label><input value={ag.serial_number} onChange={e => updateAgreement(idx, 'serial_number', e.target.value)} className={inputClass} placeholder="מספר סידורי להסכם" /></div>
+              <div><label className="block text-base font-medium mb-1">פירוט קצר</label><textarea value={ag.description} onChange={e => updateAgreement(idx, 'description', e.target.value)} rows={2} className={`${inputClass} resize-none`} placeholder="תיאור השירות / ההסכם" /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="block text-base font-medium mb-1">סכום לפני מע״מ</label><input type="number" value={ag.amount_before_vat} onChange={e => updateAgreement(idx, 'amount_before_vat', e.target.value)} className={inputClass} dir="ltr" style={{ textAlign: 'right' }} placeholder="₪" /></div>
+                <div><label className="block text-base font-medium mb-1">סכום כולל מע״מ</label><input type="number" value={ag.amount_with_vat} onChange={e => updateAgreement(idx, 'amount_with_vat', e.target.value)} className={inputClass} dir="ltr" style={{ textAlign: 'right' }} placeholder="₪" /></div>
+              </div>
+            </div>
+          ))}
         </div>
 
         <button onClick={handleSubmit} disabled={!isValid || loading}
           className={`w-full py-5 rounded-xl text-xl font-bold transition-colors ${isValid && !loading ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}>
           {loading ? 'שומר...' : isEdit ? '💾 עדכן' : '💾 שמור'}
         </button>
-
-        {isEdit && (agreementDesc || agreementBeforeVat || agreementWithVat) && (
-          <button onClick={handlePrintAgreement} className="w-full py-4 rounded-xl border-2 border-primary/30 text-primary text-lg font-bold flex items-center justify-center gap-2">
-            <Printer size={20} /> הדפסת הסכם עבודה
-          </button>
-        )}
       </div>
     </div>
   );
