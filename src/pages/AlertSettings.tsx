@@ -138,6 +138,20 @@ export default function AlertSettings() {
                     </div>
                   </div>
                 )}
+                <label className="flex items-center gap-3 p-3 rounded-xl bg-muted cursor-pointer">
+                  <input type="checkbox"
+                    checked={config.require_insurance_docs}
+                    onChange={e => updateConfig(config.id, 'require_insurance_docs', e.target.checked)}
+                    className="rounded" />
+                  <span className="text-sm font-medium">חובת הכנסת מסמכי ביטוח בהקמת רכב</span>
+                </label>
+                <label className="flex items-center gap-3 p-3 rounded-xl bg-muted cursor-pointer">
+                  <input type="checkbox"
+                    checked={config.require_no_claims}
+                    onChange={e => updateConfig(config.id, 'require_no_claims', e.target.checked)}
+                    className="rounded" />
+                  <span className="text-sm font-medium">חובת מילוי היסטוריית הדר תביעות</span>
+                </label>
               </div>
             </div>
           ))}
