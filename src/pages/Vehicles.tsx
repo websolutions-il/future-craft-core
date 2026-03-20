@@ -1080,11 +1080,11 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
 
         {/* === Document Uploads === */}
         <div className="border-t border-border pt-5">
-          <h2 className="text-xl font-bold mb-4">📎 מסמכים {!isEdit && <span className="text-destructive text-sm">(חובה)</span>}</h2>
+          <h2 className="text-xl font-bold mb-4">📎 מסמכים {!isEdit && insuranceDocsRequired && <span className="text-destructive text-sm">(חובה)</span>}</h2>
           <div className="space-y-4">
             <ImageUpload
               label="צילום רישיון רכב"
-              required={!isEdit}
+              required={!isEdit && insuranceDocsRequired}
               imageUrl={licenseDocUrl || null}
               onImageUploaded={(url) => setLicenseDocUrl(url || '')}
               folder="vehicle-docs"
@@ -1092,7 +1092,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
             />
             <ImageUpload
               label="פוליסת ביטוח חובה"
-              required={!isEdit}
+              required={!isEdit && insuranceDocsRequired}
               imageUrl={insuranceDocUrl || null}
               onImageUploaded={(url) => setInsuranceDocUrl(url || '')}
               folder="vehicle-docs"
@@ -1100,7 +1100,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
             />
             <ImageUpload
               label="פוליסת ביטוח מקיף"
-              required={!isEdit}
+              required={!isEdit && insuranceDocsRequired}
               imageUrl={compInsDocUrl || null}
               onImageUploaded={(url) => setCompInsDocUrl(url || '')}
               folder="vehicle-docs"
