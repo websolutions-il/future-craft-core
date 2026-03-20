@@ -57,7 +57,7 @@ export default function About() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={logo} alt="דליה" className="h-10" />
-            <span className="text-primary-foreground font-bold text-lg hidden sm:inline">פתרונות מימון ותפעול לרכב</span>
+            <span className="text-primary-foreground font-bold text-lg hidden sm:inline">פתרונות תפעול ותחזוקה לרכב</span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-primary-foreground/80 text-sm">
             <a href="#problems" className="hover:text-primary-foreground transition-colors">הבעיות</a>
