@@ -578,6 +578,8 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
 
   // Company setting: is driver assignment required?
   const [driverRequired, setDriverRequired] = useState(true);
+  const [insuranceDocsRequired, setInsuranceDocsRequired] = useState(true);
+  const [noClaimsRequired, setNoClaimsRequired] = useState(true);
 
   // Show insurance section for financial_leasing or self_maintained
   const showInsuranceSection = managementType === 'financial_leasing' || managementType === 'self_maintained';
@@ -587,25 +589,36 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
       const companyName = user?.company_name || '';
       const { data: settings } = await supabase
         .from('company_settings')
-        .select('require_driver_assignment, max_vehicles_without_assignment')
+        .select('require_driver_assignment, max_vehicles_without_assignment, require_insurance_docs, require_no_claims')
         .eq('company_name', companyName)
         .maybeSingle();
       
-      if (settings && settings.require_driver_assignment === false) {
-        const maxExempt = settings.max_vehicles_without_assignment || 0;
-        if (maxExempt === 0) {
-          setDriverRequired(false);
-        } else {
-          const { count } = await supabase
-            .from('vehicles')
-            .select('id', { count: 'exact', head: true })
-            .eq('company_name', companyName)
-            .is('assigned_driver_id', null);
-          const currentExempt = count || 0;
-          const isEditingExempt = isEdit && !vehicle?.assigned_driver_id;
-          const effectiveCount = isEditingExempt ? currentExempt - 1 : currentExempt;
-          if (effectiveCount < maxExempt) {
+      if (settings) {
+        // Insurance docs setting
+        if (settings.require_insurance_docs === false) {
+          setInsuranceDocsRequired(false);
+        }
+        // No claims setting
+        if (settings.require_no_claims === false) {
+          setNoClaimsRequired(false);
+        }
+        // Driver assignment setting
+        if (settings.require_driver_assignment === false) {
+          const maxExempt = settings.max_vehicles_without_assignment || 0;
+          if (maxExempt === 0) {
             setDriverRequired(false);
+          } else {
+            const { count } = await supabase
+              .from('vehicles')
+              .select('id', { count: 'exact', head: true })
+              .eq('company_name', companyName)
+              .is('assigned_driver_id', null);
+            const currentExempt = count || 0;
+            const isEditingExempt = isEdit && !vehicle?.assigned_driver_id;
+            const effectiveCount = isEditingExempt ? currentExempt - 1 : currentExempt;
+            if (effectiveCount < maxExempt) {
+              setDriverRequired(false);
+            }
           }
         }
       }
