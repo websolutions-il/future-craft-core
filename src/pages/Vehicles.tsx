@@ -578,6 +578,8 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
 
   // Company setting: is driver assignment required?
   const [driverRequired, setDriverRequired] = useState(true);
+  const [insuranceDocsRequired, setInsuranceDocsRequired] = useState(true);
+  const [noClaimsRequired, setNoClaimsRequired] = useState(true);
 
   // Show insurance section for financial_leasing or self_maintained
   const showInsuranceSection = managementType === 'financial_leasing' || managementType === 'self_maintained';
@@ -587,25 +589,36 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
       const companyName = user?.company_name || '';
       const { data: settings } = await supabase
         .from('company_settings')
-        .select('require_driver_assignment, max_vehicles_without_assignment')
+        .select('require_driver_assignment, max_vehicles_without_assignment, require_insurance_docs, require_no_claims')
         .eq('company_name', companyName)
         .maybeSingle();
       
-      if (settings && settings.require_driver_assignment === false) {
-        const maxExempt = settings.max_vehicles_without_assignment || 0;
-        if (maxExempt === 0) {
-          setDriverRequired(false);
-        } else {
-          const { count } = await supabase
-            .from('vehicles')
-            .select('id', { count: 'exact', head: true })
-            .eq('company_name', companyName)
-            .is('assigned_driver_id', null);
-          const currentExempt = count || 0;
-          const isEditingExempt = isEdit && !vehicle?.assigned_driver_id;
-          const effectiveCount = isEditingExempt ? currentExempt - 1 : currentExempt;
-          if (effectiveCount < maxExempt) {
+      if (settings) {
+        // Insurance docs setting
+        if (settings.require_insurance_docs === false) {
+          setInsuranceDocsRequired(false);
+        }
+        // No claims setting
+        if (settings.require_no_claims === false) {
+          setNoClaimsRequired(false);
+        }
+        // Driver assignment setting
+        if (settings.require_driver_assignment === false) {
+          const maxExempt = settings.max_vehicles_without_assignment || 0;
+          if (maxExempt === 0) {
             setDriverRequired(false);
+          } else {
+            const { count } = await supabase
+              .from('vehicles')
+              .select('id', { count: 'exact', head: true })
+              .eq('company_name', companyName)
+              .is('assigned_driver_id', null);
+            const currentExempt = count || 0;
+            const isEditingExempt = isEdit && !vehicle?.assigned_driver_id;
+            const effectiveCount = isEditingExempt ? currentExempt - 1 : currentExempt;
+            if (effectiveCount < maxExempt) {
+              setDriverRequired(false);
+            }
           }
         }
       }
@@ -663,7 +676,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
     }
   }
 
-  const allDocsFilled = isEdit || (licenseDocUrl && insuranceDocUrl && compInsDocUrl);
+  const allDocsFilled = isEdit || !insuranceDocsRequired || (licenseDocUrl && insuranceDocUrl && compInsDocUrl);
   const isValid = basicFieldsFilled && typeFieldsFilled && allDocsFilled;
 
   const inputClass = "w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
@@ -1067,11 +1080,11 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
 
         {/* === Document Uploads === */}
         <div className="border-t border-border pt-5">
-          <h2 className="text-xl font-bold mb-4">📎 מסמכים {!isEdit && <span className="text-destructive text-sm">(חובה)</span>}</h2>
+          <h2 className="text-xl font-bold mb-4">📎 מסמכים {!isEdit && insuranceDocsRequired && <span className="text-destructive text-sm">(חובה)</span>}</h2>
           <div className="space-y-4">
             <ImageUpload
               label="צילום רישיון רכב"
-              required={!isEdit}
+              required={!isEdit && insuranceDocsRequired}
               imageUrl={licenseDocUrl || null}
               onImageUploaded={(url) => setLicenseDocUrl(url || '')}
               folder="vehicle-docs"
@@ -1079,7 +1092,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
             />
             <ImageUpload
               label="פוליסת ביטוח חובה"
-              required={!isEdit}
+              required={!isEdit && insuranceDocsRequired}
               imageUrl={insuranceDocUrl || null}
               onImageUploaded={(url) => setInsuranceDocUrl(url || '')}
               folder="vehicle-docs"
@@ -1087,7 +1100,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
             />
             <ImageUpload
               label="פוליסת ביטוח מקיף"
-              required={!isEdit}
+              required={!isEdit && insuranceDocsRequired}
               imageUrl={compInsDocUrl || null}
               onImageUploaded={(url) => setCompInsDocUrl(url || '')}
               folder="vehicle-docs"
@@ -1123,6 +1136,8 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
             {!basicFieldsFilled && <p>• יש למלא את כל שדות החובה (מסומנים ב-*)</p>}
             {!typeFieldsFilled && <p>• יש למלא את כל שדות סוג ניהול הרכב</p>}
             {!allDocsFilled && <p>• יש לצרף את כל המסמכים הנדרשים (רישיון רכב, ביטוח חובה, ביטוח מקיף)</p>}
+            {!insuranceDocsRequired && <p className="text-muted-foreground">ℹ️ חובת מסמכי ביטוח בוטלה עבור חברה זו</p>}
+            {!noClaimsRequired && showInsuranceSection && <p className="text-muted-foreground">ℹ️ חובת הדר תביעות בוטלה עבור חברה זו</p>}
           </div>
         )}
 

@@ -14,6 +14,8 @@ interface CompanyAlertConfig {
   require_driver_assignment: boolean;
   max_vehicles_without_assignment: number;
   vehicle_approval_required: boolean;
+  require_insurance_docs: boolean;
+  require_no_claims: boolean;
 }
 
 export default function AlertSettings() {
@@ -28,7 +30,7 @@ export default function AlertSettings() {
 
   const loadConfigs = async () => {
     setLoading(true);
-    const { data } = await supabase.from('company_settings').select('id, company_name, alert_days_before, reminder_30_days, reminder_7_days, reminder_1_day, require_driver_assignment, max_vehicles_without_assignment, vehicle_approval_required');
+    const { data } = await supabase.from('company_settings').select('id, company_name, alert_days_before, reminder_30_days, reminder_7_days, reminder_1_day, require_driver_assignment, max_vehicles_without_assignment, vehicle_approval_required, require_insurance_docs, require_no_claims');
     if (data) setConfigs(data as CompanyAlertConfig[]);
     setLoading(false);
   };
@@ -42,6 +44,8 @@ export default function AlertSettings() {
       require_driver_assignment: config.require_driver_assignment,
       max_vehicles_without_assignment: config.max_vehicles_without_assignment,
       vehicle_approval_required: config.vehicle_approval_required,
+      require_insurance_docs: config.require_insurance_docs,
+      require_no_claims: config.require_no_claims,
     }).eq('id', config.id);
     if (error) toast.error('שגיאה בשמירה');
     else toast.success(`הגדרות ${config.company_name} עודכנו`);
@@ -134,6 +138,20 @@ export default function AlertSettings() {
                     </div>
                   </div>
                 )}
+                <label className="flex items-center gap-3 p-3 rounded-xl bg-muted cursor-pointer">
+                  <input type="checkbox"
+                    checked={config.require_insurance_docs}
+                    onChange={e => updateConfig(config.id, 'require_insurance_docs', e.target.checked)}
+                    className="rounded" />
+                  <span className="text-sm font-medium">חובת הכנסת מסמכי ביטוח בהקמת רכב</span>
+                </label>
+                <label className="flex items-center gap-3 p-3 rounded-xl bg-muted cursor-pointer">
+                  <input type="checkbox"
+                    checked={config.require_no_claims}
+                    onChange={e => updateConfig(config.id, 'require_no_claims', e.target.checked)}
+                    className="rounded" />
+                  <span className="text-sm font-medium">חובת מילוי היסטוריית הדר תביעות</span>
+                </label>
               </div>
             </div>
           ))}
