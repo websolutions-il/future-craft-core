@@ -1136,6 +1136,8 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
             {!basicFieldsFilled && <p>• יש למלא את כל שדות החובה (מסומנים ב-*)</p>}
             {!typeFieldsFilled && <p>• יש למלא את כל שדות סוג ניהול הרכב</p>}
             {!allDocsFilled && <p>• יש לצרף את כל המסמכים הנדרשים (רישיון רכב, ביטוח חובה, ביטוח מקיף)</p>}
+            {!insuranceDocsRequired && <p className="text-muted-foreground">ℹ️ חובת מסמכי ביטוח בוטלה עבור חברה זו</p>}
+            {!noClaimsRequired && showInsuranceSection && <p className="text-muted-foreground">ℹ️ חובת הדר תביעות בוטלה עבור חברה זו</p>}
           </div>
         )}
 
