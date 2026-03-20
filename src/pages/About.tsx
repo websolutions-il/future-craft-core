@@ -57,7 +57,7 @@ export default function About() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={logo} alt="דליה" className="h-10" />
-            <span className="text-primary-foreground font-bold text-lg hidden sm:inline">פתרונות מימון ותפעול לרכב</span>
+            <span className="text-primary-foreground font-bold text-lg hidden sm:inline">פתרונות תפעול ותחזוקה לרכב</span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-primary-foreground/80 text-sm">
             <a href="#problems" className="hover:text-primary-foreground transition-colors">הבעיות</a>
@@ -78,9 +78,9 @@ export default function About() {
       <section className="bg-primary text-primary-foreground py-20 sm:py-28 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
-            פתרונות מימון
+            פתרונות תפעול
             <br />
-            ותפעול לרכב
+            ותחזוקה לרכב
           </h1>
           <p className="text-lg sm:text-xl text-primary-foreground/80 max-w-2xl mx-auto mb-10 leading-relaxed">
             מערכת ניהול צי רכב מקצועית שמרכזת את כל התפעול במקום אחד:
