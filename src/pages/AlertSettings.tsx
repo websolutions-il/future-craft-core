@@ -14,6 +14,8 @@ interface CompanyAlertConfig {
   require_driver_assignment: boolean;
   max_vehicles_without_assignment: number;
   vehicle_approval_required: boolean;
+  require_insurance_docs: boolean;
+  require_no_claims: boolean;
 }
 
 export default function AlertSettings() {
