@@ -44,6 +44,8 @@ export default function AlertSettings() {
       require_driver_assignment: config.require_driver_assignment,
       max_vehicles_without_assignment: config.max_vehicles_without_assignment,
       vehicle_approval_required: config.vehicle_approval_required,
+      require_insurance_docs: config.require_insurance_docs,
+      require_no_claims: config.require_no_claims,
     }).eq('id', config.id);
     if (error) toast.error('שגיאה בשמירה');
     else toast.success(`הגדרות ${config.company_name} עודכנו`);
