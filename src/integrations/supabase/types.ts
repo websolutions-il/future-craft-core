@@ -181,6 +181,8 @@ export type Database = {
           reminder_30_days: boolean | null
           reminder_7_days: boolean | null
           require_driver_assignment: boolean
+          require_insurance_docs: boolean
+          require_no_claims: boolean
           updated_at: string | null
           vehicle_approval_required: boolean | null
           whatsapp_button_color: string | null
@@ -198,6 +200,8 @@ export type Database = {
           reminder_30_days?: boolean | null
           reminder_7_days?: boolean | null
           require_driver_assignment?: boolean
+          require_insurance_docs?: boolean
+          require_no_claims?: boolean
           updated_at?: string | null
           vehicle_approval_required?: boolean | null
           whatsapp_button_color?: string | null
@@ -215,6 +219,8 @@ export type Database = {
           reminder_30_days?: boolean | null
           reminder_7_days?: boolean | null
           require_driver_assignment?: boolean
+          require_insurance_docs?: boolean
+          require_no_claims?: boolean
           updated_at?: string | null
           vehicle_approval_required?: boolean | null
           whatsapp_button_color?: string | null
