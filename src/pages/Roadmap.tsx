@@ -128,7 +128,7 @@ export default function Roadmap() {
 
       <div className="mt-12 p-6 bg-primary text-primary-foreground rounded-2xl text-center">
         <p className="text-2xl font-bold mb-2">דליה - מערכת ניהול צי רכב</p>
-        <p className="opacity-80">פתרונות מימון ותפעול לרכב</p>
+        <p className="opacity-80">פתרונות תפעול ותחזוקה לרכב</p>
         <div className="mt-4 flex justify-center gap-6 text-sm opacity-70">
           <span>גרסה {currentVersion}</span>
           <span>תאריך: {releaseDate}</span>
