@@ -111,8 +111,14 @@ export default function BottomNav() {
 
   const isDriver = user?.role === 'driver';
   const isPrivateCustomer = user?.role === 'private_customer';
+  const isSuperAdmin = user?.role === 'super_admin';
   const mobileNav = isDriver ? driverMobileNav : isPrivateCustomer ? privateCustomerMobileNav : managerMobileNav;
-  const moreItems = (isDriver || isPrivateCustomer) ? [] : allManagerItems.filter(
+  const allItemsForMobile = [
+    ...allManagerItems,
+    ...extraItems,
+    ...(isSuperAdmin ? superAdminExtra : []),
+  ];
+  const moreItems = (isDriver || isPrivateCustomer) ? [] : allItemsForMobile.filter(
     item => !managerMobileNav.some(m => m.path === item.path)
   );
 
