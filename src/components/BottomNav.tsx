@@ -103,6 +103,16 @@ const privateCustomerMobileNav: NavItem[] = [
 
 const allManagerItems = managerCategories.flatMap(c => c.items);
 
+// Extra items for all managers (promotions, chat, subscriptions)
+const extraItems: NavItem[] = [
+  { path: '/promotions', label: 'מבצעים', icon: Tag },
+  { path: '/internal-chat', label: 'צ\'אט פנימי', icon: MessageCircle },
+];
+const superAdminExtra: NavItem[] = [
+  { path: '/subscriptions', label: 'מנויים וחיוב', icon: CreditCard },
+  { path: '/project-summary', label: 'דוח תוספות', icon: ScrollText },
+];
+
 export default function BottomNav() {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -111,8 +121,14 @@ export default function BottomNav() {
 
   const isDriver = user?.role === 'driver';
   const isPrivateCustomer = user?.role === 'private_customer';
+  const isSuperAdmin = user?.role === 'super_admin';
   const mobileNav = isDriver ? driverMobileNav : isPrivateCustomer ? privateCustomerMobileNav : managerMobileNav;
-  const moreItems = (isDriver || isPrivateCustomer) ? [] : allManagerItems.filter(
+  const allItemsForMobile = [
+    ...allManagerItems,
+    ...extraItems,
+    ...(isSuperAdmin ? superAdminExtra : []),
+  ];
+  const moreItems = (isDriver || isPrivateCustomer) ? [] : allItemsForMobile.filter(
     item => !managerMobileNav.some(m => m.path === item.path)
   );
 
@@ -192,15 +208,6 @@ export function DesktopSidebar() {
     { path: '/emergency', label: 'שירותי חירום 24/7', icon: Phone },
   ];
 
-  // Extra items for all managers (promotions, chat, subscriptions)
-  const extraItems: NavItem[] = [
-    { path: '/promotions', label: 'מבצעים', icon: Tag },
-    { path: '/internal-chat', label: 'צ\'אט פנימי', icon: MessageCircle },
-  ];
-  const superAdminExtra: NavItem[] = [
-    { path: '/subscriptions', label: 'מנויים וחיוב', icon: CreditCard },
-    { path: '/project-summary', label: 'דוח תוספות', icon: ScrollText },
-  ];
 
   return (
     <aside className="hidden md:flex flex-col w-72 bg-[hsl(218,58%,15%)] text-primary-foreground h-screen fixed right-0 top-0 z-20">
