@@ -103,6 +103,16 @@ const privateCustomerMobileNav: NavItem[] = [
 
 const allManagerItems = managerCategories.flatMap(c => c.items);
 
+// Extra items for all managers (promotions, chat, subscriptions)
+const extraItems: NavItem[] = [
+  { path: '/promotions', label: 'מבצעים', icon: Tag },
+  { path: '/internal-chat', label: 'צ\'אט פנימי', icon: MessageCircle },
+];
+const superAdminExtra: NavItem[] = [
+  { path: '/subscriptions', label: 'מנויים וחיוב', icon: CreditCard },
+  { path: '/project-summary', label: 'דוח תוספות', icon: ScrollText },
+];
+
 export default function BottomNav() {
   const { user, logout } = useAuth();
   const location = useLocation();
