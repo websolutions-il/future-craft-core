@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Search, Users, Shield, KeyRound, Loader2, Filter, Pencil, Eye } from 'lucide-react';
+import { Search, Users, Shield, KeyRound, Loader2, Filter, Pencil, Eye, Mail, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -43,6 +43,7 @@ export default function UserManagement() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [companyFilter, setCompanyFilter] = useState('all');
+  const [roleFilter, setRoleFilter] = useState('all');
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<ManagedUser | null>(null);
@@ -54,6 +55,7 @@ export default function UserManagement() {
 
   useEffect(() => {
     loadCompanyOptions();
+    loadUsers();
   }, []);
 
   const loadCompanyOptions = async () => {
@@ -62,29 +64,29 @@ export default function UserManagement() {
     setCompanyOptions(Array.from(set).sort());
   };
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
   const loadUsers = async () => {
     setLoading(true);
-    const { data: profiles, error: profErr } = await supabase
-      .from('profiles')
-      .select('id, full_name, phone, company_name, is_active');
+    
+    // Fetch profiles and roles
+    const [profilesRes, rolesRes, emailsRes] = await Promise.all([
+      supabase.from('profiles').select('id, full_name, phone, company_name, is_active'),
+      supabase.from('user_roles').select('user_id, role'),
+      supabase.functions.invoke('create-admin-user', { body: { action: 'list-users' } }),
+    ]);
 
-    if (profErr) {
+    if (profilesRes.error) {
       toast({ title: 'שגיאה', description: 'לא ניתן לטעון משתמשים', variant: 'destructive' });
       setLoading(false);
       return;
     }
 
-    const { data: roles } = await supabase.from('user_roles').select('user_id, role');
-    const roleMap = new Map((roles || []).map((r) => [r.user_id, r.role]));
+    const roleMap = new Map((rolesRes.data || []).map((r: any) => [r.user_id, r.role]));
+    const emailMap: Record<string, string> = emailsRes.data?.emails || {};
 
-    const mapped: ManagedUser[] = (profiles || []).map((p) => ({
+    const mapped: ManagedUser[] = (profilesRes.data || []).map((p: any) => ({
       id: p.id,
       full_name: p.full_name || '',
-      email: '',
+      email: emailMap[p.id] || '',
       company_name: p.company_name || '',
       phone: p.phone || '',
       is_active: p.is_active ?? true,
@@ -106,11 +108,13 @@ export default function UserManagement() {
         !search ||
         u.full_name.toLowerCase().includes(search.toLowerCase()) ||
         u.company_name.toLowerCase().includes(search.toLowerCase()) ||
+        u.email.toLowerCase().includes(search.toLowerCase()) ||
         u.phone.includes(search);
       const matchCompany = companyFilter === 'all' || u.company_name === companyFilter;
-      return matchSearch && matchCompany;
+      const matchRole = roleFilter === 'all' || u.role === roleFilter;
+      return matchSearch && matchCompany && matchRole;
     });
-  }, [users, search, companyFilter]);
+  }, [users, search, companyFilter, roleFilter]);
 
   const openEditDialog = (u: ManagedUser) => {
     setSelectedUser(u);
@@ -203,6 +207,24 @@ export default function UserManagement() {
     toast({ title: newActive ? '✅ חשבון הופעל' : '⛔ חשבון הושבת', description: `המשתמש ${newActive ? 'הופעל' : 'הושבת'} בהצלחה` });
   };
 
+  const handleImpersonate = (u: ManagedUser) => {
+    impersonate({
+      id: u.id,
+      email: u.email,
+      full_name: u.full_name,
+      phone: u.phone,
+      company_name: u.company_name,
+      is_active: u.is_active,
+      role: u.role as any,
+    });
+    navigate('/dashboard');
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: 'הועתק', description: text });
+  };
+
   if (user?.role !== 'super_admin') {
     return (
       <div className="text-center py-12">
@@ -227,7 +249,7 @@ export default function UserManagement() {
         <div className="relative flex-1">
           <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="חיפוש לפי שם, חברה או טלפון..."
+            placeholder="חיפוש לפי שם, אימייל, חברה או טלפון..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pr-10"
@@ -245,6 +267,17 @@ export default function UserManagement() {
             ))}
           </SelectContent>
         </Select>
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger className="w-full sm:w-[160px]">
+            <SelectValue placeholder="כל התפקידים" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">כל התפקידים</SelectItem>
+            {Object.entries(ROLE_LABELS).map(([k, v]) => (
+              <SelectItem key={k} value={k}>{v}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Table */}
@@ -259,6 +292,7 @@ export default function UserManagement() {
             <TableHeader>
               <TableRow>
                 <TableHead className="text-right">שם</TableHead>
+                <TableHead className="text-right">אימייל</TableHead>
                 <TableHead className="text-right">חברה</TableHead>
                 <TableHead className="text-right">טלפון</TableHead>
                 <TableHead className="text-right">תפקיד</TableHead>
@@ -269,7 +303,7 @@ export default function UserManagement() {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     לא נמצאו משתמשים
                   </TableCell>
                 </TableRow>
@@ -277,6 +311,17 @@ export default function UserManagement() {
                 filtered.map((u) => (
                   <TableRow key={u.id}>
                     <TableCell className="font-bold text-foreground">{u.full_name || '—'}</TableCell>
+                    <TableCell>
+                      {u.email ? (
+                        <div className="flex items-center gap-1.5">
+                          <Mail size={13} className="text-muted-foreground shrink-0" />
+                          <span className="text-sm" dir="ltr">{u.email}</span>
+                          <button onClick={() => copyToClipboard(u.email)} className="text-muted-foreground hover:text-primary transition-colors">
+                            <Copy size={12} />
+                          </button>
+                        </div>
+                      ) : '—'}
+                    </TableCell>
                     <TableCell>{u.company_name || '—'}</TableCell>
                     <TableCell dir="ltr" className="text-right">{u.phone || '—'}</TableCell>
                     <TableCell>
@@ -285,9 +330,9 @@ export default function UserManagement() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="driver">{ROLE_LABELS.driver}</SelectItem>
-                          <SelectItem value="fleet_manager">{ROLE_LABELS.fleet_manager}</SelectItem>
-                          <SelectItem value="super_admin">{ROLE_LABELS.super_admin}</SelectItem>
+                          {Object.entries(ROLE_LABELS).map(([k, v]) => (
+                            <SelectItem key={k} value={k}>{v}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </TableCell>
@@ -322,26 +367,15 @@ export default function UserManagement() {
                           <KeyRound size={14} />
                           סיסמה
                         </Button>
-                        {u.role === 'driver' && u.id !== user?.id && (
+                        {u.id !== user?.id && u.role !== 'super_admin' && (
                           <Button
                             size="sm"
                             variant="secondary"
-                            onClick={() => {
-                              impersonate({
-                                id: u.id,
-                                email: '',
-                                full_name: u.full_name,
-                                phone: u.phone,
-                                company_name: u.company_name,
-                                is_active: u.is_active,
-                                role: 'driver',
-                              });
-                              navigate('/dashboard');
-                            }}
+                            onClick={() => handleImpersonate(u)}
                             className="gap-1.5"
                           >
                             <Eye size={14} />
-                            צפייה כנהג
+                            כניסה כ{ROLE_LABELS[u.role] || u.role}
                           </Button>
                         )}
                       </div>
@@ -364,15 +398,24 @@ export default function UserManagement() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {selectedUser?.email && (
+              <div className="p-3 rounded-xl bg-muted text-sm">
+                <span className="text-muted-foreground">אימייל: </span>
+                <span dir="ltr" className="font-medium">{selectedUser.email}</span>
+              </div>
+            )}
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">סיסמה חדשה</label>
               <Input
-                type="password"
+                type="text"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="לפחות 6 תווים"
                 minLength={6}
+                dir="ltr"
+                className="text-right"
               />
+              <p className="text-xs text-muted-foreground mt-1">הסיסמה תוחלף מיידית. שתף את הסיסמה החדשה עם המשתמש.</p>
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
@@ -395,6 +438,12 @@ export default function UserManagement() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {selectedUser?.email && (
+              <div className="p-3 rounded-xl bg-muted text-sm">
+                <span className="text-muted-foreground">אימייל: </span>
+                <span dir="ltr" className="font-medium">{selectedUser.email}</span>
+              </div>
+            )}
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">שם מלא</label>
               <Input
@@ -431,9 +480,9 @@ export default function UserManagement() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="driver">{ROLE_LABELS.driver}</SelectItem>
-                  <SelectItem value="fleet_manager">{ROLE_LABELS.fleet_manager}</SelectItem>
-                  <SelectItem value="super_admin">{ROLE_LABELS.super_admin}</SelectItem>
+                  {Object.entries(ROLE_LABELS).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -448,9 +497,6 @@ export default function UserManagement() {
                   {editForm.is_active ? 'כן' : 'לא'}
                 </span>
               </div>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              מזהה: <span dir="ltr" className="font-mono">{selectedUser?.id}</span>
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
