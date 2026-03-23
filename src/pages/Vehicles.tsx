@@ -671,8 +671,9 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
     typeFieldsFilled = !!monthlyLoanPayment && !!loanEndDate && !!plannedReplacementDate;
   } else if (managementType === 'self_maintained') {
     // Loan fields are optional but if hasLoan then they're required
+    typeFieldsFilled = !!plannedReplacementDate;
     if (hasLoan) {
-      typeFieldsFilled = !!monthlyLoanPayment && !!loanEndDate;
+      typeFieldsFilled = typeFieldsFilled && !!monthlyLoanPayment && !!loanEndDate;
     }
   }
 
