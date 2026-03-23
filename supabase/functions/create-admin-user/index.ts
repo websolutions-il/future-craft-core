@@ -65,10 +65,29 @@ Deno.serve(async (req) => {
     const { email, password, full_name, role, company_name, phone, action, user_id, is_active, user_number } = await req.json();
 
     // Actions that require super_admin only
-    const superAdminOnlyActions = ['update-password', 'reset-password-by-id', 'update-role', 'update-profile', 'toggle-active'];
+    const superAdminOnlyActions = ['update-password', 'reset-password-by-id', 'update-role', 'update-profile', 'toggle-active', 'list-users'];
     if (action && superAdminOnlyActions.includes(action) && !isSuperAdmin) {
       return new Response(JSON.stringify({ error: 'Forbidden - super_admin only' }), {
         status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // List all users with their emails
+    if (action === 'list-users') {
+      const { data: authUsers, error: listErr } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+      if (listErr) {
+        return new Response(JSON.stringify({ error: listErr.message }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const emailMap: Record<string, string> = {};
+      for (const u of authUsers.users) {
+        emailMap[u.id] = u.email || '';
+      }
+      return new Response(JSON.stringify({ success: true, emails: emailMap }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
