@@ -767,7 +767,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
 
     // Generate alerts for expiring documents
     if (!error && !isEdit) {
-      await generateVehicleAlerts(licensePlate, user);
+      await generateVehicleAlerts(licensePlate, user, payload);
     }
 
     setLoading(false);
