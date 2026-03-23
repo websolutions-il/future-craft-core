@@ -1588,6 +1588,48 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_companions: {
+        Row: {
+          companion_id: string
+          company_name: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          vehicle_id: string
+        }
+        Insert: {
+          companion_id: string
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          vehicle_id: string
+        }
+        Update: {
+          companion_id?: string
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_companions_companion_id_fkey"
+            columns: ["companion_id"]
+            isOneToOne: false
+            referencedRelation: "companions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_companions_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicle_handovers: {
         Row: {
           action_type: string | null
