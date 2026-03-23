@@ -938,7 +938,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
               </>
             )}
             <div>
-              <label className="block text-sm font-medium mb-1">מועד מתוכנן להחלפת הרכב</label>
+              <label className="block text-sm font-medium mb-1">מועד מתוכנן להחלפת הרכב *</label>
               <input type="date" value={plannedReplacementDate} onChange={e => setPlannedReplacementDate(e.target.value)} className={inputClass} />
             </div>
           </div>
