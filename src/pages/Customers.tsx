@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, User, Search, ArrowRight, Phone, Mail, Plus, Edit2, Trash2, FileText, Printer, KeyRound, Send, Eye, EyeOff, Loader2, Lock, X } from 'lucide-react';
+import { Building2, User, Search, ArrowRight, Phone, Mail, Plus, Edit2, Trash2, FileText, Printer, KeyRound, Send, Eye, EyeOff, Loader2, Lock, X, Briefcase, PlusCircle, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -35,7 +35,29 @@ interface AgreementRow {
   created_at: string;
 }
 
+interface DealRow {
+  id: string;
+  customer_id: string;
+  deal_number: string;
+  customer_name: string;
+  work_type: string;
+  description: string;
+  amount: number;
+  open_date: string;
+  target_date: string | null;
+  status: string;
+  company_name: string;
+  created_at: string;
+}
+
 type ViewMode = 'list' | 'detail' | 'form';
+
+const dealStatusLabels: Record<string, { text: string; cls: string }> = {
+  open: { text: 'פתוחה', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+  in_progress: { text: 'בביצוע', cls: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
+  completed: { text: 'הושלמה', cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+  cancelled: { text: 'בוטלה', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+};
 
 export default function Customers() {
   const { user } = useAuth();
@@ -123,6 +145,7 @@ export default function Customers() {
       <CustomerDetail
         customer={c}
         isManager={isManager}
+        user={user}
         onBack={() => { setViewMode('list'); setSelected(null); }}
         onEdit={() => { setEditItem(c); setViewMode('form'); }}
         onDelete={() => handleDelete(c.id)}
@@ -179,12 +202,21 @@ export default function Customers() {
 }
 
 /* ───── Customer Detail ───── */
-function CustomerDetail({ customer: c, isManager, onBack, onEdit, onDelete, onSendReset, onChangePassword, resetLoading, showPasswordDialog, setShowPasswordDialog, newPassword, setNewPassword, showPassword, setShowPassword, passwordLoading, handleChangePassword }: any) {
+function CustomerDetail({ customer: c, isManager, user, onBack, onEdit, onDelete, onSendReset, onChangePassword, resetLoading, showPasswordDialog, setShowPasswordDialog, newPassword, setNewPassword, showPassword, setShowPassword, passwordLoading, handleChangePassword }: any) {
   const [agreements, setAgreements] = useState<AgreementRow[]>([]);
+  const [deals, setDeals] = useState<DealRow[]>([]);
+  const [showDealForm, setShowDealForm] = useState(false);
+  const [editDeal, setEditDeal] = useState<DealRow | null>(null);
+
+  const loadDeals = () => {
+    supabase.from('customer_deals').select('*').eq('customer_id', c.id).order('created_at', { ascending: false })
+      .then(({ data }) => { if (data) setDeals(data as unknown as DealRow[]); });
+  };
 
   useEffect(() => {
     supabase.from('customer_agreements').select('*').eq('customer_id', c.id).order('created_at', { ascending: true })
       .then(({ data }) => { if (data) setAgreements(data as unknown as AgreementRow[]); });
+    loadDeals();
   }, [c.id]);
 
   const handlePrintAgreement = (ag: AgreementRow) => {
@@ -249,9 +281,20 @@ function CustomerDetail({ customer: c, isManager, onBack, onEdit, onDelete, onSe
     printWindow.print();
   };
 
+  const handleDeleteDeal = async (dealId: string) => {
+    if (!confirm('למחוק עסקה זו?')) return;
+    const { error } = await supabase.from('customer_deals').delete().eq('id', dealId);
+    if (error) toast.error('שגיאה במחיקה');
+    else { toast.success('העסקה נמחקה'); loadDeals(); }
+  };
+
+  const totalDealsAmount = deals.filter(d => d.status !== 'cancelled').reduce((sum, d) => sum + (d.amount || 0), 0);
+
   return (
     <div className="animate-fade-in">
       <button onClick={onBack} className="flex items-center gap-2 text-primary text-lg font-medium mb-4 min-h-[48px]"><ArrowRight size={20} /> חזרה</button>
+      
+      {/* Customer Info Card */}
       <div className="card-elevated">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -335,6 +378,98 @@ function CustomerDetail({ customer: c, isManager, onBack, onEdit, onDelete, onSe
         )}
       </div>
 
+      {/* ═══════ Deals / Transactions Section ═══════ */}
+      <div className="card-elevated mt-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Briefcase size={22} className="text-primary" />
+            <h2 className="text-xl font-bold">עסקאות ({deals.length})</h2>
+          </div>
+          {isManager && (
+            <button onClick={() => { setEditDeal(null); setShowDealForm(true); }}
+              className="flex items-center gap-1 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm hover:opacity-90 transition-opacity">
+              <PlusCircle size={16} /> עסקה חדשה
+            </button>
+          )}
+        </div>
+
+        {totalDealsAmount > 0 && (
+          <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 mb-4 flex items-center justify-between">
+            <span className="text-sm font-medium text-muted-foreground">סך עסקאות פעילות</span>
+            <span className="text-lg font-bold text-primary">₪{totalDealsAmount.toLocaleString('he-IL')}</span>
+          </div>
+        )}
+
+        {deals.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Briefcase size={32} className="mx-auto mb-2 opacity-40" />
+            <p>אין עסקאות עדיין</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {deals.map(deal => {
+              const sl = dealStatusLabels[deal.status] || { text: deal.status, cls: 'bg-muted text-muted-foreground' };
+              return (
+                <div key={deal.id} className="border border-border rounded-xl p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-primary">{deal.deal_number}</span>
+                      <span className={`px-2 py-0.5 rounded-lg text-xs font-medium ${sl.cls}`}>{sl.text}</span>
+                    </div>
+                    {isManager && (
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => { setEditDeal(deal); setShowDealForm(true); }} className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
+                          <Edit2 size={14} />
+                        </button>
+                        <button onClick={() => handleDeleteDeal(deal.id)} className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {deal.work_type && <p className="text-sm"><span className="text-muted-foreground">סוג עבודה:</span> {deal.work_type}</p>}
+                  {deal.description && <p className="text-sm text-muted-foreground">{deal.description}</p>}
+                  <div className="flex items-center gap-4 text-sm">
+                    {deal.amount > 0 && <span className="font-bold">₪{deal.amount.toLocaleString('he-IL')}</span>}
+                    {deal.open_date && (
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <Calendar size={12} /> נפתחה: {new Date(deal.open_date).toLocaleDateString('he-IL')}
+                      </span>
+                    )}
+                    {deal.target_date && (
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <Calendar size={12} /> יעד: {new Date(deal.target_date).toLocaleDateString('he-IL')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Deal Form Dialog */}
+      <Dialog open={showDealForm} onOpenChange={setShowDealForm}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Briefcase size={22} className="text-primary" />
+              {editDeal ? 'עריכת עסקה' : 'עסקה חדשה'} — {c.name}
+            </DialogTitle>
+          </DialogHeader>
+          <DealForm
+            deal={editDeal}
+            customerId={c.id}
+            customerName={c.name}
+            companyName={user?.company_name || ''}
+            userId={user?.id}
+            onDone={() => { setShowDealForm(false); setEditDeal(null); loadDeals(); }}
+            onCancel={() => { setShowDealForm(false); setEditDeal(null); }}
+          />
+        </DialogContent>
+      </Dialog>
+
       {/* Change Password Dialog */}
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
         <DialogContent className="max-w-md">
@@ -371,6 +506,135 @@ function CustomerDetail({ customer: c, isManager, onBack, onEdit, onDelete, onSe
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+/* ───── Deal Form ───── */
+function DealForm({ deal, customerId, customerName, companyName, userId, onDone, onCancel }: {
+  deal: DealRow | null;
+  customerId: string;
+  customerName: string;
+  companyName: string;
+  userId: string;
+  onDone: () => void;
+  onCancel: () => void;
+}) {
+  const isEdit = !!deal;
+  const [workType, setWorkType] = useState(deal?.work_type || '');
+  const [description, setDescription] = useState(deal?.description || '');
+  const [amount, setAmount] = useState(deal?.amount?.toString() || '');
+  const [openDate, setOpenDate] = useState(deal?.open_date || new Date().toISOString().split('T')[0]);
+  const [targetDate, setTargetDate] = useState(deal?.target_date || '');
+  const [status, setStatus] = useState(deal?.status || 'open');
+  const [loading, setLoading] = useState(false);
+
+  const inputClass = "w-full p-3 text-base rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
+  const isValid = workType && description;
+
+  const handleSubmit = async () => {
+    if (!isValid) { toast.error('יש למלא סוג עבודה ופירוט'); return; }
+    setLoading(true);
+
+    const payload: any = {
+      customer_id: customerId,
+      customer_name: customerName,
+      work_type: workType,
+      description,
+      amount: parseFloat(amount) || 0,
+      open_date: openDate || null,
+      target_date: targetDate || null,
+      status,
+      company_name: companyName,
+      updated_at: new Date().toISOString(),
+    };
+
+    let error;
+    if (isEdit) {
+      ({ error } = await supabase.from('customer_deals').update(payload).eq('id', deal!.id));
+    } else {
+      ({ error } = await supabase.from('customer_deals').insert({ ...payload, created_by: userId }));
+    }
+
+    setLoading(false);
+    if (error) {
+      toast.error('שגיאה בשמירה');
+      console.error(error);
+    } else {
+      toast.success(isEdit ? 'העסקה עודכנה' : 'העסקה נוספה');
+      onDone();
+    }
+  };
+
+  return (
+    <div className="space-y-4 pt-2">
+      {isEdit && deal?.deal_number && (
+        <div className="p-3 rounded-xl bg-muted text-center">
+          <span className="text-sm text-muted-foreground">מספר עסקה:</span>{' '}
+          <strong className="text-primary">{deal.deal_number}</strong>
+        </div>
+      )}
+
+      <div>
+        <label className="block text-sm font-medium mb-1">סוג עבודה / שירות *</label>
+        <select value={workType} onChange={e => setWorkType(e.target.value)} className={inputClass}>
+          <option value="">בחר סוג...</option>
+          <option value="הסעות">הסעות</option>
+          <option value="שינוע">שינוע</option>
+          <option value="ליסינג">ליסינג</option>
+          <option value="תחזוקה">תחזוקה</option>
+          <option value="ייעוץ">ייעוץ</option>
+          <option value="אחר">אחר</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">פירוט העבודה *</label>
+        <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className={`${inputClass} resize-none`} placeholder="תיאור מפורט של העסקה..." />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">סכום העסקה (₪)</label>
+        <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" className={inputClass} dir="ltr" style={{ textAlign: 'right' }} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium mb-1">תאריך פתיחה</label>
+          <input type="date" value={openDate} onChange={e => setOpenDate(e.target.value)} className={inputClass} />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">תאריך יעד</label>
+          <input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} className={inputClass} />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">סטטוס</label>
+        <div className="grid grid-cols-2 gap-2">
+          {(['open', 'in_progress', 'completed', 'cancelled'] as const).map(s => {
+            const sl = dealStatusLabels[s];
+            return (
+              <button key={s} type="button" onClick={() => setStatus(s)}
+                className={`py-2.5 rounded-xl text-sm font-medium transition-all border-2 ${
+                  status === s ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground hover:border-primary/40'
+                }`}>
+                {sl.text}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex gap-3 pt-2">
+        <button onClick={handleSubmit} disabled={!isValid || loading}
+          className={`flex-1 py-4 rounded-xl text-lg font-bold transition-colors ${isValid && !loading ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}>
+          {loading ? 'שומר...' : isEdit ? '💾 עדכן עסקה' : '💾 שמור עסקה'}
+        </button>
+        <button onClick={onCancel} className="px-6 py-4 rounded-xl border-2 border-border text-muted-foreground font-bold hover:bg-muted transition-colors">
+          ביטול
+        </button>
+      </div>
     </div>
   );
 }
