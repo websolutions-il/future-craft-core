@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Bell, Save, Building2 } from 'lucide-react';
+import { Building2, Save, Search, ChevronDown, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface CompanyAlertConfig {
@@ -18,47 +18,117 @@ interface CompanyAlertConfig {
   require_no_claims: boolean;
 }
 
+interface ProfileCompany {
+  company_name: string;
+}
+
 export default function AlertSettings() {
   const { user } = useAuth();
   const [configs, setConfigs] = useState<CompanyAlertConfig[]>([]);
+  const [companies, setCompanies] = useState<string[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState<string>('');
+  const [search, setSearch] = useState('');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const isSuperAdmin = user?.role === 'super_admin';
 
   useEffect(() => {
-    loadConfigs();
+    loadData();
   }, []);
 
-  const loadConfigs = async () => {
+  const loadData = async () => {
     setLoading(true);
-    const { data } = await supabase.from('company_settings').select('id, company_name, alert_days_before, reminder_30_days, reminder_7_days, reminder_1_day, require_driver_assignment, max_vehicles_without_assignment, vehicle_approval_required, require_insurance_docs, require_no_claims');
-    if (data) setConfigs(data as CompanyAlertConfig[]);
+
+    // Load all company settings
+    const { data: settingsData } = await supabase
+      .from('company_settings')
+      .select('id, company_name, alert_days_before, reminder_30_days, reminder_7_days, reminder_1_day, require_driver_assignment, max_vehicles_without_assignment, vehicle_approval_required, require_insurance_docs, require_no_claims');
+    
+    if (settingsData) setConfigs(settingsData as CompanyAlertConfig[]);
+
+    // Load all unique company names from profiles
+    const { data: profilesData } = await supabase
+      .from('profiles')
+      .select('company_name');
+
+    if (profilesData) {
+      const uniqueCompanies = [...new Set(
+        (profilesData as ProfileCompany[])
+          .map(p => p.company_name)
+          .filter(Boolean)
+          .filter(name => name && name.trim() !== '')
+      )].sort();
+      setCompanies(uniqueCompanies);
+
+      // Auto-create missing company_settings records
+      if (settingsData) {
+        const existingNames = new Set(settingsData.map(s => s.company_name));
+        const missingCompanies = uniqueCompanies.filter(c => !existingNames.has(c));
+        
+        if (missingCompanies.length > 0) {
+          const newSettings = missingCompanies.map(name => ({
+            company_name: name,
+            alert_days_before: 30,
+            reminder_30_days: true,
+            reminder_7_days: true,
+            reminder_1_day: true,
+            require_driver_assignment: true,
+            max_vehicles_without_assignment: 0,
+            vehicle_approval_required: false,
+            require_insurance_docs: true,
+            require_no_claims: true,
+          }));
+          
+          const { data: inserted } = await supabase
+            .from('company_settings')
+            .insert(newSettings)
+            .select('id, company_name, alert_days_before, reminder_30_days, reminder_7_days, reminder_1_day, require_driver_assignment, max_vehicles_without_assignment, vehicle_approval_required, require_insurance_docs, require_no_claims');
+          
+          if (inserted) {
+            setConfigs(prev => [...prev, ...(inserted as CompanyAlertConfig[])]);
+          }
+        }
+      }
+    }
+
     setLoading(false);
   };
 
-  const handleSave = async (config: CompanyAlertConfig) => {
+  const activeConfig = configs.find(c => c.company_name === selectedCompany);
+
+  const handleSave = async () => {
+    if (!activeConfig) return;
+    setSaving(true);
     const { error } = await supabase.from('company_settings').update({
-      alert_days_before: config.alert_days_before,
-      reminder_30_days: config.reminder_30_days,
-      reminder_7_days: config.reminder_7_days,
-      reminder_1_day: config.reminder_1_day,
-      require_driver_assignment: config.require_driver_assignment,
-      max_vehicles_without_assignment: config.max_vehicles_without_assignment,
-      vehicle_approval_required: config.vehicle_approval_required,
-      require_insurance_docs: config.require_insurance_docs,
-      require_no_claims: config.require_no_claims,
-    }).eq('id', config.id);
+      alert_days_before: activeConfig.alert_days_before,
+      reminder_30_days: activeConfig.reminder_30_days,
+      reminder_7_days: activeConfig.reminder_7_days,
+      reminder_1_day: activeConfig.reminder_1_day,
+      require_driver_assignment: activeConfig.require_driver_assignment,
+      max_vehicles_without_assignment: activeConfig.max_vehicles_without_assignment,
+      vehicle_approval_required: activeConfig.vehicle_approval_required,
+      require_insurance_docs: activeConfig.require_insurance_docs,
+      require_no_claims: activeConfig.require_no_claims,
+    }).eq('id', activeConfig.id);
+    setSaving(false);
     if (error) toast.error('שגיאה בשמירה');
-    else toast.success(`הגדרות ${config.company_name} עודכנו`);
+    else toast.success(`הגדרות ${activeConfig.company_name} עודכנו בהצלחה`);
   };
 
-  const updateConfig = (id: string, field: string, value: any) => {
-    setConfigs(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c));
+  const updateConfig = (field: string, value: any) => {
+    if (!activeConfig) return;
+    setConfigs(prev => prev.map(c => c.id === activeConfig.id ? { ...c, [field]: value } : c));
   };
+
+  const filteredCompanies = companies.filter(c => 
+    !search || c.includes(search)
+  );
 
   if (!isSuperAdmin) {
     return (
       <div className="animate-fade-in text-center py-16">
-        <Bell size={48} className="mx-auto mb-4 text-muted-foreground opacity-50" />
+        <Building2 size={48} className="mx-auto mb-4 text-muted-foreground opacity-50" />
         <p className="text-xl text-muted-foreground">אין הרשאה</p>
       </div>
     );
@@ -66,96 +136,219 @@ export default function AlertSettings() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <h1 className="page-header flex items-center gap-3"><Bell size={28} /> הגדרות חברות</h1>
-      <p className="text-muted-foreground">הגדרות התראות, אישורים והצמדת נהגים לפי חברה.</p>
+      <h1 className="page-header flex items-center gap-3">
+        <Settings2 size={28} /> הגדרות חברות
+      </h1>
+      <p className="text-muted-foreground">בחר חברה כדי לערוך את ההגדרות שלה — התראות, אישורים, חובות הצמדה ומסמכים.</p>
 
       {loading ? (
-        <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" /></div>
-      ) : configs.length === 0 ? (
-        <div className="card-elevated text-center py-12 text-muted-foreground">אין חברות מוגדרות</div>
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
+        </div>
       ) : (
-        <div className="space-y-4">
-          {configs.map(config => (
-            <div key={config.id} className="card-elevated space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-lg flex items-center gap-2"><Building2 size={18} /> {config.company_name}</h3>
-                <button onClick={() => handleSave(config)}
-                  className="flex items-center gap-1 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-bold text-sm">
-                  <Save size={16} /> שמור
+        <>
+          {/* ═══ Company Selector ═══ */}
+          <div className="card-elevated">
+            <label className="block text-lg font-bold mb-3 flex items-center gap-2">
+              <Building2 size={20} className="text-primary" />
+              בחר חברה / לקוח
+            </label>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className={`w-full p-4 text-lg rounded-xl border-2 text-right flex items-center justify-between transition-colors ${
+                  selectedCompany 
+                    ? 'border-primary bg-primary/5 text-foreground' 
+                    : 'border-input bg-background text-muted-foreground'
+                }`}
+              >
+                <span>{selectedCompany || 'לחץ לבחירת חברה...'}</span>
+                <ChevronDown size={20} className={`transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {dropdownOpen && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-card border-2 border-border rounded-xl shadow-lg z-30 max-h-72 overflow-hidden">
+                  {/* Search */}
+                  <div className="p-3 border-b border-border">
+                    <div className="relative">
+                      <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                      <input
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        placeholder="חיפוש חברה..."
+                        className="w-full pr-10 p-3 text-base rounded-lg border border-input bg-background focus:border-primary focus:outline-none"
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+                  {/* Options */}
+                  <div className="overflow-y-auto max-h-52">
+                    {filteredCompanies.length === 0 ? (
+                      <div className="p-4 text-center text-muted-foreground text-sm">לא נמצאו חברות</div>
+                    ) : (
+                      filteredCompanies.map(company => (
+                        <button
+                          key={company}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCompany(company);
+                            setDropdownOpen(false);
+                            setSearch('');
+                          }}
+                          className={`w-full text-right px-4 py-3 text-base hover:bg-primary/10 transition-colors flex items-center gap-3 ${
+                            selectedCompany === company ? 'bg-primary/10 text-primary font-bold' : 'text-foreground'
+                          }`}
+                        >
+                          <Building2 size={16} className={selectedCompany === company ? 'text-primary' : 'text-muted-foreground'} />
+                          {company}
+                          {selectedCompany === company && <span className="mr-auto text-primary">✓</span>}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {companies.length > 0 && !selectedCompany && (
+              <p className="mt-3 text-sm text-muted-foreground text-center">
+                {companies.length} חברות זמינות — בחר חברה כדי לערוך את ההגדרות שלה
+              </p>
+            )}
+          </div>
+
+          {/* ═══ Settings Panel ═══ */}
+          {activeConfig ? (
+            <div className="card-elevated space-y-5">
+              <div className="flex items-center justify-between pb-3 border-b border-border">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <Building2 size={22} className="text-primary" />
+                  הגדרות: {activeConfig.company_name}
+                </h2>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-bold text-base hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  <Save size={18} />
+                  {saving ? 'שומר...' : 'שמור הגדרות'}
                 </button>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-1">ימים לפני תזכורת ראשונה</label>
-                <input type="number" value={config.alert_days_before} min={1} max={90}
-                  onChange={e => updateConfig(config.id, 'alert_days_before', parseInt(e.target.value) || 30)}
-                  className="w-32 p-3 rounded-xl border-2 border-input bg-background text-sm focus:border-primary focus:outline-none" />
+              {/* Reminder Settings */}
+              <div className="space-y-3">
+                <h3 className="font-bold text-lg">🔔 תזכורות אוטומטיות</h3>
+                <div>
+                  <label className="block text-sm font-medium mb-1">ימים לפני תזכורת ראשונה</label>
+                  <input
+                    type="number"
+                    value={activeConfig.alert_days_before}
+                    min={1}
+                    max={90}
+                    onChange={e => updateConfig('alert_days_before', parseInt(e.target.value) || 30)}
+                    className="w-32 p-3 rounded-xl border-2 border-input bg-background text-sm focus:border-primary focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  {[
+                    { key: 'reminder_30_days', label: '30 יום לפני' },
+                    { key: 'reminder_7_days', label: '7 ימים לפני' },
+                    { key: 'reminder_1_day', label: 'יום לפני' },
+                  ].map(({ key, label }) => (
+                    <label key={key} className="flex items-center gap-3 p-3 rounded-xl bg-muted cursor-pointer hover:bg-muted/80 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={(activeConfig as any)[key]}
+                        onChange={e => updateConfig(key, e.target.checked)}
+                        className="rounded w-5 h-5 accent-primary"
+                      />
+                      <span className="text-base font-medium">{label}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <p className="text-sm font-medium">תזכורות אוטומטיות:</p>
-                {[
-                  { key: 'reminder_30_days', label: '30 יום לפני' },
-                  { key: 'reminder_7_days', label: '7 ימים לפני' },
-                  { key: 'reminder_1_day', label: 'יום לפני' },
-                ].map(({ key, label }) => (
-                  <label key={key} className="flex items-center gap-3 p-3 rounded-xl bg-muted cursor-pointer">
-                    <input type="checkbox"
-                      checked={(config as any)[key]}
-                      onChange={e => updateConfig(config.id, key, e.target.checked)}
-                      className="rounded" />
-                    <span className="text-sm font-medium">{label}</span>
-                  </label>
-                ))}
-              </div>
-
-              {/* Company-level settings */}
-              <div className="border-t border-border pt-4 space-y-2">
-                <p className="text-sm font-bold">הגדרות רכב:</p>
-                <label className="flex items-center gap-3 p-3 rounded-xl bg-muted cursor-pointer">
-                  <input type="checkbox"
-                    checked={config.vehicle_approval_required}
-                    onChange={e => updateConfig(config.id, 'vehicle_approval_required', e.target.checked)}
-                    className="rounded" />
-                  <span className="text-sm font-medium">אישור מנהל על נדרש להפעלת רכב חדש</span>
+              {/* Vehicle Settings */}
+              <div className="border-t border-border pt-4 space-y-3">
+                <h3 className="font-bold text-lg">🚗 הגדרות רכב</h3>
+                <label className="flex items-center gap-3 p-3 rounded-xl bg-muted cursor-pointer hover:bg-muted/80 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={activeConfig.vehicle_approval_required}
+                    onChange={e => updateConfig('vehicle_approval_required', e.target.checked)}
+                    className="rounded w-5 h-5 accent-primary"
+                  />
+                  <span className="text-base font-medium">אישור מנהל על נדרש להפעלת רכב חדש</span>
                 </label>
-                <label className="flex items-center gap-3 p-3 rounded-xl bg-muted cursor-pointer">
-                  <input type="checkbox"
-                    checked={config.require_driver_assignment}
-                    onChange={e => updateConfig(config.id, 'require_driver_assignment', e.target.checked)}
-                    className="rounded" />
-                  <span className="text-sm font-medium">חובה להצמיד נהג/משתמש לרכב</span>
+                <label className="flex items-center gap-3 p-3 rounded-xl bg-muted cursor-pointer hover:bg-muted/80 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={activeConfig.require_driver_assignment}
+                    onChange={e => updateConfig('require_driver_assignment', e.target.checked)}
+                    className="rounded w-5 h-5 accent-primary"
+                  />
+                  <span className="text-base font-medium">חובה להצמיד נהג/משתמש לרכב</span>
                 </label>
-                {!config.require_driver_assignment && (
-                  <div className="mr-8 space-y-2">
+                {!activeConfig.require_driver_assignment && (
+                  <div className="mr-8 space-y-2 p-3 rounded-xl bg-muted/50 border border-border">
                     <p className="text-xs text-muted-foreground">ניתן להכניס רכבים ללא הצמדת נהג או משתמש, עד למכסה שהוגדרה</p>
                     <div>
                       <label className="block text-sm font-medium mb-1">כמות רכבים ללא חובת הצמדה</label>
-                      <input type="number" value={config.max_vehicles_without_assignment} min={0} max={9999}
-                        onChange={e => updateConfig(config.id, 'max_vehicles_without_assignment', parseInt(e.target.value) || 0)}
-                        className="w-32 p-3 rounded-xl border-2 border-input bg-background text-sm focus:border-primary focus:outline-none" />
+                      <input
+                        type="number"
+                        value={activeConfig.max_vehicles_without_assignment}
+                        min={0}
+                        max={9999}
+                        onChange={e => updateConfig('max_vehicles_without_assignment', parseInt(e.target.value) || 0)}
+                        className="w-32 p-3 rounded-xl border-2 border-input bg-background text-sm focus:border-primary focus:outline-none"
+                      />
                       <p className="text-xs text-muted-foreground mt-1">0 = ללא הגבלה (כל הרכבים פטורים)</p>
                     </div>
                   </div>
                 )}
-                <label className="flex items-center gap-3 p-3 rounded-xl bg-muted cursor-pointer">
-                  <input type="checkbox"
-                    checked={config.require_insurance_docs}
-                    onChange={e => updateConfig(config.id, 'require_insurance_docs', e.target.checked)}
-                    className="rounded" />
-                  <span className="text-sm font-medium">חובת הכנסת מסמכי ביטוח בהקמת רכב</span>
+              </div>
+
+              {/* Document & Insurance Settings */}
+              <div className="border-t border-border pt-4 space-y-3">
+                <h3 className="font-bold text-lg">📄 מסמכים וביטוחים</h3>
+                <label className="flex items-center gap-3 p-3 rounded-xl bg-muted cursor-pointer hover:bg-muted/80 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={activeConfig.require_insurance_docs}
+                    onChange={e => updateConfig('require_insurance_docs', e.target.checked)}
+                    className="rounded w-5 h-5 accent-primary"
+                  />
+                  <span className="text-base font-medium">חובת הכנסת מסמכי ביטוח בהקמת רכב</span>
                 </label>
-                <label className="flex items-center gap-3 p-3 rounded-xl bg-muted cursor-pointer">
-                  <input type="checkbox"
-                    checked={config.require_no_claims}
-                    onChange={e => updateConfig(config.id, 'require_no_claims', e.target.checked)}
-                    className="rounded" />
-                  <span className="text-sm font-medium">חובת מילוי היסטוריית הדר תביעות</span>
+                <label className="flex items-center gap-3 p-3 rounded-xl bg-muted cursor-pointer hover:bg-muted/80 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={activeConfig.require_no_claims}
+                    onChange={e => updateConfig('require_no_claims', e.target.checked)}
+                    className="rounded w-5 h-5 accent-primary"
+                  />
+                  <span className="text-base font-medium">חובת מילוי היסטוריית הדר תביעות</span>
                 </label>
               </div>
+
+              {/* Save button at bottom too */}
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="w-full py-4 rounded-xl bg-primary text-primary-foreground text-lg font-bold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <Save size={20} />
+                {saving ? 'שומר...' : 'שמור הגדרות'}
+              </button>
             </div>
-          ))}
-        </div>
+          ) : selectedCompany ? (
+            <div className="card-elevated text-center py-12 text-muted-foreground">
+              <Settings2 size={48} className="mx-auto mb-4 opacity-40" />
+              <p className="text-lg">לא נמצאו הגדרות עבור חברה זו</p>
+            </div>
+          ) : null}
+        </>
       )}
     </div>
   );
