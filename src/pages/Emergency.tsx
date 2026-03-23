@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Phone, AlertTriangle, Car, MapPin, Fuel, Key, Battery, Shield, Clock, Navigation } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Phone, AlertTriangle, Car, Wrench, Shield, HelpCircle, Clock, Navigation } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -11,19 +11,38 @@ interface EmergencyService {
   icon: typeof Car;
   phone: string;
   colorCls: string;
+  targetType: string;
+  autoMessage: string;
 }
 
-const emergencyServices: EmergencyService[] = [
-  { id: 'tow', title: 'גרר', description: 'שירות גרירה לרכב תקוע', icon: Car, phone: '*8888', colorCls: 'bg-destructive/10 text-destructive' },
-  { id: 'tire', title: 'פנצ׳ר / צמיגים', description: 'החלפת צמיג בדרך', icon: Shield, phone: '*8888', colorCls: 'bg-warning/10 text-warning' },
-  { id: 'battery', title: 'מצבר / התנעה', description: 'שירות התנעה או החלפת מצבר', icon: Battery, phone: '*8888', colorCls: 'bg-info/10 text-info' },
-  { id: 'fuel', title: 'דלק', description: 'מילוי דלק חירום בדרך', icon: Fuel, phone: '*8888', colorCls: 'bg-primary/10 text-primary' },
-  { id: 'lockout', title: 'נעילת רכב', description: 'פתיחת רכב נעול / מפתח שבור', icon: Key, phone: '*8888', colorCls: 'bg-accent/10 text-accent-foreground' },
-  { id: 'accident', title: 'תאונה', description: 'דיווח וסיוע בתאונת דרכים', icon: AlertTriangle, phone: '100', colorCls: 'bg-destructive/10 text-destructive' },
+const iconMap: Record<string, typeof Car> = {
+  accident: AlertTriangle,
+  tow: Car,
+  fault: Wrench,
+  tire: Shield,
+  other: HelpCircle,
+};
+
+const colorMap: Record<string, string> = {
+  accident: 'bg-destructive/10 text-destructive',
+  tow: 'bg-destructive/10 text-destructive',
+  fault: 'bg-warning/10 text-warning',
+  tire: 'bg-warning/10 text-warning',
+  other: 'bg-primary/10 text-primary',
+};
+
+// Fallback services when no categories configured
+const defaultServices: EmergencyService[] = [
+  { id: 'tow', title: 'גרר', description: 'שירות גרירה לרכב תקוע', icon: Car, phone: '*8888', colorCls: 'bg-destructive/10 text-destructive', targetType: 'phone', autoMessage: '' },
+  { id: 'tire', title: 'פנצ׳ר / צמיגים', description: 'החלפת צמיג בדרך', icon: Shield, phone: '*8888', colorCls: 'bg-warning/10 text-warning', targetType: 'phone', autoMessage: '' },
+  { id: 'fault', title: 'תקלה דחופה', description: 'תקלה מכנית או חשמלית', icon: Wrench, phone: '*8888', colorCls: 'bg-warning/10 text-warning', targetType: 'phone', autoMessage: '' },
+  { id: 'accident', title: 'תאונה', description: 'דיווח וסיוע בתאונת דרכים', icon: AlertTriangle, phone: '100', colorCls: 'bg-destructive/10 text-destructive', targetType: 'phone', autoMessage: '' },
 ];
 
 export default function Emergency() {
   const { user } = useAuth();
+  const [services, setServices] = useState<EmergencyService[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedService, setSelectedService] = useState<EmergencyService | null>(null);
   const [location, setLocation] = useState('');
   const [loadingLocation, setLoadingLocation] = useState(false);
@@ -31,6 +50,55 @@ export default function Emergency() {
   const [description, setDescription] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [defaultPhone, setDefaultPhone] = useState('*8888');
+
+  // Load emergency categories from DB for user's company
+  useEffect(() => {
+    loadEmergencyConfig();
+  }, [user?.company_name, user?.full_name]);
+
+  const loadEmergencyConfig = async () => {
+    if (!user) return;
+    setLoading(true);
+
+    // For private customers, try matching by full_name first, then company_name
+    const companyName = user.company_name || user.full_name || '';
+
+    const [catsRes, settingsRes] = await Promise.all([
+      supabase
+        .from('emergency_categories')
+        .select('*')
+        .eq('company_name', companyName)
+        .eq('is_active', true)
+        .order('sort_order'),
+      supabase
+        .from('company_settings')
+        .select('whatsapp_phone, whatsapp_enabled')
+        .eq('company_name', companyName)
+        .maybeSingle(),
+    ]);
+
+    if (settingsRes.data?.whatsapp_phone) {
+      setDefaultPhone(settingsRes.data.whatsapp_phone);
+    }
+
+    if (catsRes.data && catsRes.data.length > 0) {
+      const mapped: EmergencyService[] = catsRes.data.map(cat => ({
+        id: cat.category_key,
+        title: cat.category_label,
+        description: '',
+        icon: iconMap[cat.category_icon] || HelpCircle,
+        phone: cat.target_value || settingsRes.data?.whatsapp_phone || '*8888',
+        colorCls: colorMap[cat.category_icon] || 'bg-primary/10 text-primary',
+        targetType: cat.target_type,
+        autoMessage: cat.auto_message_template || '',
+      }));
+      setServices(mapped);
+    } else {
+      setServices(defaultServices);
+    }
+    setLoading(false);
+  };
 
   const getLocation = () => {
     if (!navigator.geolocation) {
@@ -51,14 +119,59 @@ export default function Emergency() {
     );
   };
 
+  const buildWhatsAppMessage = (service: EmergencyService) => {
+    let msg = service.autoMessage;
+    if (!msg) {
+      msg = `שלום, אני צריך שירות חירום\nשם: ${user?.full_name || ''}\nטלפון: ${user?.phone || ''}\nסוג: ${service.title}`;
+    } else {
+      msg = msg
+        .replace(/{company}/g, user?.company_name || '')
+        .replace(/{name}/g, user?.full_name || '')
+        .replace(/{phone}/g, user?.phone || '')
+        .replace(/{category}/g, service.title);
+    }
+    if (location) msg += `\nמיקום: ${location}`;
+    if (vehiclePlate) msg += `\nרכב: ${vehiclePlate}`;
+    if (description) msg += `\nפרטים: ${description}`;
+    return msg;
+  };
+
+  const handleAction = (service: EmergencyService) => {
+    if (service.targetType === 'whatsapp') {
+      const msg = encodeURIComponent(buildWhatsAppMessage(service));
+      const phone = service.phone.replace(/[^0-9+]/g, '');
+      window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+
+      // Log the emergency event
+      logEmergency(service, 'whatsapp');
+    } else {
+      window.open(`tel:${service.phone}`, '_self');
+      logEmergency(service, 'phone');
+    }
+  };
+
+  const logEmergency = async (service: EmergencyService, type: string) => {
+    await supabase.from('emergency_logs').insert({
+      user_id: user?.id || '',
+      user_name: user?.full_name || '',
+      company_name: user?.company_name || user?.full_name || '',
+      category_key: service.id,
+      category_label: service.title,
+      target_type: type,
+      target_value: service.phone,
+      vehicle_plate: vehiclePlate || null,
+      location: location || null,
+      notes: description || null,
+    });
+  };
+
   const handleSubmit = async () => {
     if (!selectedService) return;
     setSending(true);
 
-    // Log the emergency request in service_orders
     await supabase.from('service_orders').insert({
       service_category: `חירום - ${selectedService.title}`,
-      description: description || selectedService.description,
+      description: description || selectedService.title,
       vehicle_plate: vehiclePlate,
       driver_name: user?.full_name || '',
       driver_phone: user?.phone || '',
@@ -70,6 +183,8 @@ export default function Emergency() {
       ordering_user: user?.full_name || '',
     });
 
+    handleAction(selectedService);
+
     setSending(false);
     setSent(true);
     toast.success('בקשת החירום נשלחה!');
@@ -78,6 +193,14 @@ export default function Emergency() {
   const handleCall = (phone: string) => {
     window.open(`tel:${phone}`, '_self');
   };
+
+  if (loading) {
+    return (
+      <div className="animate-fade-in text-center py-12">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto" />
+      </div>
+    );
+  }
 
   if (sent) {
     return (
@@ -89,13 +212,13 @@ export default function Emergency() {
         <p className="text-lg text-muted-foreground mb-2">שירות {selectedService?.title} בדרך אליך</p>
         <p className="text-muted-foreground mb-8">מוקד השירות יחזור אליך בהקדם</p>
 
-        <button onClick={() => handleCall(selectedService?.phone || '')}
+        <button onClick={() => handleCall(selectedService?.phone || defaultPhone)}
           className="w-full py-5 rounded-xl bg-primary text-primary-foreground text-xl font-bold flex items-center justify-center gap-3 mb-4">
           <Phone size={24} />
           חייג למוקד
         </button>
 
-        <button onClick={() => { setSelectedService(null); setSent(false); setDescription(''); setLocation(''); }}
+        <button onClick={() => { setSelectedService(null); setSent(false); setDescription(''); setLocation(''); setVehiclePlate(''); }}
           className="w-full py-4 rounded-xl bg-muted text-muted-foreground text-lg font-medium">
           חזרה לשירותי חירום
         </button>
@@ -120,16 +243,16 @@ export default function Emergency() {
         <p className="text-center text-muted-foreground mb-6">{selectedService.description}</p>
 
         <div className="space-y-4">
-          {/* Quick call */}
-          <button onClick={() => handleCall(selectedService.phone)}
+          {/* Quick action */}
+          <button onClick={() => handleAction(selectedService)}
             className="w-full py-4 rounded-xl bg-destructive text-destructive-foreground text-lg font-bold flex items-center justify-center gap-3">
             <Phone size={22} />
-            חייג עכשיו - {selectedService.phone}
+            {selectedService.targetType === 'whatsapp' ? `שלח וואטסאפ` : `חייג עכשיו - ${selectedService.phone}`}
           </button>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-            <div className="relative flex justify-center"><span className="bg-background px-4 text-muted-foreground text-sm">או שלח בקשה</span></div>
+            <div className="relative flex justify-center"><span className="bg-background px-4 text-muted-foreground text-sm">או שלח בקשה עם פרטים</span></div>
           </div>
 
           {/* Location */}
@@ -176,7 +299,7 @@ export default function Emergency() {
 
       {/* Emergency services grid */}
       <div className="grid grid-cols-2 gap-3 mb-6">
-        {emergencyServices.map(svc => {
+        {services.map(svc => {
           const Icon = svc.icon;
           return (
             <button key={svc.id} onClick={() => setSelectedService(svc)}
@@ -185,14 +308,14 @@ export default function Emergency() {
                 <Icon size={28} />
               </div>
               <p className="text-lg font-bold">{svc.title}</p>
-              <p className="text-sm text-muted-foreground mt-1">{svc.description}</p>
+              {svc.description && <p className="text-sm text-muted-foreground mt-1">{svc.description}</p>}
             </button>
           );
         })}
       </div>
 
       {/* Quick call */}
-      <button onClick={() => handleCall('*8888')}
+      <button onClick={() => handleCall(defaultPhone)}
         className="w-full py-5 rounded-xl bg-destructive text-destructive-foreground text-xl font-bold flex items-center justify-center gap-3">
         <Phone size={24} />
         חייג למוקד חירום

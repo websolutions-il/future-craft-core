@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Phone, Plus, Trash2, Save, Settings, ArrowUp, ArrowDown, AlertTriangle, Car, Wrench, Shield, HelpCircle } from 'lucide-react';
+import { Phone, Plus, Trash2, Save, Settings, ArrowUp, ArrowDown, AlertTriangle, Car, Wrench, Shield, HelpCircle, Building2, Search, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCompanyScope } from '@/contexts/CompanyScopeContext';
 import { toast } from 'sonner';
 
 interface CompanySettings {
@@ -27,6 +26,11 @@ interface EmergencyCategory {
   is_active: boolean;
 }
 
+interface CompanyEntry {
+  name: string;
+  type: 'company' | 'private_customer';
+}
+
 const iconOptions = [
   { value: 'accident', label: 'תאונה', Icon: AlertTriangle },
   { value: 'tow', label: 'גרר', Icon: Car },
@@ -37,15 +41,54 @@ const iconOptions = [
 
 export default function EmergencySettings() {
   const { user } = useAuth();
-  const { companyOptions } = useCompanyScope();
+  const [companyEntries, setCompanyEntries] = useState<CompanyEntry[]>([]);
   const [selectedCompany, setSelectedCompany] = useState('');
+  const [search, setSearch] = useState('');
   const [settings, setSettings] = useState<CompanySettings | null>(null);
   const [categories, setCategories] = useState<EmergencyCategory[]>([]);
   const [saving, setSaving] = useState(false);
   const [logs, setLogs] = useState<any[]>([]);
   const [showLogs, setShowLogs] = useState(false);
+  const [loadingCompanies, setLoadingCompanies] = useState(true);
 
   const isSuperAdmin = user?.role === 'super_admin';
+
+  // Load companies from profiles + user_roles (to identify private customers)
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    loadCompanies();
+  }, [isSuperAdmin]);
+
+  const loadCompanies = async () => {
+    setLoadingCompanies(true);
+    const [profilesRes, rolesRes] = await Promise.all([
+      supabase.from('profiles').select('id, full_name, company_name'),
+      supabase.from('user_roles').select('user_id, role'),
+    ]);
+
+    const roleMap = new Map((rolesRes.data || []).map(r => [r.user_id, r.role]));
+    const companiesSet = new Set<string>();
+    const privateCustomers: string[] = [];
+
+    (profilesRes.data || []).forEach(p => {
+      const role = roleMap.get(p.id);
+      if (role === 'private_customer') {
+        // Private customers - use their full_name as identifier
+        const name = p.full_name?.trim() || p.company_name?.trim();
+        if (name) privateCustomers.push(name);
+      } else if (p.company_name?.trim()) {
+        companiesSet.add(p.company_name.trim());
+      }
+    });
+
+    const entries: CompanyEntry[] = [
+      ...Array.from(companiesSet).sort().map(name => ({ name, type: 'company' as const })),
+      ...privateCustomers.sort().map(name => ({ name, type: 'private_customer' as const })),
+    ];
+
+    setCompanyEntries(entries);
+    setLoadingCompanies(false);
+  };
 
   useEffect(() => {
     if (!selectedCompany) return;
@@ -127,7 +170,7 @@ export default function EmergencySettings() {
     }
 
     setSaving(false);
-    toast.success('ההגדרות נשמרו בהצלחה');
+    toast.success(`הגדרות חירום עבור "${selectedCompany}" נשמרו בהצלחה`);
     loadData();
   };
 
@@ -179,6 +222,10 @@ export default function EmergencySettings() {
     );
   }
 
+  const filteredEntries = companyEntries.filter(e =>
+    !search || e.name.includes(search)
+  );
+
   const inputClass = "w-full p-3 rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none text-sm";
 
   return (
@@ -190,13 +237,54 @@ export default function EmergencySettings() {
 
       {/* Company selector */}
       <div className="card-elevated mb-4">
-        <label className="block text-base font-medium mb-2">בחר חברה</label>
-        <select value={selectedCompany} onChange={e => setSelectedCompany(e.target.value)} className={inputClass}>
-          <option value="">-- בחר חברה --</option>
-          {companyOptions.map(c => (
-            <option key={c.name} value={c.name}>{c.name}</option>
-          ))}
-        </select>
+        <label className="block text-base font-bold mb-2 flex items-center gap-2">
+          <Building2 size={18} className="text-primary" />
+          בחר חברה / לקוח פרטי
+        </label>
+        <div className="relative mb-2">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="חיפוש..."
+            className="w-full pr-10 p-3 rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none text-sm"
+          />
+        </div>
+        {loadingCompanies ? (
+          <div className="flex justify-center py-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+          </div>
+        ) : (
+          <div className="max-h-60 overflow-y-auto border border-border rounded-xl">
+            {filteredEntries.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4 text-sm">לא נמצאו חברות</p>
+            ) : (
+              filteredEntries.map((entry) => (
+                <button
+                  key={`${entry.type}-${entry.name}`}
+                  onClick={() => { setSelectedCompany(entry.name); setSearch(''); }}
+                  className={`w-full text-right px-4 py-3 text-sm hover:bg-primary/10 transition-colors flex items-center gap-3 border-b border-border last:border-b-0 ${
+                    selectedCompany === entry.name ? 'bg-primary/10 text-primary font-bold' : 'text-foreground'
+                  }`}
+                >
+                  {entry.type === 'private_customer' ? (
+                    <User size={16} className="text-emerald-500 shrink-0" />
+                  ) : (
+                    <Building2 size={16} className="text-primary shrink-0" />
+                  )}
+                  <span className="flex-1">{entry.name}</span>
+                  {entry.type === 'private_customer' && (
+                    <span className="text-xs bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded-lg">לקוח פרטי</span>
+                  )}
+                  {selectedCompany === entry.name && <span className="text-primary">✓</span>}
+                </button>
+              ))
+            )}
+          </div>
+        )}
+        <p className="text-xs text-muted-foreground mt-2">
+          {companyEntries.filter(e => e.type === 'company').length} חברות, {companyEntries.filter(e => e.type === 'private_customer').length} לקוחות פרטיים
+        </p>
       </div>
 
       {selectedCompany && settings && (
@@ -205,7 +293,7 @@ export default function EmergencySettings() {
           <div className="card-elevated mb-4">
             <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
               <Settings size={20} />
-              הגדרות כפתור חירום
+              הגדרות כפתור חירום — {selectedCompany}
             </h2>
             <div className="space-y-4">
               <div className="flex items-center gap-3">
@@ -251,7 +339,7 @@ export default function EmergencySettings() {
             </div>
 
             {categories.length === 0 && (
-              <p className="text-muted-foreground text-center py-4">אין קטגוריות. הוסף קטגוריות חירום או שייעשה שימוש בברירות מחדל.</p>
+              <p className="text-muted-foreground text-center py-4">אין קטגוריות. הוסף קטגוריות חירום.</p>
             )}
 
             <div className="space-y-3">
