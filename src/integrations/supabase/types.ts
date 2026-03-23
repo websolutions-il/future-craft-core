@@ -361,6 +361,65 @@ export type Database = {
           },
         ]
       }
+      customer_deals: {
+        Row: {
+          amount: number | null
+          company_name: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          customer_name: string | null
+          deal_number: string | null
+          description: string | null
+          id: string
+          open_date: string | null
+          status: string
+          target_date: string | null
+          updated_at: string
+          work_type: string | null
+        }
+        Insert: {
+          amount?: number | null
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          customer_name?: string | null
+          deal_number?: string | null
+          description?: string | null
+          id?: string
+          open_date?: string | null
+          status?: string
+          target_date?: string | null
+          updated_at?: string
+          work_type?: string | null
+        }
+        Update: {
+          amount?: number | null
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          customer_name?: string | null
+          deal_number?: string | null
+          description?: string | null
+          id?: string
+          open_date?: string | null
+          status?: string
+          target_date?: string | null
+          updated_at?: string
+          work_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_deals_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
