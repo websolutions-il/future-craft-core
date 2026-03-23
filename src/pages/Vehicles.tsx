@@ -1152,7 +1152,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
 }
 
 // Generate in-app alerts for vehicle document expiry
-async function generateVehicleAlerts(plate: string, user: any) {
+async function generateVehicleAlerts(plate: string, user: any, payload?: any) {
   try {
     const { data: managers } = await supabase
       .from('user_roles')
@@ -1167,14 +1167,56 @@ async function generateVehicleAlerts(plate: string, user: any) {
         .eq('company_name', user?.company_name || '');
 
       if (profiles) {
+        const notifications: Array<{ user_id: string; type: string; title: string; message: string; link: string }> = [];
+
         for (const p of profiles) {
-          await supabase.from('driver_notifications').insert({
+          // Generic new vehicle notification
+          notifications.push({
             user_id: p.id,
             type: 'vehicle',
             title: 'רכב חדש נוסף',
             message: `רכב ${plate} נוסף למערכת`,
             link: '/vehicles',
           });
+
+          // Date-specific expiry alerts
+          if (payload) {
+            const expiryFields = [
+              { field: 'test_expiry', label: 'טסט' },
+              { field: 'insurance_expiry', label: 'ביטוח חובה' },
+              { field: 'comprehensive_insurance_expiry', label: 'ביטוח מקיף' },
+              { field: 'leasing_end_date', label: 'סיום ליסינג' },
+              { field: 'loan_end_date', label: 'סיום הלוואה' },
+            ];
+
+            for (const { field, label } of expiryFields) {
+              const dateVal = payload[field];
+              if (dateVal) {
+                const daysLeft = Math.ceil((new Date(dateVal).getTime() - Date.now()) / 86400000);
+                if (daysLeft <= 30 && daysLeft > 0) {
+                  notifications.push({
+                    user_id: p.id,
+                    type: 'vehicle',
+                    title: `⚠️ ${label} פוקע בקרוב`,
+                    message: `${label} של רכב ${plate} פוקע בעוד ${daysLeft} ימים (${new Date(dateVal).toLocaleDateString('he-IL')})`,
+                    link: '/vehicles',
+                  });
+                } else if (daysLeft <= 0) {
+                  notifications.push({
+                    user_id: p.id,
+                    type: 'vehicle',
+                    title: `🚨 ${label} פג תוקף!`,
+                    message: `${label} של רכב ${plate} פג תוקף ב-${new Date(dateVal).toLocaleDateString('he-IL')}`,
+                    link: '/vehicles',
+                  });
+                }
+              }
+            }
+          }
+        }
+
+        if (notifications.length > 0) {
+          await supabase.from('driver_notifications').insert(notifications);
         }
       }
     }
