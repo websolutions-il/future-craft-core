@@ -65,7 +65,7 @@ const managerCategories = [
     items: [
       { path: '/user-management', label: 'ניהול משתמשים', icon: Users },
       { path: '/permissions', label: 'הרשאות', icon: Shield },
-      { path: '/alert-settings', label: 'הגדרות התראות', icon: Bell },
+      { path: '/alert-settings', label: 'הגדרות חברות', icon: Building2 },
       { path: '/approval-settings', label: 'הגדרות אישורים', icon: CheckSquare },
       { path: '/suppliers', label: 'ניהול ספקים', icon: Building2 },
       { path: '/emergency', label: 'מספרי חירום', icon: Phone },
