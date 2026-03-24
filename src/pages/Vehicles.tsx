@@ -577,7 +577,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
   const [compInsDocUrl, setCompInsDocUrl] = useState(vehicle?.comprehensive_insurance_doc_url || '');
 
   // Company setting: is driver assignment required?
-  const [driverRequired, setDriverRequired] = useState(true);
+  const [driverRequired, setDriverRequired] = useState(false);
   const [insuranceDocsRequired, setInsuranceDocsRequired] = useState(true);
   const [noClaimsRequired, setNoClaimsRequired] = useState(true);
 
