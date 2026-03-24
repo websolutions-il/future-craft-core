@@ -240,6 +240,7 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
 
     const payload = {
       full_name: fullName,
+      id_number: idNumber,
       phone,
       email,
       license_number: licenseNumber,
