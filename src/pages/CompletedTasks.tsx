@@ -69,12 +69,12 @@ const CompletedTasks = () => {
   }
 
   const handleAddTask = () => {
-    if (!newDate || !newSummary.trim()) {
-      toast.error('יש למלא תאריך ותיאור');
+    if (!newSummary.trim()) {
+      toast.error('יש למלא תיאור משימה');
       return;
     }
-    setTasks(prev => [...prev, { date: newDate, summary: newSummary.trim() }]);
-    setNewDate('');
+    const today = new Date().toISOString().split('T')[0];
+    setTasks(prev => [...prev, { date: today, summary: newSummary.trim() }]);
     setNewSummary('');
     toast.success('המשימה נוספה בהצלחה');
   };
