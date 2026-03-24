@@ -194,8 +194,8 @@ export default function Drivers() {
                 <p className="text-muted-foreground text-lg">{d.phone}</p>
                 {d.license_types?.length > 0 && <p className="text-sm text-muted-foreground">{d.license_types.join(', ')}</p>}
               </div>
-              <span className={`status-badge ${d.status === 'active' ? 'status-active' : 'status-inactive'}`}>
-                {d.status === 'active' ? 'פעיל' : 'לא פעיל'}
+              <span className={`status-badge ${d.status === 'active' ? 'status-active' : d.status === 'archived' ? 'bg-muted text-muted-foreground' : 'status-inactive'}`}>
+                {d.status === 'active' ? 'פעיל' : d.status === 'archived' ? 'ארכיון' : 'לא פעיל'}
               </span>
             </div>
           </button>
