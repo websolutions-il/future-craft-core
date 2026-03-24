@@ -30,6 +30,7 @@ export default function Drivers() {
   const [drivers, setDrivers] = useState<DriverRow[]>([]);
   const [search, setSearch] = useState('');
   const [filterCompany, setFilterCompany] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selected, setSelected] = useState<DriverRow | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingDriver, setEditingDriver] = useState<DriverRow | null>(null);
