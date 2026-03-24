@@ -133,6 +133,10 @@ function AppRoutes() {
         <Route path="/service-order-history" element={<ServiceOrderHistory />} />
         <Route path="/project-summary" element={<ProjectSummary />} />
         <Route path="/completed-tasks" element={<CompletedTasks />} />
+        <Route path="/vehicle-inspections" element={<VehicleInspections />} />
+        <Route path="/vehicle-tasks" element={<VehicleTasks />} />
+        <Route path="/health-declaration" element={<HealthDeclaration />} />
+        <Route path="/vehicle-import" element={<VehicleImport />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
