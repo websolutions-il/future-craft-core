@@ -353,6 +353,7 @@ function VehicleDetail({ vehicle: v, drivers, isManager, onBack, onEdit, onDelet
         <div className="grid grid-cols-2 gap-y-5 gap-x-4 text-lg">
           <InfoField label="סוג רכב" value={v.vehicle_type || '—'} />
           <InfoField label='ק"מ' value={`${(v.odometer || 0).toLocaleString()}`} />
+          <InfoField label="מספר פנימי" value={v.internal_number || '—'} />
           <InfoField label="חברה" value={v.company_name || '—'} />
           <InfoField label="נהג משויך" value={getDriverName(v.assigned_driver_id)} />
           <InfoField label="סוג ניהול" value={
