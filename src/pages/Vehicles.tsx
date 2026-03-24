@@ -93,7 +93,7 @@ export default function Vehicles() {
   const companies = [...new Set(vehicles.map(v => v.company_name).filter(Boolean))];
 
   const filtered = vehicles.filter(v => {
-    const matchSearch = !search || v.license_plate.includes(search) || v.manufacturer?.includes(search) || v.model?.includes(search);
+    const matchSearch = !search || v.license_plate.includes(search) || v.manufacturer?.includes(search) || v.model?.includes(search) || v.internal_number?.includes(search);
     const matchStatus = statusFilter === 'all' || v.status === statusFilter;
     const matchCompany = !filterCompany || v.company_name === filterCompany;
     const matchDriver = !filterDriver || v.assigned_driver_id === filterDriver;
