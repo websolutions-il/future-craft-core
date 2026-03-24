@@ -36,6 +36,7 @@ import ResetPassword from "@/pages/ResetPassword";
 import About from "@/pages/About";
 import NotFound from "./pages/NotFound";
 import ProjectSummary from "@/pages/ProjectSummary";
+import CompletedTasks from "@/pages/CompletedTasks";
 
 // New pages
 import Companions from "@/pages/Companions";
@@ -127,6 +128,7 @@ function AppRoutes() {
         <Route path="/system-logs" element={<Alerts />} />
         <Route path="/service-order-history" element={<ServiceOrderHistory />} />
         <Route path="/project-summary" element={<ProjectSummary />} />
+        <Route path="/completed-tasks" element={<CompletedTasks />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
