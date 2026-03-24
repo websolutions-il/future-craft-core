@@ -44,9 +44,10 @@ export default function Drivers() {
   const companies = [...new Set(drivers.map(d => d.company_name).filter(Boolean))];
 
   const filtered = drivers.filter(d => {
-    const matchSearch = !search || d.full_name?.includes(search) || d.phone?.includes(search) || d.license_number?.includes(search);
+    const matchSearch = !search || d.full_name?.includes(search) || d.phone?.includes(search) || d.license_number?.includes(search) || d.id_number?.includes(search);
     const matchCompany = !filterCompany || d.company_name === filterCompany;
-    return matchSearch && matchCompany;
+    const matchStatus = statusFilter === 'all' || d.status === statusFilter;
+    return matchSearch && matchCompany && matchStatus;
   });
 
   if (showForm || editingDriver) {
