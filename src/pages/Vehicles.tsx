@@ -482,11 +482,22 @@ function VehicleDetail({ vehicle: v, drivers, isManager, onBack, onEdit, onDelet
         </div>
       )}
 
-      {/* Delete */}
+      {/* Archive / Delete */}
       {isManager && (
-        <button onClick={() => onDelete(v.id)} className="w-full mt-4 py-4 rounded-xl border-2 border-destructive/30 text-destructive font-bold text-lg flex items-center justify-center gap-2 hover:bg-destructive/5 transition-colors">
-          <Trash2 size={20} /> מחק רכב
-        </button>
+        <div className="space-y-3 mt-4">
+          {v.status !== 'archived' && (
+            <button onClick={async () => {
+              await supabase.from('vehicles').update({ status: 'archived' }).eq('id', v.id);
+              toast.success('הרכב הועבר לארכיון');
+              onBack();
+            }} className="w-full py-4 rounded-xl border-2 border-warning/30 text-warning font-bold text-lg flex items-center justify-center gap-2 hover:bg-warning/5 transition-colors">
+              📦 העבר לארכיון
+            </button>
+          )}
+          <button onClick={() => onDelete(v.id)} className="w-full py-4 rounded-xl border-2 border-destructive/30 text-destructive font-bold text-lg flex items-center justify-center gap-2 hover:bg-destructive/5 transition-colors">
+            <Trash2 size={20} /> מחק רכב
+          </button>
+        </div>
       )}
     </div>
   );
