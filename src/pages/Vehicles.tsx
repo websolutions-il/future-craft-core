@@ -552,6 +552,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
 }) {
   const isEdit = !!vehicle;
   const [licensePlate, setLicensePlate] = useState(vehicle?.license_plate || '');
+  const [internalNumber, setInternalNumber] = useState(vehicle?.internal_number || '');
   const [manufacturer, setManufacturer] = useState(vehicle?.manufacturer || '');
   const [model, setModel] = useState(vehicle?.model || '');
   const [year, setYear] = useState(vehicle?.year?.toString() || new Date().getFullYear().toString());
