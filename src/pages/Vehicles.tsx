@@ -217,6 +217,7 @@ export default function Vehicles() {
           { key: 'active', label: 'פעיל' },
           { key: 'in_service', label: 'בטיפול' },
           { key: 'out_of_service', label: 'לא פעיל' },
+          { key: 'archived', label: 'ארכיון' },
         ] as const).map(f => (
           <button key={f.key} onClick={() => setStatusFilter(f.key)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${statusFilter === f.key ? 'bg-primary text-primary-foreground shadow-md' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
