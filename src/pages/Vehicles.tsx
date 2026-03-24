@@ -155,11 +155,14 @@ export default function Vehicles() {
   }
 
   // === LIST VIEW ===
+  const activeVehicles = vehicles.filter(v => v.status !== 'archived');
+  const archivedVehicles = vehicles.filter(v => v.status === 'archived');
   const statusCounts = {
-    all: vehicles.length,
+    all: activeVehicles.length,
     active: vehicles.filter(v => v.status === 'active').length,
     in_service: vehicles.filter(v => v.status === 'in_service').length,
     out_of_service: vehicles.filter(v => v.status === 'out_of_service').length,
+    archived: archivedVehicles.length,
   };
 
   return (
