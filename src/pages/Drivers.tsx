@@ -19,6 +19,7 @@ interface DriverRow {
   status: string;
   notes: string;
   company_name: string;
+  id_number: string;
 }
 
 const licenseOptions = ['A', 'A1', 'A2', 'B', 'C', 'C1', 'D', 'D1', 'E'];
