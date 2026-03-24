@@ -19,6 +19,7 @@ interface DriverRow {
   status: string;
   notes: string;
   company_name: string;
+  id_number: string;
 }
 
 const licenseOptions = ['A', 'A1', 'A2', 'B', 'C', 'C1', 'D', 'D1', 'E'];
@@ -29,6 +30,7 @@ export default function Drivers() {
   const [drivers, setDrivers] = useState<DriverRow[]>([]);
   const [search, setSearch] = useState('');
   const [filterCompany, setFilterCompany] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selected, setSelected] = useState<DriverRow | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingDriver, setEditingDriver] = useState<DriverRow | null>(null);
@@ -43,9 +45,10 @@ export default function Drivers() {
   const companies = [...new Set(drivers.map(d => d.company_name).filter(Boolean))];
 
   const filtered = drivers.filter(d => {
-    const matchSearch = !search || d.full_name?.includes(search) || d.phone?.includes(search) || d.license_number?.includes(search);
+    const matchSearch = !search || d.full_name?.includes(search) || d.phone?.includes(search) || d.license_number?.includes(search) || d.id_number?.includes(search);
     const matchCompany = !filterCompany || d.company_name === filterCompany;
-    return matchSearch && matchCompany;
+    const matchStatus = statusFilter === 'all' || d.status === statusFilter;
+    return matchSearch && matchCompany && matchStatus;
   });
 
   if (showForm || editingDriver) {
@@ -84,6 +87,7 @@ export default function Drivers() {
           <div className="grid grid-cols-2 gap-4 text-lg">
             <div><span className="text-muted-foreground">טלפון:</span><p className="font-bold">{d.phone}</p></div>
             <div><span className="text-muted-foreground">אימייל:</span><p className="font-bold">{d.email || '—'}</p></div>
+            <div><span className="text-muted-foreground">ת.ז:</span><p className="font-bold">{d.id_number || '—'}</p></div>
             <div><span className="text-muted-foreground">רישיון:</span><p className="font-bold">{d.license_number || '—'}</p></div>
             <div><span className="text-muted-foreground">תוקף רישיון:</span><p className="font-bold">{d.license_expiry ? new Date(d.license_expiry).toLocaleDateString('he-IL') : '—'}</p></div>
             <div className="col-span-2"><span className="text-muted-foreground">סוגי רישיון:</span><p className="font-bold">{d.license_types?.join(', ') || '—'}</p></div>
@@ -103,6 +107,17 @@ export default function Drivers() {
               </a>
             )}
           </div>
+          {/* Archive button */}
+          {user?.role !== 'driver' && d.status !== 'archived' && (
+            <button onClick={async () => {
+              await supabase.from('drivers').update({ status: 'archived' }).eq('id', d.id);
+              toast.success('הנהג הועבר לארכיון');
+              setSelected(null);
+              loadDrivers();
+            }} className="w-full mt-3 py-3 rounded-xl border-2 border-warning/30 text-warning font-bold text-lg flex items-center justify-center gap-2 hover:bg-warning/5 transition-colors">
+              📦 העבר לארכיון
+            </button>
+          )}
         </div>
       </div>
     );
@@ -135,10 +150,25 @@ export default function Drivers() {
         </div>
       </div>
 
-      <div className="relative mb-6">
+      <div className="relative mb-4">
         <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="חיפוש לפי שם, טלפון או רישיון..."
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="חיפוש לפי שם, טלפון, ת.ז או רישיון..."
           className="w-full pr-12 p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none" />
+      </div>
+
+      {/* Status filter */}
+      <div className="flex gap-2 mb-4 flex-wrap">
+        {[
+          { key: 'all', label: 'הכל' },
+          { key: 'active', label: 'פעיל' },
+          { key: 'inactive', label: 'לא פעיל' },
+          { key: 'archived', label: 'ארכיון' },
+        ].map(f => (
+          <button key={f.key} onClick={() => setStatusFilter(f.key)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${statusFilter === f.key ? 'bg-primary text-primary-foreground shadow-md' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+            {f.label} ({f.key === 'all' ? drivers.filter(d => d.status !== 'archived').length : drivers.filter(d => d.status === f.key).length})
+          </button>
+        ))}
       </div>
 
       {/* Company filter - visible to super_admin */}
@@ -164,8 +194,8 @@ export default function Drivers() {
                 <p className="text-muted-foreground text-lg">{d.phone}</p>
                 {d.license_types?.length > 0 && <p className="text-sm text-muted-foreground">{d.license_types.join(', ')}</p>}
               </div>
-              <span className={`status-badge ${d.status === 'active' ? 'status-active' : 'status-inactive'}`}>
-                {d.status === 'active' ? 'פעיל' : 'לא פעיל'}
+              <span className={`status-badge ${d.status === 'active' ? 'status-active' : d.status === 'archived' ? 'bg-muted text-muted-foreground' : 'status-inactive'}`}>
+                {d.status === 'active' ? 'פעיל' : d.status === 'archived' ? 'ארכיון' : 'לא פעיל'}
               </span>
             </div>
           </button>
@@ -185,6 +215,7 @@ export default function Drivers() {
 function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: any; onDone: () => void }) {
   const isEdit = !!driver;
   const [fullName, setFullName] = useState(driver?.full_name || '');
+  const [idNumber, setIdNumber] = useState(driver?.id_number || '');
   const [phone, setPhone] = useState(driver?.phone || '');
   const [email, setEmail] = useState(driver?.email || '');
   const [licenseNumber, setLicenseNumber] = useState(driver?.license_number || '');
@@ -196,7 +227,7 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
   const [notes, setNotes] = useState(driver?.notes || '');
   const [loading, setLoading] = useState(false);
 
-  const isValid = fullName.trim().length > 0 && phone.trim().length > 0 && licenseNumber.trim().length > 0;
+  const isValid = fullName.trim().length > 0 && phone.trim().length > 0 && licenseNumber.trim().length > 0 && idNumber.trim().length > 0;
   const inputClass = "w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
 
   const toggleLicense = (type: string) => {
@@ -209,6 +240,7 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
 
     const payload = {
       full_name: fullName,
+      id_number: idNumber,
       phone,
       email,
       license_number: licenseNumber,
@@ -248,6 +280,10 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
         <div>
           <label className="block text-lg font-medium mb-2">שם מלא <span className="text-destructive">*</span></label>
           <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="שם הנהג..." className={inputClass} />
+        </div>
+        <div>
+          <label className="block text-lg font-medium mb-2">תעודת זהות <span className="text-destructive">*</span></label>
+          <input value={idNumber} onChange={e => setIdNumber(e.target.value)} placeholder="תעודת זהות..." className={inputClass} />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>

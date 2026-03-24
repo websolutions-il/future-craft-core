@@ -37,6 +37,10 @@ import About from "@/pages/About";
 import NotFound from "./pages/NotFound";
 import ProjectSummary from "@/pages/ProjectSummary";
 import CompletedTasks from "@/pages/CompletedTasks";
+import VehicleInspections from "@/pages/VehicleInspections";
+import VehicleTasks from "@/pages/VehicleTasks";
+import HealthDeclaration from "@/pages/HealthDeclaration";
+import VehicleImport from "@/pages/VehicleImport";
 
 // New pages
 import Companions from "@/pages/Companions";
@@ -129,6 +133,10 @@ function AppRoutes() {
         <Route path="/service-order-history" element={<ServiceOrderHistory />} />
         <Route path="/project-summary" element={<ProjectSummary />} />
         <Route path="/completed-tasks" element={<CompletedTasks />} />
+        <Route path="/vehicle-inspections" element={<VehicleInspections />} />
+        <Route path="/vehicle-tasks" element={<VehicleTasks />} />
+        <Route path="/health-declaration" element={<HealthDeclaration />} />
+        <Route path="/vehicle-import" element={<VehicleImport />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>

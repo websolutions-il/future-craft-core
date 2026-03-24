@@ -10,6 +10,7 @@ import ImageUpload from '@/components/ImageUpload';
 interface VehicleRow {
   id: string;
   license_plate: string;
+  internal_number: string;
   manufacturer: string;
   model: string;
   year: number;
@@ -92,7 +93,7 @@ export default function Vehicles() {
   const companies = [...new Set(vehicles.map(v => v.company_name).filter(Boolean))];
 
   const filtered = vehicles.filter(v => {
-    const matchSearch = !search || v.license_plate.includes(search) || v.manufacturer?.includes(search) || v.model?.includes(search);
+    const matchSearch = !search || v.license_plate.includes(search) || v.manufacturer?.includes(search) || v.model?.includes(search) || v.internal_number?.includes(search);
     const matchStatus = statusFilter === 'all' || v.status === statusFilter;
     const matchCompany = !filterCompany || v.company_name === filterCompany;
     const matchDriver = !filterDriver || v.assigned_driver_id === filterDriver;
@@ -104,6 +105,7 @@ export default function Vehicles() {
       case 'active': return { text: 'פעיל', cls: 'status-active' };
       case 'in_service': return { text: 'בטיפול', cls: 'status-pending' };
       case 'out_of_service': return { text: 'לא פעיל', cls: 'status-inactive' };
+      case 'archived': return { text: 'ארכיון', cls: 'bg-muted text-muted-foreground' };
       default: return { text: s || 'לא ידוע', cls: '' };
     }
   };
@@ -153,11 +155,14 @@ export default function Vehicles() {
   }
 
   // === LIST VIEW ===
+  const activeVehicles = vehicles.filter(v => v.status !== 'archived');
+  const archivedVehicles = vehicles.filter(v => v.status === 'archived');
   const statusCounts = {
-    all: vehicles.length,
+    all: activeVehicles.length,
     active: vehicles.filter(v => v.status === 'active').length,
     in_service: vehicles.filter(v => v.status === 'in_service').length,
     out_of_service: vehicles.filter(v => v.status === 'out_of_service').length,
+    archived: archivedVehicles.length,
   };
 
   return (
@@ -185,7 +190,7 @@ export default function Vehicles() {
 
       <div className="relative mb-4">
         <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="חיפוש לפי מספר, יצרן או דגם..."
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="חיפוש לפי מספר רכב, מספר פנימי, יצרן או דגם..."
           className="w-full pr-12 p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none" />
       </div>
 
@@ -212,6 +217,7 @@ export default function Vehicles() {
           { key: 'active', label: 'פעיל' },
           { key: 'in_service', label: 'בטיפול' },
           { key: 'out_of_service', label: 'לא פעיל' },
+          { key: 'archived', label: 'ארכיון' },
         ] as const).map(f => (
           <button key={f.key} onClick={() => setStatusFilter(f.key)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${statusFilter === f.key ? 'bg-primary text-primary-foreground shadow-md' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
@@ -242,7 +248,7 @@ export default function Vehicles() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xl font-bold">{v.manufacturer} {v.model}</p>
-                    <p className="text-muted-foreground text-lg">{v.license_plate} • {v.year}</p>
+                    <p className="text-muted-foreground text-lg">{v.license_plate}{v.internal_number ? ` | ${v.internal_number}` : ''} • {v.year}</p>
                     <p className="text-sm text-muted-foreground">נהג: {getDriverName(v.assigned_driver_id)}</p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
@@ -347,6 +353,7 @@ function VehicleDetail({ vehicle: v, drivers, isManager, onBack, onEdit, onDelet
         <div className="grid grid-cols-2 gap-y-5 gap-x-4 text-lg">
           <InfoField label="סוג רכב" value={v.vehicle_type || '—'} />
           <InfoField label='ק"מ' value={`${(v.odometer || 0).toLocaleString()}`} />
+          <InfoField label="מספר פנימי" value={v.internal_number || '—'} />
           <InfoField label="חברה" value={v.company_name || '—'} />
           <InfoField label="נהג משויך" value={getDriverName(v.assigned_driver_id)} />
           <InfoField label="סוג ניהול" value={
@@ -475,11 +482,22 @@ function VehicleDetail({ vehicle: v, drivers, isManager, onBack, onEdit, onDelet
         </div>
       )}
 
-      {/* Delete */}
+      {/* Archive / Delete */}
       {isManager && (
-        <button onClick={() => onDelete(v.id)} className="w-full mt-4 py-4 rounded-xl border-2 border-destructive/30 text-destructive font-bold text-lg flex items-center justify-center gap-2 hover:bg-destructive/5 transition-colors">
-          <Trash2 size={20} /> מחק רכב
-        </button>
+        <div className="space-y-3 mt-4">
+          {v.status !== 'archived' && (
+            <button onClick={async () => {
+              await supabase.from('vehicles').update({ status: 'archived' }).eq('id', v.id);
+              toast.success('הרכב הועבר לארכיון');
+              onBack();
+            }} className="w-full py-4 rounded-xl border-2 border-warning/30 text-warning font-bold text-lg flex items-center justify-center gap-2 hover:bg-warning/5 transition-colors">
+              📦 העבר לארכיון
+            </button>
+          )}
+          <button onClick={() => onDelete(v.id)} className="w-full py-4 rounded-xl border-2 border-destructive/30 text-destructive font-bold text-lg flex items-center justify-center gap-2 hover:bg-destructive/5 transition-colors">
+            <Trash2 size={20} /> מחק רכב
+          </button>
+        </div>
       )}
     </div>
   );
@@ -534,6 +552,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
 }) {
   const isEdit = !!vehicle;
   const [licensePlate, setLicensePlate] = useState(vehicle?.license_plate || '');
+  const [internalNumber, setInternalNumber] = useState(vehicle?.internal_number || '');
   const [manufacturer, setManufacturer] = useState(vehicle?.manufacturer || '');
   const [model, setModel] = useState(vehicle?.model || '');
   const [year, setYear] = useState(vehicle?.year?.toString() || new Date().getFullYear().toString());
@@ -704,6 +723,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
 
     const payload: any = {
       license_plate: licensePlate,
+      internal_number: internalNumber,
       manufacturer,
       model,
       year: parseInt(year) || null,
@@ -800,6 +820,10 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
         <div>
           <label className="block text-lg font-medium mb-2">מספר רכב *</label>
           <input value={licensePlate} onChange={e => setLicensePlate(e.target.value)} placeholder="12-345-67" className={inputClass} dir="ltr" style={{ textAlign: 'right' }} />
+        </div>
+        <div>
+          <label className="block text-lg font-medium mb-2">מספר פנימי</label>
+          <input value={internalNumber} onChange={e => setInternalNumber(e.target.value)} placeholder="מספר פנימי בארגון..." className={inputClass} />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
