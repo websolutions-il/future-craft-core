@@ -143,24 +143,14 @@ const CompletedTasks = () => {
         <TabsContent value="add">
           <div className="border border-border rounded-lg p-6 bg-card space-y-4 max-w-2xl">
             <h2 className="text-lg font-semibold">הוספת משימה חדשה</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-muted-foreground">תאריך ביצוע</label>
-                <Input
-                  type="date"
-                  value={newDate}
-                  onChange={(e) => setNewDate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-muted-foreground">תיאור המשימה</label>
-                <Input
-                  placeholder="לדוגמה: תיקון באג בדף הגדרות..."
-                  value={newSummary}
-                  onChange={(e) => setNewSummary(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
-                />
-              </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-muted-foreground">תיאור המשימה</label>
+              <Input
+                placeholder="לדוגמה: תיקון באג בדף הגדרות..."
+                value={newSummary}
+                onChange={(e) => setNewSummary(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
+              />
             </div>
             <Button onClick={handleAddTask} className="gap-1.5">
               <Plus size={16} />
