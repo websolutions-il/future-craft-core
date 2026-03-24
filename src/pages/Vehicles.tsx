@@ -105,6 +105,7 @@ export default function Vehicles() {
       case 'active': return { text: 'פעיל', cls: 'status-active' };
       case 'in_service': return { text: 'בטיפול', cls: 'status-pending' };
       case 'out_of_service': return { text: 'לא פעיל', cls: 'status-inactive' };
+      case 'archived': return { text: 'ארכיון', cls: 'bg-muted text-muted-foreground' };
       default: return { text: s || 'לא ידוע', cls: '' };
     }
   };
