@@ -128,6 +128,7 @@ function AppRoutes() {
         <Route path="/system-logs" element={<Alerts />} />
         <Route path="/service-order-history" element={<ServiceOrderHistory />} />
         <Route path="/project-summary" element={<ProjectSummary />} />
+        <Route path="/completed-tasks" element={<CompletedTasks />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
