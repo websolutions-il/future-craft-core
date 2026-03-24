@@ -531,6 +531,48 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_health_declarations: {
+        Row: {
+          company_name: string | null
+          created_at: string | null
+          created_by: string | null
+          declaration_date: string | null
+          driver_id: string | null
+          driver_name: string | null
+          id: string
+          id_number: string | null
+          license_image_url: string | null
+          license_number: string | null
+          signature_url: string | null
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          declaration_date?: string | null
+          driver_id?: string | null
+          driver_name?: string | null
+          id?: string
+          id_number?: string | null
+          license_image_url?: string | null
+          license_number?: string | null
+          signature_url?: string | null
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          declaration_date?: string | null
+          driver_id?: string | null
+          driver_name?: string | null
+          id?: string
+          id_number?: string | null
+          license_image_url?: string | null
+          license_number?: string | null
+          signature_url?: string | null
+        }
+        Relationships: []
+      }
       driver_notifications: {
         Row: {
           created_at: string
@@ -573,6 +615,7 @@ export type Database = {
           email: string | null
           full_name: string
           id: string
+          id_number: string | null
           license_expiry: string | null
           license_number: string | null
           license_types: string[] | null
@@ -590,6 +633,7 @@ export type Database = {
           email?: string | null
           full_name?: string
           id?: string
+          id_number?: string | null
           license_expiry?: string | null
           license_number?: string | null
           license_types?: string[] | null
@@ -607,6 +651,7 @@ export type Database = {
           email?: string | null
           full_name?: string
           id?: string
+          id_number?: string | null
           license_expiry?: string | null
           license_number?: string | null
           license_types?: string[] | null
@@ -986,6 +1031,41 @@ export type Database = {
           vehicle_plate?: string | null
         }
         Relationships: []
+      }
+      inspection_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          inspection_id: string
+          item_name: string
+          notes: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          inspection_id: string
+          item_name?: string
+          notes?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          inspection_id?: string
+          item_name?: string
+          notes?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_items_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_inspections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       internal_messages: {
         Row: {
@@ -1723,6 +1803,48 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_inspections: {
+        Row: {
+          company_name: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          inspection_date: string | null
+          inspection_type: string | null
+          inspector_name: string | null
+          notes: string | null
+          overall_status: string | null
+          vehicle_id: string
+          vehicle_plate: string | null
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          inspection_date?: string | null
+          inspection_type?: string | null
+          inspector_name?: string | null
+          notes?: string | null
+          overall_status?: string | null
+          vehicle_id: string
+          vehicle_plate?: string | null
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          inspection_date?: string | null
+          inspection_type?: string | null
+          inspector_name?: string | null
+          notes?: string | null
+          overall_status?: string | null
+          vehicle_id?: string
+          vehicle_plate?: string | null
+        }
+        Relationships: []
+      }
       vehicle_insurance_history: {
         Row: {
           company_name: string | null
@@ -1770,6 +1892,65 @@ export type Database = {
           },
         ]
       }
+      vehicle_tasks: {
+        Row: {
+          company_name: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          inspection_id: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          resolved_by_name: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          vehicle_id: string | null
+          vehicle_plate: string | null
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          inspection_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolved_by_name?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          vehicle_id?: string | null
+          vehicle_plate?: string | null
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          inspection_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolved_by_name?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          vehicle_id?: string | null
+          vehicle_plate?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_tasks_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_inspections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
           approval_status: string | null
@@ -1787,6 +1968,7 @@ export type Database = {
           insurance_doc_url: string | null
           insurance_expiry: string | null
           insurance_start: string | null
+          internal_number: string | null
           is_leasing: boolean | null
           last_service_date: string | null
           leasing_end_date: string | null
@@ -1826,6 +2008,7 @@ export type Database = {
           insurance_doc_url?: string | null
           insurance_expiry?: string | null
           insurance_start?: string | null
+          internal_number?: string | null
           is_leasing?: boolean | null
           last_service_date?: string | null
           leasing_end_date?: string | null
@@ -1865,6 +2048,7 @@ export type Database = {
           insurance_doc_url?: string | null
           insurance_expiry?: string | null
           insurance_start?: string | null
+          internal_number?: string | null
           is_leasing?: boolean | null
           last_service_date?: string | null
           leasing_end_date?: string | null
