@@ -61,7 +61,7 @@ const initialTasks: TaskEntry[] = [
 const CompletedTasks = () => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<TaskEntry[]>(initialTasks);
-  const [newDate, setNewDate] = useState('');
+  
   const [newSummary, setNewSummary] = useState('');
 
   if (!user || user.role !== 'super_admin') {
