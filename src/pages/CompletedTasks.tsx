@@ -87,9 +87,9 @@ const CompletedTasks = () => {
   return (
     <div dir="rtl" className="animate-fade-in">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
+      <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
           <Rocket className="text-primary" size={28} />
-          משימות שבוצעו
+          משימות פיתוח תוכנה
         </h1>
         <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
           {tasks.length} משימות
