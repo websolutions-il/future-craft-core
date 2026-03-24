@@ -37,6 +37,10 @@ import About from "@/pages/About";
 import NotFound from "./pages/NotFound";
 import ProjectSummary from "@/pages/ProjectSummary";
 import CompletedTasks from "@/pages/CompletedTasks";
+import VehicleInspections from "@/pages/VehicleInspections";
+import VehicleTasks from "@/pages/VehicleTasks";
+import HealthDeclaration from "@/pages/HealthDeclaration";
+import VehicleImport from "@/pages/VehicleImport";
 
 // New pages
 import Companions from "@/pages/Companions";
