@@ -107,6 +107,17 @@ export default function Drivers() {
               </a>
             )}
           </div>
+          {/* Archive button */}
+          {user?.role !== 'driver' && d.status !== 'archived' && (
+            <button onClick={async () => {
+              await supabase.from('drivers').update({ status: 'archived' }).eq('id', d.id);
+              toast.success('הנהג הועבר לארכיון');
+              setSelected(null);
+              loadDrivers();
+            }} className="w-full mt-3 py-3 rounded-xl border-2 border-warning/30 text-warning font-bold text-lg flex items-center justify-center gap-2 hover:bg-warning/5 transition-colors">
+              📦 העבר לארכיון
+            </button>
+          )}
         </div>
       </div>
     );
