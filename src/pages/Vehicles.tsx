@@ -820,6 +820,10 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
           <label className="block text-lg font-medium mb-2">מספר רכב *</label>
           <input value={licensePlate} onChange={e => setLicensePlate(e.target.value)} placeholder="12-345-67" className={inputClass} dir="ltr" style={{ textAlign: 'right' }} />
         </div>
+        <div>
+          <label className="block text-lg font-medium mb-2">מספר פנימי</label>
+          <input value={internalNumber} onChange={e => setInternalNumber(e.target.value)} placeholder="מספר פנימי בארגון..." className={inputClass} />
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-lg font-medium mb-2">יצרן *</label>
