@@ -64,7 +64,7 @@ const CompletedTasks = () => {
   const [newDate, setNewDate] = useState('');
   const [newSummary, setNewSummary] = useState('');
 
-  if (user?.role !== 'super_admin') {
+  if (!user || user.role !== 'super_admin') {
     return <Navigate to="/dashboard" replace />;
   }
 
