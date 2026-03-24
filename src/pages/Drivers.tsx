@@ -284,6 +284,7 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
         <div>
           <label className="block text-lg font-medium mb-2">תעודת זהות <span className="text-destructive">*</span></label>
           <input value={idNumber} onChange={e => setIdNumber(e.target.value)} placeholder="תעודת זהות..." className={inputClass} />
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-lg font-medium mb-2">טלפון <span className="text-destructive">*</span></label>
