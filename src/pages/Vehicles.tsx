@@ -248,7 +248,7 @@ export default function Vehicles() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xl font-bold">{v.manufacturer} {v.model}</p>
-                    <p className="text-muted-foreground text-lg">{v.license_plate} • {v.year}</p>
+                    <p className="text-muted-foreground text-lg">{v.license_plate}{v.internal_number ? ` | ${v.internal_number}` : ''} • {v.year}</p>
                     <p className="text-sm text-muted-foreground">נהג: {getDriverName(v.assigned_driver_id)}</p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
