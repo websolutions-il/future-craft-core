@@ -136,7 +136,14 @@ const CompletedTasks = () => {
                   <tr key={i} className={i % 2 === 0 ? 'bg-background' : 'bg-muted/30'}>
                     <td className="p-3 text-muted-foreground">{i + 1}</td>
                     <td className="p-3 text-muted-foreground font-mono text-xs">{task.date}</td>
-                    <td className="p-3">{task.summary}</td>
+                    <td className="p-3">
+                      {task.summary.includes('\n') ? (
+                        <div>
+                          <p>{task.summary.split('\n')[0]}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{task.summary.split('\n')[1]}</p>
+                        </div>
+                      ) : task.summary}
+                    </td>
                     <td className="p-3 text-center">
                       <CheckCircle className="text-green-500 h-4 w-4 mx-auto" />
                     </td>
