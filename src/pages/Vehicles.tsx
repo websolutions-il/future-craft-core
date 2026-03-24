@@ -723,6 +723,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
 
     const payload: any = {
       license_plate: licensePlate,
+      internal_number: internalNumber,
       manufacturer,
       model,
       year: parseInt(year) || null,
