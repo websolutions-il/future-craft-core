@@ -1,7 +1,12 @@
 
-import { CheckCircle, Calendar, Rocket } from 'lucide-react';
+import { CheckCircle, Calendar, Rocket, Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface TaskEntry {
   date: string;       // תאריך פרסום / ביצוע
