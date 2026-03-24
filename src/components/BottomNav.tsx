@@ -111,7 +111,7 @@ const extraItems: NavItem[] = [
 const superAdminExtra: NavItem[] = [
   { path: '/subscriptions', label: 'מנויים וחיוב', icon: CreditCard },
   { path: '/project-summary', label: 'דוח תוספות', icon: ScrollText },
-  { path: '/completed-tasks', label: 'משימות שבוצעו', icon: CheckSquare },
+  { path: '/completed-tasks', label: 'משימות פיתוח תוכנה', icon: CheckSquare },
 ];
 
 export default function BottomNav() {

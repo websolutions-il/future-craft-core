@@ -61,7 +61,7 @@ const initialTasks: TaskEntry[] = [
 const CompletedTasks = () => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<TaskEntry[]>(initialTasks);
-  const [newDate, setNewDate] = useState('');
+  
   const [newSummary, setNewSummary] = useState('');
 
   if (!user || user.role !== 'super_admin') {
@@ -69,12 +69,12 @@ const CompletedTasks = () => {
   }
 
   const handleAddTask = () => {
-    if (!newDate || !newSummary.trim()) {
-      toast.error('יש למלא תאריך ותיאור');
+    if (!newSummary.trim()) {
+      toast.error('יש למלא תיאור משימה');
       return;
     }
-    setTasks(prev => [...prev, { date: newDate, summary: newSummary.trim() }]);
-    setNewDate('');
+    const today = new Date().toISOString().split('T')[0];
+    setTasks(prev => [...prev, { date: today, summary: newSummary.trim() }]);
     setNewSummary('');
     toast.success('המשימה נוספה בהצלחה');
   };
@@ -87,9 +87,9 @@ const CompletedTasks = () => {
   return (
     <div dir="rtl" className="animate-fade-in">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
+      <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
           <Rocket className="text-primary" size={28} />
-          משימות שבוצעו
+          משימות פיתוח תוכנה
         </h1>
         <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
           {tasks.length} משימות
@@ -143,24 +143,14 @@ const CompletedTasks = () => {
         <TabsContent value="add">
           <div className="border border-border rounded-lg p-6 bg-card space-y-4 max-w-2xl">
             <h2 className="text-lg font-semibold">הוספת משימה חדשה</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-muted-foreground">תאריך ביצוע</label>
-                <Input
-                  type="date"
-                  value={newDate}
-                  onChange={(e) => setNewDate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-muted-foreground">תיאור המשימה</label>
-                <Input
-                  placeholder="לדוגמה: תיקון באג בדף הגדרות..."
-                  value={newSummary}
-                  onChange={(e) => setNewSummary(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
-                />
-              </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-muted-foreground">תיאור המשימה</label>
+              <Input
+                placeholder="לדוגמה: תיקון באג בדף הגדרות..."
+                value={newSummary}
+                onChange={(e) => setNewSummary(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
+              />
             </div>
             <Button onClick={handleAddTask} className="gap-1.5">
               <Plus size={16} />
