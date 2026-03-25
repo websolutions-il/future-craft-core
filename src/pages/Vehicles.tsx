@@ -558,7 +558,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
   const [year, setYear] = useState(vehicle?.year?.toString() || new Date().getFullYear().toString());
   const [vehicleType, setVehicleType] = useState(vehicle?.vehicle_type || '');
   const [status, setStatus] = useState(vehicle?.status || 'active');
-  const [odometer, setOdometer] = useState(vehicle?.odometer?.toString() || '');
+  const [odometer, setOdometer] = useState(vehicle?.odometer?.toString() || '0');
   const [assignedDriver, setAssignedDriver] = useState(vehicle?.assigned_driver_id || '');
   const [testExpiry, setTestExpiry] = useState(vehicle?.test_expiry || '');
   const [insuranceStart, setInsuranceStart] = useState(vehicle?.insurance_start || '');
@@ -683,18 +683,8 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
   // Validation
   const basicFieldsFilled = licensePlate && manufacturer && model && year && vehicleType && odometer && (driverRequired ? assignedDriver : true);
   
-  let typeFieldsFilled = true;
-  if (managementType === 'operational_leasing') {
-    typeFieldsFilled = !!leasingEndDate && !!monthlyLeasingCost && !!vehicleReturnDate;
-  } else if (managementType === 'financial_leasing') {
-    typeFieldsFilled = !!monthlyLoanPayment && !!loanEndDate && !!plannedReplacementDate;
-  } else if (managementType === 'self_maintained') {
-    // Loan fields are optional but if hasLoan then they're required
-    typeFieldsFilled = !!plannedReplacementDate;
-    if (hasLoan) {
-      typeFieldsFilled = typeFieldsFilled && !!monthlyLoanPayment && !!loanEndDate;
-    }
-  }
+  // Management type fields are optional - don't block vehicle creation
+  const typeFieldsFilled = true;
 
   const allDocsFilled = isEdit || !insuranceDocsRequired || (licenseDocUrl && insuranceDocUrl && compInsDocUrl);
   const isValid = basicFieldsFilled && typeFieldsFilled && allDocsFilled;
