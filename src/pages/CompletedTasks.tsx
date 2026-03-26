@@ -1,5 +1,5 @@
 
-import { CheckCircle, Calendar, Rocket, Plus, Clock, ArrowLeftRight } from 'lucide-react';
+import { CheckCircle, Calendar, Rocket, Plus, Clock, ArrowLeftRight, Zap, AlertTriangle, Flame } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
