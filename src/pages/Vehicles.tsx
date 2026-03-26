@@ -643,8 +643,18 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
     if (!govData) return;
     if (govData.tozeret_nm) setManufacturer(govData.tozeret_nm.trim());
     if (govData.kinuy_mishari) setModel(govData.kinuy_mishari.trim());
+    if (govData.degem_nm) {
+      // Use degem_nm as model if kinuy_mishari is empty
+      if (!govData.kinuy_mishari) setModel(govData.degem_nm.trim());
+    }
     if (govData.shnat_yitzur) setYear(govData.shnat_yitzur.toString());
-    if (govData.tokef_dt) setTestExpiry(govData.tokef_dt);
+    if (govData.tokef_dt) {
+      try {
+        const d = new Date(govData.tokef_dt);
+        if (!isNaN(d.getTime())) setTestExpiry(d.toISOString().split('T')[0]);
+        else setTestExpiry(govData.tokef_dt);
+      } catch { setTestExpiry(govData.tokef_dt); }
+    }
     setGovDialogOpen(false);
     toast.success('פרטי הרכב מולאו בהצלחה');
   };
