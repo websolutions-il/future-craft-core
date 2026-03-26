@@ -3,6 +3,7 @@ import { Home, Car, Users, Route, Wrench, FileText, AlertTriangle, BarChart3, Re
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyScope } from '@/contexts/CompanyScopeContext';
 import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
+import { useHiddenButtons } from '@/hooks/useHiddenButtons';
 import logo from '@/assets/white-logo.png';
 import { useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
