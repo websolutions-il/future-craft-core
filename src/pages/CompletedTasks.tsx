@@ -1,114 +1,187 @@
 
-import { CheckCircle, Calendar, Rocket, Plus, Trash2 } from 'lucide-react';
+import { CheckCircle, Calendar, Rocket, Plus, Clock, ArrowLeftRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
 
-interface TaskEntry {
-  date: string;
+interface DevTask {
+  id: string;
+  task_number: number;
   summary: string;
+  clarification: string;
+  status: string;
+  created_at: string;
+  completed_at: string | null;
 }
-
-const initialTasks: TaskEntry[] = [
-  { date: '2026-03-01', summary: 'דף נחיתה מקצועי עם Hero, תכונות, צילומי מסך ו-Footer' },
-  { date: '2026-03-02', summary: 'מערכת התחברות – Login, Forgot Password, Reset Password' },
-  { date: '2026-03-02', summary: 'Multi-Tenancy – הפרדת חברות מלאה עם CompanyScope' },
-  { date: '2026-03-03', summary: 'תפקידים והרשאות – super_admin / fleet_manager / driver עם RLS' },
-  { date: '2026-03-03', summary: 'התחזות (Impersonation) – צפייה במערכת מנקודת מבט משתמש אחר' },
-  { date: '2026-03-04', summary: 'ניהול רכבים – CRUD מלא, שיוך נהג, ביטוח, טסט, מסמכים' },
-  { date: '2026-03-04', summary: 'ניהול נהגים – CRUD מלא, פרטי רישיון, סוגי רישיון' },
-  { date: '2026-03-05', summary: 'ניהול לקוחות – CRUD, פרטי הסכם, סוג לקוח' },
-  { date: '2026-03-05', summary: 'מסירות רכב – טופס מסירה עם צ\'קליסט מצב, אישור נהג, מיקום' },
-  { date: '2026-03-06', summary: 'תקלות – דיווח + צ\'אט Realtime + לוג סטטוס + הפניה לספק + שינוע' },
-  { date: '2026-03-06', summary: 'תאונות – דיווח עם תמונות, ביטוח, אימייל אוטומטי' },
-  { date: '2026-03-07', summary: 'הזמנות שירות – טופס, דשבורד ניהולי, צ\'אט, סטטוסים, שינוע' },
-  { date: '2026-03-07', summary: 'היסטוריית הזמנות שירות – סינון מתקדם, ייצוא CSV, דוח חודשי' },
-  { date: '2026-03-08', summary: 'הוצאות – דיווח הוצאה עם קטגוריה, ספק, חשבונית' },
-  { date: '2026-03-08', summary: 'מסלולים – ניהול מסלולים עם ימי פעילות, תחנות ביניים' },
-  { date: '2026-03-08', summary: 'סידורי עבודה – אישור 3-שלבי, צ\'אט, לוג סטטוס, מלווה' },
-  { date: '2026-03-09', summary: 'התראות – מעקב תפוגת טסט, ביטוח, רישיונות (1/7/30 יום)' },
-  { date: '2026-03-09', summary: 'התראות פנימיות – DB Triggers, Toasts בזמן אמת' },
-  { date: '2026-03-09', summary: 'אימייל אוטומטי – Edge Functions לתאונות, תקלות, הזמנות' },
-  { date: '2026-03-10', summary: 'צ\'אט פנימי Realtime – הודעות בזמן אמת בין משתמשים' },
-  { date: '2026-03-10', summary: 'בקשות אישור – מנגנון אישורים + תזכורות 48 שעות' },
-  { date: '2026-03-10', summary: 'דוחות מתקדמים – Inline מתרחבים, ייצוא CSV/WhatsApp/אימייל' },
-  { date: '2026-03-10', summary: 'ספקים, מלווים, מנויים, מבצעים, חירום, יומן מערכת' },
-  { date: '2026-03-10', summary: 'ניהול משתמשים + Edge Function + דשבורד נהג + מסמכים + איפוס סיסמה' },
-  { date: '2026-03-12', summary: 'הזמנות עבודה לספקים – מודול שלם עם CRUD, מספור אוטומטי' },
-  { date: '2026-03-13', summary: 'דשבורד אנליטי ספקים – גרפים, מגמות, סינון מתקדם' },
-  { date: '2026-03-14', summary: 'דוחות ספקים מורחבים – ייצוא CSV, פילטרים' },
-  { date: '2026-03-15', summary: 'כפתור + צף (FAB) בכל הדפים' },
-  { date: '2026-03-16', summary: 'לקוח פרטי – תפקיד + דשבורד + Edge Function' },
-  { date: '2026-03-17', summary: 'תיקוני באגים ושיפורי UX כלליים' },
-  { date: '2026-03-18', summary: 'הצמדת נהג גמישה – הגדרה ברמת לקוח (חובה/לא חובה)' },
-  { date: '2026-03-18', summary: 'מכסת רכבים פטורים מהצמדה – שדה כמותי ברמת חברה' },
-  { date: '2026-03-18', summary: 'ולידציה דינמית בטופס רכבים לפי מכסה והגדרה' },
-  { date: '2026-03-19', summary: 'ניהול הסכמי לקוח – מספר הסכמים ללקוח עם פרטים מלאים' },
-  { date: '2026-03-20', summary: 'מרכז עזרה – עדכון מדריך, חלונית רחבה עם גלילה' },
-  { date: '2026-03-20', summary: 'הגדרות גמישות – ביטול חובת ביטוח/העדר תביעות ברמת חברה' },
-  { date: '2026-03-21', summary: 'שיפורי דף נחיתה – הסרת מימון, פישוט טקסטים' },
-  { date: '2026-03-22', summary: 'ניהול משתמשים – הצגת אימיילים, איפוס סיסמה מרחוק, כניסה כמשתמש' },
-  { date: '2026-03-22', summary: 'סינון תפקידים בטבלת משתמשים + העתקת אימייל' },
-  { date: '2026-03-23', summary: 'הגדרות חירום – תיקון בורר חברות, תמיכה בלקוחות פרטיים, סנכרון מלא' },
-  { date: '2026-03-23', summary: 'הצמדת נהג ללקוח – תיקון סדר שדות (רכב/נהג/לקוח), תמיכה במלווים מרובים' },
-  { date: '2026-03-24', summary: 'דף משימות שבוצעו – סיכום כל הפעולות עם תאריכים' },
-  { date: '2026-03-24', summary: 'מספר פנימי לרכב – שדה חדש בכרטיס רכב, חיפוש וסינון לפי מספר פנימי\nהבהרה: השדה מיועד לזיהוי פנימי בארגון ומוצג ברשימת הרכבים ובכרטיס הרכב' },
-  { date: '2026-03-24', summary: 'טופס ביקורת רכב תקופתי – 14 פריטי בדיקה, פתיחת משימות טיפול אוטומטית בליקוי\nהבהרה: כשמתגלה ליקוי בביקורת, נפתחת משימת המשך טיפול שנשארת פתוחה עד סימון "טופל"' },
-  { date: '2026-03-24', summary: 'משימות טיפול רכב – דף ייעודי למעקב אחר ליקויים ומשימות פתוחות\nהבהרה: משימה משויכת לרכב ולביקורת המקור, כולל מעקב מי טיפל ומתי' },
-  { date: '2026-03-24', summary: 'ארכיון רכבים ונהגים – העברה לארכיון ללא מחיקה פיזית, סינון לפי סטטוס ארכיון\nהבהרה: הנתונים נשמרים לצפייה היסטורית, לחצן "העבר לארכיון" בכרטיס רכב/נהג' },
-  { date: '2026-03-24', summary: 'יבוא רכבים מקובץ CSV – תצוגה מקדימה, מיפוי כותרות בעברית, דוח הצלחה/כישלון\nהבהרה: תומך בשדות: מספר פנימי, מספר רישוי, מחלקה, יצרן, שנת ייצור, תוקף רישוי, תוקף ביטוח ועוד' },
-  { date: '2026-03-24', summary: 'שדרוג כרטיס נהג – הוספת שדה תעודת זהות כחובה, חיפוש לפי ת.ז\nהבהרה: שדה ת.ז נדרש בטופס הוספת/עריכת נהג ומוצג בכרטיס הנהג' },
-  { date: '2026-03-24', summary: 'טופס הצהרת בריאות דיגיטלי – נוסח מלא, חתימה דיגיטלית באצבע, תאריך אוטומטי, העלאת רישיון\nהבהרה: הטופס כולל Canvas לחתימה באצבע/עכבר, העלאת צילום רישיון דו-צדדי, ושמירה במסד הנתונים' },
-  { date: '2026-03-26', summary: 'משימה 13 – ניהול מסלולים ותמחור לפי סוג רכב: שדות מספר מסלול, סוג רכב (רשימה נפתחת + אחר חופשי), סכום למסלול, תמחור שונה לפי סוג רכב, תוקף מסלול לפי טווח תאריכים\nהבהרה: המודול מאפשר ניהול מסלולים קבועים/תקופתיים עם תמחור משתנה. סוגי רכב: פרטי, מסחרי, מונית, מיניבוס, אוטובוס, אחר' },
-];
 
 const CompletedTasks = () => {
   const { user } = useAuth();
-  const [tasks, setTasks] = useState<TaskEntry[]>(initialTasks);
-  
+  const [tasks, setTasks] = useState<DevTask[]>([]);
+  const [loading, setLoading] = useState(true);
   const [newSummary, setNewSummary] = useState('');
+  const [newClarification, setNewClarification] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  if (!user || user.role !== 'super_admin') {
+  const isSuperAdmin = user?.role === 'super_admin';
+
+  const fetchTasks = async () => {
+    const { data, error } = await supabase
+      .from('dev_tasks')
+      .select('*')
+      .order('task_number', { ascending: true });
+    if (!error && data) {
+      setTasks(data as unknown as DevTask[]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchTasks(); }, []);
+
+  if (!user || (user.role !== 'super_admin' && user.role !== 'fleet_manager')) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const handleAddTask = () => {
+  const pendingTasks = tasks.filter(t => t.status === 'pending');
+  const completedTasks = tasks.filter(t => t.status === 'completed');
+
+  const handleAddTask = async () => {
     if (!newSummary.trim()) {
       toast.error('יש למלא תיאור משימה');
       return;
     }
-    const today = new Date().toISOString().split('T')[0];
-    setTasks(prev => [...prev, { date: today, summary: newSummary.trim() }]);
-    setNewSummary('');
-    toast.success('המשימה נוספה בהצלחה');
+    setSubmitting(true);
+    const { error } = await supabase.from('dev_tasks').insert({
+      summary: newSummary.trim(),
+      clarification: newClarification.trim(),
+      status: 'pending',
+      created_by: user.id,
+    } as any);
+    if (error) {
+      toast.error('שגיאה בשמירה');
+    } else {
+      toast.success('המשימה נוספה בהצלחה');
+      setNewSummary('');
+      setNewClarification('');
+      fetchTasks();
+    }
+    setSubmitting(false);
   };
 
-  const handleRemoveTask = (index: number) => {
-    setTasks(prev => prev.filter((_, i) => i !== index));
-    toast.success('המשימה הוסרה');
+  const handleMarkCompleted = async (task: DevTask) => {
+    const { error } = await supabase
+      .from('dev_tasks')
+      .update({ status: 'completed', completed_at: new Date().toISOString() } as any)
+      .eq('id', task.id);
+    if (!error) {
+      toast.success(`משימה #${task.task_number} סומנה כבוצעה`);
+      fetchTasks();
+    }
   };
+
+  const handleMarkPending = async (task: DevTask) => {
+    const { error } = await supabase
+      .from('dev_tasks')
+      .update({ status: 'pending', completed_at: null } as any)
+      .eq('id', task.id);
+    if (!error) {
+      toast.success(`משימה #${task.task_number} הוחזרה לביצוע`);
+      fetchTasks();
+    }
+  };
+
+  const TaskTable = ({ items, showComplete }: { items: DevTask[]; showComplete: boolean }) => (
+    <div className="border border-border rounded-lg overflow-hidden overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="bg-muted">
+            <th className="text-right p-3 font-semibold w-8">#</th>
+            <th className="text-right p-3 font-semibold w-32">
+              <div className="flex items-center gap-1"><Calendar size={14} />תאריך</div>
+            </th>
+            <th className="text-right p-3 font-semibold">תיאור המשימה</th>
+            <th className="text-center p-3 font-semibold w-20">סטטוס</th>
+            {isSuperAdmin && <th className="text-center p-3 font-semibold w-24">פעולה</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {items.length === 0 && (
+            <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">אין משימות</td></tr>
+          )}
+          {items.map((task, i) => (
+            <tr key={task.id} className={i % 2 === 0 ? 'bg-background' : 'bg-muted/30'}>
+              <td className="p-3 text-muted-foreground">{task.task_number}</td>
+              <td className="p-3 text-muted-foreground font-mono text-xs">
+                {task.created_at?.split('T')[0]}
+              </td>
+              <td className="p-3">
+                <p>{task.summary}</p>
+                {task.clarification && (
+                  <p className="text-xs text-muted-foreground mt-1">הבהרה: {task.clarification}</p>
+                )}
+              </td>
+              <td className="p-3 text-center">
+                {task.status === 'completed'
+                  ? <CheckCircle className="text-green-500 h-4 w-4 mx-auto" />
+                  : <Clock className="text-amber-500 h-4 w-4 mx-auto" />
+                }
+              </td>
+              {isSuperAdmin && (
+                <td className="p-3 text-center">
+                  {showComplete ? (
+                    <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => handleMarkCompleted(task)}>
+                      <CheckCircle size={12} /> בוצע
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="ghost" className="text-xs h-7 gap-1" onClick={() => handleMarkPending(task)}>
+                      <ArrowLeftRight size={12} /> החזר
+                    </Button>
+                  )}
+                </td>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  if (loading) return <div className="flex justify-center py-20 text-muted-foreground">טוען...</div>;
 
   return (
     <div dir="rtl" className="animate-fade-in">
       <div className="flex items-center justify-between mb-6">
-      <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
+        <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
           <Rocket className="text-primary" size={28} />
           משימות פיתוח תוכנה
         </h1>
-        <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
-          {tasks.length} משימות
-        </span>
+        <div className="flex gap-2">
+          <Badge variant="outline" className="gap-1">
+            <Clock size={12} className="text-amber-500" />
+            {pendingTasks.length} לביצוע
+          </Badge>
+          <Badge variant="outline" className="gap-1">
+            <CheckCircle size={12} className="text-green-500" />
+            {completedTasks.length} בוצעו
+          </Badge>
+        </div>
       </div>
 
-      <Tabs defaultValue="list" className="w-full">
+      <Tabs defaultValue="pending" className="w-full">
         <TabsList className="mb-4">
-          <TabsTrigger value="list" className="gap-1.5">
+          <TabsTrigger value="pending" className="gap-1.5">
+            <Clock size={14} />
+            משימות לביצוע ({pendingTasks.length})
+          </TabsTrigger>
+          <TabsTrigger value="completed" className="gap-1.5">
             <CheckCircle size={14} />
-            רשימת משימות
+            משימות שבוצעו ({completedTasks.length})
           </TabsTrigger>
           <TabsTrigger value="add" className="gap-1.5">
             <Plus size={14} />
@@ -116,83 +189,39 @@ const CompletedTasks = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="list">
-          <div className="border border-border rounded-lg overflow-hidden overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-muted">
-                  <th className="text-right p-3 font-semibold w-8">#</th>
-                  <th className="text-right p-3 font-semibold w-32">
-                    <div className="flex items-center gap-1">
-                      <Calendar size={14} />
-                      תאריך
-                    </div>
-                  </th>
-                  <th className="text-right p-3 font-semibold">תיאור המשימה</th>
-                  <th className="text-center p-3 font-semibold w-16">סטטוס</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tasks.map((task, i) => (
-                  <tr key={i} className={i % 2 === 0 ? 'bg-background' : 'bg-muted/30'}>
-                    <td className="p-3 text-muted-foreground">{i + 1}</td>
-                    <td className="p-3 text-muted-foreground font-mono text-xs">{task.date}</td>
-                    <td className="p-3">
-                      {task.summary.includes('\n') ? (
-                        <div>
-                          <p>{task.summary.split('\n')[0]}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{task.summary.split('\n')[1]}</p>
-                        </div>
-                      ) : task.summary}
-                    </td>
-                    <td className="p-3 text-center">
-                      <CheckCircle className="text-green-500 h-4 w-4 mx-auto" />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <TabsContent value="pending">
+          <TaskTable items={pendingTasks} showComplete={true} />
+        </TabsContent>
+
+        <TabsContent value="completed">
+          <TaskTable items={completedTasks} showComplete={false} />
         </TabsContent>
 
         <TabsContent value="add">
           <div className="border border-border rounded-lg p-6 bg-card space-y-4 max-w-2xl">
             <h2 className="text-lg font-semibold">הוספת משימה חדשה</h2>
+            <p className="text-sm text-muted-foreground">המשימה תקבל מספור אוטומטי ותופיע בחוצץ "משימות לביצוע"</p>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-muted-foreground">תיאור המשימה</label>
+              <label className="text-sm font-medium">תיאור המשימה</label>
               <Input
                 placeholder="לדוגמה: תיקון באג בדף הגדרות..."
                 value={newSummary}
                 onChange={(e) => setNewSummary(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
               />
             </div>
-            <Button onClick={handleAddTask} className="gap-1.5">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">הבהרה (אופציונלי)</label>
+              <Textarea
+                placeholder="פרטים נוספים, הקשר, דרישות..."
+                value={newClarification}
+                onChange={(e) => setNewClarification(e.target.value)}
+                rows={3}
+              />
+            </div>
+            <Button onClick={handleAddTask} disabled={submitting} className="gap-1.5">
               <Plus size={16} />
-              הוסף משימה
+              {submitting ? 'שומר...' : 'הוסף משימה'}
             </Button>
-
-            {tasks.length > initialTasks.length && (
-              <div className="mt-6 space-y-2">
-                <h3 className="text-sm font-semibold text-muted-foreground">משימות שנוספו בהפעלה זו:</h3>
-                {tasks.slice(initialTasks.length).map((task, i) => (
-                  <div key={i} className="flex items-center justify-between bg-muted/50 rounded-md px-3 py-2 text-sm">
-                    <span>
-                      <span className="text-muted-foreground font-mono text-xs ml-2">{task.date}</span>
-                      {task.summary}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-destructive hover:text-destructive"
-                      onClick={() => handleRemoveTask(initialTasks.length + i)}
-                    >
-                      <Trash2 size={14} />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </TabsContent>
       </Tabs>

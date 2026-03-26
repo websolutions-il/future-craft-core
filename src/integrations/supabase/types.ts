@@ -489,6 +489,39 @@ export type Database = {
         }
         Relationships: []
       }
+      dev_tasks: {
+        Row: {
+          clarification: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          status: string
+          summary: string
+          task_number: number
+        }
+        Insert: {
+          clarification?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          status?: string
+          summary: string
+          task_number?: number
+        }
+        Update: {
+          clarification?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          status?: string
+          summary?: string
+          task_number?: number
+        }
+        Relationships: []
+      }
       document_metadata: {
         Row: {
           category: string
