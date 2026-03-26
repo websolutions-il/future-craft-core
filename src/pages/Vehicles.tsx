@@ -581,6 +581,15 @@ function ExpiryRow({ label, date, daysLeft, colorCls }: { label: string; date: s
   );
 }
 
+function InfoRow({ label, value }: { label: string; value: string | null | undefined }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-muted-foreground text-xs">{label}</span>
+      <span className="font-medium text-foreground">{value || '—'}</span>
+    </div>
+  );
+}
+
 // === Vehicle Form (Add / Edit) ===
 type ManagementType = 'operational_leasing' | 'financial_leasing' | 'self_maintained';
 
