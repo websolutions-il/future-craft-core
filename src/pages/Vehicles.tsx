@@ -885,8 +885,59 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
         {/* Basic info */}
         <div>
           <label className="block text-lg font-medium mb-2">מספר רכב *</label>
-          <input value={licensePlate} onChange={e => setLicensePlate(e.target.value)} placeholder="12-345-67" className={inputClass} dir="ltr" style={{ textAlign: 'right' }} />
+          <div className="flex gap-2">
+            <input value={licensePlate} onChange={e => setLicensePlate(e.target.value)} placeholder="12-345-67" className={`${inputClass} flex-1`} dir="ltr" style={{ textAlign: 'right' }} />
+            <Button
+              type="button"
+              onClick={handleGovLookup}
+              disabled={govLoading}
+              variant="outline"
+              className="h-auto px-4 text-lg rounded-xl border-2 whitespace-nowrap"
+            >
+              {govLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5 ml-1" />}
+              שליפה
+            </Button>
+          </div>
         </div>
+
+        {/* Gov Vehicle Data Dialog */}
+        <Dialog open={govDialogOpen} onOpenChange={setGovDialogOpen}>
+          <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="text-xl">פרטי רכב מהמאגר הממשלתי</DialogTitle>
+            </DialogHeader>
+            {govData && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <InfoRow label="מספר רכב" value={govData.mispar_rechev?.toString()} />
+                  <InfoRow label="יצרן" value={govData.tozeret_nm} />
+                  <InfoRow label="דגם" value={govData.degem_nm} />
+                  <InfoRow label="כינוי מסחרי" value={govData.kinuy_mishari} />
+                  <InfoRow label="שנת ייצור" value={govData.shnat_yitzur?.toString()} />
+                  <InfoRow label="צבע" value={govData.tzeva_rechev} />
+                  <InfoRow label="סוג דלק" value={govData.sug_delek_nm} />
+                  <InfoRow label="בעלות" value={govData.baalut} />
+                  <InfoRow label="תוקף רישיון" value={govData.tokef_dt} />
+                  <InfoRow label="טסט אחרון" value={govData.mivchan_acharon_dt} />
+                  <InfoRow label="צמיג קדמי" value={govData.zmig_kidmi} />
+                  <InfoRow label="צמיג אחורי" value={govData.zmig_ahori} />
+                  <InfoRow label="רמת גימור" value={govData.ramat_gimur} />
+                  <InfoRow label="דגם מנוע" value={govData.degem_manoa} />
+                  <InfoRow label="מס׳ שלדה" value={govData.misgeret} />
+                  <InfoRow label="עלייה לכביש" value={govData.moed_aliya_lakvish} />
+                </div>
+                <div className="flex gap-2 pt-3 border-t border-border">
+                  <Button onClick={applyGovData} className="flex-1 text-lg py-3">
+                    מלא פרטים בטופס
+                  </Button>
+                  <Button variant="outline" onClick={() => setGovDialogOpen(false)} className="text-lg py-3">
+                    סגור
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
         <div>
           <label className="block text-lg font-medium mb-2">מספר פנימי</label>
           <input value={internalNumber} onChange={e => setInternalNumber(e.target.value)} placeholder="מספר פנימי בארגון..." className={inputClass} />
