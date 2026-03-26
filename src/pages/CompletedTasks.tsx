@@ -31,10 +31,6 @@ const CompletedTasks = () => {
 
   const isSuperAdmin = user?.role === 'super_admin';
 
-  if (!user || (user.role !== 'super_admin' && user.role !== 'fleet_manager')) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   const fetchTasks = async () => {
     const { data, error } = await supabase
       .from('dev_tasks')
