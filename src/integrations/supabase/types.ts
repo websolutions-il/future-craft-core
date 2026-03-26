@@ -496,6 +496,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          priority: string
+          size: string
           status: string
           summary: string
           task_number: number
@@ -506,6 +508,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          priority?: string
+          size?: string
           status?: string
           summary: string
           task_number?: number
@@ -516,6 +520,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          priority?: string
+          size?: string
           status?: string
           summary?: string
           task_number?: number
