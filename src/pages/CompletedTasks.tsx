@@ -1,5 +1,5 @@
 
-import { CheckCircle, Calendar, Rocket, Plus, Clock, ArrowLeftRight } from 'lucide-react';
+import { CheckCircle, Calendar, Rocket, Plus, Clock, ArrowLeftRight, Pencil } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface DevTask {
   id: string;
@@ -24,6 +25,7 @@ interface DevTask {
   size: string;
   created_at: string;
   completed_at: string | null;
+  edited_at: string | null;
 }
 
 const priorityConfig: Record<string, { label: string; color: string; icon: string }> = {
@@ -48,6 +50,12 @@ const CompletedTasks = () => {
   const [newPriority, setNewPriority] = useState('medium');
   const [newSize, setNewSize] = useState('M');
   const [submitting, setSubmitting] = useState(false);
+  const [editingTask, setEditingTask] = useState<DevTask | null>(null);
+  const [editSummary, setEditSummary] = useState('');
+  const [editClarification, setEditClarification] = useState('');
+  const [editPriority, setEditPriority] = useState('medium');
+  const [editSize, setEditSize] = useState('M');
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   const isSuperAdmin = user?.role === 'super_admin';
 
@@ -120,6 +128,40 @@ const CompletedTasks = () => {
     }
   };
 
+  const openEditDialog = (task: DevTask) => {
+    setEditingTask(task);
+    setEditSummary(task.summary);
+    setEditClarification(task.clarification || '');
+    setEditPriority(task.priority);
+    setEditSize(task.size);
+  };
+
+  const handleEditTask = async () => {
+    if (!editingTask || !editSummary.trim()) {
+      toast.error('יש למלא תיאור משימה');
+      return;
+    }
+    setEditSubmitting(true);
+    const { error } = await supabase
+      .from('dev_tasks')
+      .update({
+        summary: editSummary.trim(),
+        clarification: editClarification.trim(),
+        priority: editPriority,
+        size: editSize,
+        edited_at: new Date().toISOString(),
+      } as any)
+      .eq('id', editingTask.id);
+    if (error) {
+      toast.error('שגיאה בעדכון');
+    } else {
+      toast.success(`משימה #${editingTask.task_number} עודכנה`);
+      setEditingTask(null);
+      fetchTasks();
+    }
+    setEditSubmitting(false);
+  };
+
   const PriorityBadge = ({ priority }: { priority: string }) => {
     const cfg = priorityConfig[priority] || priorityConfig.medium;
     return <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>{cfg.icon} {cfg.label}</span>;
@@ -143,7 +185,7 @@ const CompletedTasks = () => {
             </th>
             <th className="text-right p-3 font-semibold">תיאור המשימה</th>
             <th className="text-center p-3 font-semibold w-16">סטטוס</th>
-            {isSuperAdmin && <th className="text-center p-3 font-semibold w-24">פעולה</th>}
+            {isSuperAdmin && <th className="text-center p-3 font-semibold w-28">פעולה</th>}
           </tr>
         </thead>
         <tbody>
@@ -159,7 +201,12 @@ const CompletedTasks = () => {
                 {task.created_at?.split('T')[0]}
               </td>
               <td className="p-3">
-                <p>{task.summary}</p>
+                <div className="flex items-center gap-2">
+                  <p>{task.summary}</p>
+                  {task.edited_at && (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-accent text-accent-foreground text-[10px] font-medium whitespace-nowrap">✏️ נערך</span>
+                  )}
+                </div>
                 {task.clarification && (
                   <p className="text-xs text-muted-foreground mt-1">הבהרה: {task.clarification}</p>
                 )}
@@ -172,15 +219,20 @@ const CompletedTasks = () => {
               </td>
               {isSuperAdmin && (
                 <td className="p-3 text-center">
-                  {showComplete ? (
-                    <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => handleMarkCompleted(task)}>
-                      <CheckCircle size={12} /> בוצע
+                  <div className="flex items-center justify-center gap-1">
+                    <Button size="sm" variant="ghost" className="text-xs h-7 w-7 p-0" onClick={() => openEditDialog(task)} title="ערוך">
+                      <Pencil size={12} />
                     </Button>
-                  ) : (
-                    <Button size="sm" variant="ghost" className="text-xs h-7 gap-1" onClick={() => handleMarkPending(task)}>
-                      <ArrowLeftRight size={12} /> החזר
-                    </Button>
-                  )}
+                    {showComplete ? (
+                      <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => handleMarkCompleted(task)}>
+                        <CheckCircle size={12} /> בוצע
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="ghost" className="text-xs h-7 gap-1" onClick={() => handleMarkPending(task)}>
+                        <ArrowLeftRight size={12} /> החזר
+                      </Button>
+                    )}
+                  </div>
                 </td>
               )}
             </tr>
@@ -293,6 +345,58 @@ const CompletedTasks = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingTask} onOpenChange={(open) => !open && setEditingTask(null)}>
+        <DialogContent className="max-w-lg" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>עריכת משימה #{editingTask?.task_number}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">תיאור המשימה</label>
+              <Input value={editSummary} onChange={(e) => setEditSummary(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">הבהרה</label>
+              <Textarea value={editClarification} onChange={(e) => setEditClarification(e.target.value)} rows={3} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">דחיפות</label>
+                <Select value={editPriority} onValueChange={setEditPriority}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">🟢 נמוכה</SelectItem>
+                    <SelectItem value="medium">🟡 בינונית</SelectItem>
+                    <SelectItem value="high">🟠 גבוהה</SelectItem>
+                    <SelectItem value="critical">🔴 קריטית</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">גודל</label>
+                <RadioGroup value={editSize} onValueChange={setEditSize} className="flex gap-3">
+                  {Object.entries(sizeConfig).map(([key, cfg]) => (
+                    <div key={key} className="flex items-center gap-1.5">
+                      <RadioGroupItem value={key} id={`edit-size-${key}`} />
+                      <Label htmlFor={`edit-size-${key}`} className="cursor-pointer text-sm">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded border text-xs font-bold ${cfg.color}`}>{cfg.label}</span>
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setEditingTask(null)}>ביטול</Button>
+              <Button onClick={handleEditTask} disabled={editSubmitting}>
+                {editSubmitting ? 'שומר...' : 'שמור שינויים'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <footer className="text-center text-muted-foreground text-sm py-8 border-t border-border mt-8">
         מסמך זה נוצר אוטומטית | {new Date().toLocaleDateString('he-IL')}
