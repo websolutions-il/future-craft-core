@@ -50,6 +50,12 @@ const CompletedTasks = () => {
   const [newPriority, setNewPriority] = useState('medium');
   const [newSize, setNewSize] = useState('M');
   const [submitting, setSubmitting] = useState(false);
+  const [editingTask, setEditingTask] = useState<DevTask | null>(null);
+  const [editSummary, setEditSummary] = useState('');
+  const [editClarification, setEditClarification] = useState('');
+  const [editPriority, setEditPriority] = useState('medium');
+  const [editSize, setEditSize] = useState('M');
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   const isSuperAdmin = user?.role === 'super_admin';
 
