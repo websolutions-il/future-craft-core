@@ -147,7 +147,7 @@ export default function VehicleLookup() {
         <Card className="border-primary/20">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-xl">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <CheckCircle2 className="h-5 w-5 text-primary" />
               🚗 פרטי רכב
               {result["יצרן"] && (
                 <Badge variant="secondary" className="text-sm font-normal mr-auto">
