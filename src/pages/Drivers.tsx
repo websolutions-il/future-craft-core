@@ -237,7 +237,24 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
   const [street, setStreet] = useState(driver?.street || '');
   const [status, setStatus] = useState(driver?.status || 'active');
   const [notes, setNotes] = useState(driver?.notes || '');
+  const [licenseImageUrl, setLicenseImageUrl] = useState(driver?.license_image_url || '');
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const handleLicenseUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error('הקובץ גדול מדי (מקסימום 5MB)'); return; }
+    setUploading(true);
+    const ext = file.name.split('.').pop();
+    const path = `driver-licenses/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from('documents').upload(path, file);
+    if (error) { toast.error('שגיאה בהעלאת הקובץ'); setUploading(false); return; }
+    const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path);
+    setLicenseImageUrl(urlData.publicUrl);
+    setUploading(false);
+    toast.success('רישיון הועלה בהצלחה');
+  };
 
   const isValid = fullName.trim().length > 0 && phone.trim().length > 0 && licenseNumber.trim().length > 0 && idNumber.trim().length > 0;
   const inputClass = "w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
