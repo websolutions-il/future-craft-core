@@ -17,9 +17,24 @@ interface DevTask {
   summary: string;
   clarification: string;
   status: string;
+  priority: string;
+  size: string;
   created_at: string;
   completed_at: string | null;
 }
+
+const priorityConfig: Record<string, { label: string; color: string; icon: string }> = {
+  low: { label: 'נמוכה', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400', icon: '🟢' },
+  medium: { label: 'בינונית', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400', icon: '🟡' },
+  high: { label: 'גבוהה', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400', icon: '🟠' },
+  critical: { label: 'קריטית', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400', icon: '🔴' },
+};
+
+const sizeConfig: Record<string, { label: string; color: string; hours: string }> = {
+  S: { label: 'S', color: 'bg-sky-100 text-sky-700 border-sky-300 dark:bg-sky-900/40 dark:text-sky-400 dark:border-sky-700', hours: '~1-2 שעות' },
+  M: { label: 'M', color: 'bg-violet-100 text-violet-700 border-violet-300 dark:bg-violet-900/40 dark:text-violet-400 dark:border-violet-700', hours: '~3-5 שעות' },
+  L: { label: 'L', color: 'bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-900/40 dark:text-rose-400 dark:border-rose-700', hours: '~יום עבודה+' },
+};
 
 const CompletedTasks = () => {
   const { user } = useAuth();
