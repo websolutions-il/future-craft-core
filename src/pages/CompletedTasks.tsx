@@ -45,6 +45,8 @@ const CompletedTasks = () => {
   const [loading, setLoading] = useState(true);
   const [newSummary, setNewSummary] = useState('');
   const [newClarification, setNewClarification] = useState('');
+  const [newPriority, setNewPriority] = useState('medium');
+  const [newSize, setNewSize] = useState('M');
   const [submitting, setSubmitting] = useState(false);
 
   const isSuperAdmin = user?.role === 'super_admin';
