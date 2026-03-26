@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Search, ArrowRight, Phone, Mail, Plus, Save, Edit2, X, Download } from 'lucide-react';
+import { Users, Search, ArrowRight, Phone, Mail, Plus, Save, Edit2, X, Download, Upload, FileImage, Eye } from 'lucide-react';
 import { exportToCsv } from '@/utils/exportCsv';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,6 +20,7 @@ interface DriverRow {
   notes: string;
   company_name: string;
   id_number: string;
+  license_image_url?: string;
 }
 
 const licenseOptions = ['A', 'A1', 'A2', 'B', 'C', 'C1', 'D', 'D1', 'E'];
@@ -93,6 +94,17 @@ export default function Drivers() {
             <div className="col-span-2"><span className="text-muted-foreground">סוגי רישיון:</span><p className="font-bold">{d.license_types?.join(', ') || '—'}</p></div>
             <div><span className="text-muted-foreground">עיר:</span><p className="font-bold">{d.city || '—'}</p></div>
             <div><span className="text-muted-foreground">רחוב:</span><p className="font-bold">{d.street || '—'}</p></div>
+            {d.license_image_url && (
+              <div className="col-span-2">
+                <span className="text-muted-foreground">צילום רישיון נהיגה:</span>
+                <div className="mt-2">
+                  <a href={d.license_image_url} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 text-primary font-medium hover:bg-primary/20 transition-colors">
+                    <Eye size={18} /> צפה ברישיון
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
           {d.notes && <p className="mt-4 p-3 bg-muted rounded-xl text-muted-foreground">{d.notes}</p>}
           <div className="flex gap-3 mt-6">
@@ -225,7 +237,24 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
   const [street, setStreet] = useState(driver?.street || '');
   const [status, setStatus] = useState(driver?.status || 'active');
   const [notes, setNotes] = useState(driver?.notes || '');
+  const [licenseImageUrl, setLicenseImageUrl] = useState(driver?.license_image_url || '');
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const handleLicenseUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error('הקובץ גדול מדי (מקסימום 5MB)'); return; }
+    setUploading(true);
+    const ext = file.name.split('.').pop();
+    const path = `driver-licenses/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from('documents').upload(path, file);
+    if (error) { toast.error('שגיאה בהעלאת הקובץ'); setUploading(false); return; }
+    const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path);
+    setLicenseImageUrl(urlData.publicUrl);
+    setUploading(false);
+    toast.success('רישיון הועלה בהצלחה');
+  };
 
   const isValid = fullName.trim().length > 0 && phone.trim().length > 0 && licenseNumber.trim().length > 0 && idNumber.trim().length > 0;
   const inputClass = "w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
@@ -250,6 +279,7 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
       street,
       status,
       notes,
+      license_image_url: licenseImageUrl,
       company_name: user?.company_name || '',
       ...(isEdit ? {} : { created_by: user?.id }),
     };
@@ -340,6 +370,23 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
               className={`flex-1 py-3 rounded-xl text-lg font-medium transition-colors ${status === 'inactive' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
               לא פעיל
             </button>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-lg font-medium mb-2">צילום רישיון נהיגה</label>
+          <div className="flex items-center gap-3">
+            <label className={`flex items-center gap-2 px-5 py-3 rounded-xl cursor-pointer text-lg font-medium transition-colors ${uploading ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary hover:bg-primary/20'}`}>
+              <Upload size={20} />
+              {uploading ? 'מעלה...' : 'העלאת קובץ'}
+              <input type="file" accept="image/*,.pdf" onChange={handleLicenseUpload} className="hidden" disabled={uploading} />
+            </label>
+            {licenseImageUrl && (
+              <a href={licenseImageUrl} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-3 rounded-xl bg-muted text-foreground font-medium hover:bg-muted/80 transition-colors">
+                <FileImage size={18} /> צפה ברישיון
+              </a>
+            )}
           </div>
         </div>
 
