@@ -374,6 +374,23 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
         </div>
 
         <div>
+          <label className="block text-lg font-medium mb-2">צילום רישיון נהיגה</label>
+          <div className="flex items-center gap-3">
+            <label className={`flex items-center gap-2 px-5 py-3 rounded-xl cursor-pointer text-lg font-medium transition-colors ${uploading ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary hover:bg-primary/20'}`}>
+              <Upload size={20} />
+              {uploading ? 'מעלה...' : 'העלאת קובץ'}
+              <input type="file" accept="image/*,.pdf" onChange={handleLicenseUpload} className="hidden" disabled={uploading} />
+            </label>
+            {licenseImageUrl && (
+              <a href={licenseImageUrl} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-3 rounded-xl bg-muted text-foreground font-medium hover:bg-muted/80 transition-colors">
+                <FileImage size={18} /> צפה ברישיון
+              </a>
+            )}
+          </div>
+        </div>
+
+        <div>
           <label className="block text-lg font-medium mb-2">הערות</label>
           <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="הערות..." className={`${inputClass} resize-none`} />
         </div>
