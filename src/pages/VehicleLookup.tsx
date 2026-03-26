@@ -43,22 +43,11 @@ export default function VehicleLookup() {
     setResult(null);
 
     try {
-      const { data: json, error: fnError } = await supabase.functions.invoke(
-        'vehicle-lookup',
-        {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-          body: undefined,
-        }
-      );
-
-      // supabase.functions.invoke uses POST by default, but our function expects GET with query params
-      // Let's use fetch with the proper URL from supabase client
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
       const res = await fetch(
-        `${supabaseUrl}/functions/v1/vehicle-lookup?plate=${clean}`,
+        `${supabaseUrl}/functions/v1/vehicle-lookup?plate=${encodeURIComponent(clean)}`,
         {
           method: 'GET',
           headers: {
