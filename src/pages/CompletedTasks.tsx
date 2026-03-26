@@ -256,6 +256,36 @@ const CompletedTasks = () => {
                 rows={3}
               />
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">דחיפות</label>
+                <Select value={newPriority} onValueChange={setNewPriority}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">🟢 נמוכה</SelectItem>
+                    <SelectItem value="medium">🟡 בינונית</SelectItem>
+                    <SelectItem value="high">🟠 גבוהה</SelectItem>
+                    <SelectItem value="critical">🔴 קריטית</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">גודל משימה</label>
+                <RadioGroup value={newSize} onValueChange={setNewSize} className="flex gap-3">
+                  {Object.entries(sizeConfig).map(([key, cfg]) => (
+                    <div key={key} className="flex items-center gap-1.5">
+                      <RadioGroupItem value={key} id={`size-${key}`} />
+                      <Label htmlFor={`size-${key}`} className="cursor-pointer text-sm">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded border text-xs font-bold ${cfg.color}`}>{cfg.label}</span>
+                        <span className="text-muted-foreground text-xs mr-1">{cfg.hours}</span>
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+            </div>
             <Button onClick={handleAddTask} disabled={submitting} className="gap-1.5">
               <Plus size={16} />
               {submitting ? 'שומר...' : 'הוסף משימה'}
