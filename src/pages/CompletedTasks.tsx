@@ -120,27 +120,41 @@ const CompletedTasks = () => {
     }
   };
 
+  const PriorityBadge = ({ priority }: { priority: string }) => {
+    const cfg = priorityConfig[priority] || priorityConfig.medium;
+    return <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>{cfg.icon} {cfg.label}</span>;
+  };
+
+  const SizeBadge = ({ size }: { size: string }) => {
+    const cfg = sizeConfig[size] || sizeConfig.M;
+    return <span className={`inline-flex items-center justify-center w-7 h-7 rounded-md border text-xs font-bold ${cfg.color}`}>{cfg.label}</span>;
+  };
+
   const TaskTable = ({ items, showComplete }: { items: DevTask[]; showComplete: boolean }) => (
     <div className="border border-border rounded-lg overflow-hidden overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-muted">
             <th className="text-right p-3 font-semibold w-8">#</th>
-            <th className="text-right p-3 font-semibold w-32">
+            <th className="text-center p-3 font-semibold w-10">גודל</th>
+            <th className="text-center p-3 font-semibold w-24">דחיפות</th>
+            <th className="text-right p-3 font-semibold w-28">
               <div className="flex items-center gap-1"><Calendar size={14} />תאריך</div>
             </th>
             <th className="text-right p-3 font-semibold">תיאור המשימה</th>
-            <th className="text-center p-3 font-semibold w-20">סטטוס</th>
+            <th className="text-center p-3 font-semibold w-16">סטטוס</th>
             {isSuperAdmin && <th className="text-center p-3 font-semibold w-24">פעולה</th>}
           </tr>
         </thead>
         <tbody>
           {items.length === 0 && (
-            <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">אין משימות</td></tr>
+            <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">אין משימות</td></tr>
           )}
           {items.map((task, i) => (
             <tr key={task.id} className={i % 2 === 0 ? 'bg-background' : 'bg-muted/30'}>
               <td className="p-3 text-muted-foreground">{task.task_number}</td>
+              <td className="p-3 text-center"><SizeBadge size={task.size} /></td>
+              <td className="p-3 text-center"><PriorityBadge priority={task.priority} /></td>
               <td className="p-3 text-muted-foreground font-mono text-xs">
                 {task.created_at?.split('T')[0]}
               </td>
