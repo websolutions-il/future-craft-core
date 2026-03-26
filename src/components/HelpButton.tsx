@@ -26,6 +26,7 @@ function getDriverHelp(): HelpCategory[] {
         {
           icon: <Car className="h-5 w-5 text-primary" />,
           title: 'נהיגה יומית',
+          link: '/dashboard',
           content: [
             'וודא שהרכב תקין לפני כל נסיעה',
             'בדוק שמנים, צמיגים ומראות לפני יציאה',
