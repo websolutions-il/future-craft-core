@@ -86,7 +86,7 @@ export default function AlertSettings() {
           const { data: inserted } = await supabase
             .from('company_settings')
             .insert(newSettings)
-            .select('id, company_name, alert_days_before, reminder_30_days, reminder_7_days, reminder_1_day, require_driver_assignment, max_vehicles_without_assignment, vehicle_approval_required, require_insurance_docs, require_no_claims');
+            .select('id, company_name, alert_days_before, reminder_30_days, reminder_7_days, reminder_1_day, require_driver_assignment, max_vehicles_without_assignment, vehicle_approval_required, require_insurance_docs, require_no_claims, hidden_buttons');
           
           if (inserted) {
             setConfigs(prev => [...prev, ...(inserted as CompanyAlertConfig[])]);
