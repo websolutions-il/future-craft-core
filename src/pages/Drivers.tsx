@@ -94,6 +94,17 @@ export default function Drivers() {
             <div className="col-span-2"><span className="text-muted-foreground">סוגי רישיון:</span><p className="font-bold">{d.license_types?.join(', ') || '—'}</p></div>
             <div><span className="text-muted-foreground">עיר:</span><p className="font-bold">{d.city || '—'}</p></div>
             <div><span className="text-muted-foreground">רחוב:</span><p className="font-bold">{d.street || '—'}</p></div>
+            {d.license_image_url && (
+              <div className="col-span-2">
+                <span className="text-muted-foreground">צילום רישיון נהיגה:</span>
+                <div className="mt-2">
+                  <a href={d.license_image_url} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 text-primary font-medium hover:bg-primary/20 transition-colors">
+                    <Eye size={18} /> צפה ברישיון
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
           {d.notes && <p className="mt-4 p-3 bg-muted rounded-xl text-muted-foreground">{d.notes}</p>}
           <div className="flex gap-3 mt-6">
