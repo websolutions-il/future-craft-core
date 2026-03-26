@@ -113,6 +113,7 @@ export default function AlertSettings() {
       vehicle_approval_required: activeConfig.vehicle_approval_required,
       require_insurance_docs: activeConfig.require_insurance_docs,
       require_no_claims: activeConfig.require_no_claims,
+      hidden_buttons: activeConfig.hidden_buttons || [],
     }).eq('id', activeConfig.id);
     setSaving(false);
     if (error) toast.error('שגיאה בשמירה');
