@@ -662,6 +662,7 @@ export type Database = {
           id: string
           id_number: string | null
           license_expiry: string | null
+          license_image_url: string | null
           license_number: string | null
           license_types: string[] | null
           notes: string | null
@@ -680,6 +681,7 @@ export type Database = {
           id?: string
           id_number?: string | null
           license_expiry?: string | null
+          license_image_url?: string | null
           license_number?: string | null
           license_types?: string[] | null
           notes?: string | null
@@ -698,6 +700,7 @@ export type Database = {
           id?: string
           id_number?: string | null
           license_expiry?: string | null
+          license_image_url?: string | null
           license_number?: string | null
           license_types?: string[] | null
           notes?: string | null
