@@ -25,6 +25,7 @@ interface DevTask {
   size: string;
   created_at: string;
   completed_at: string | null;
+  edited_at: string | null;
 }
 
 const priorityConfig: Record<string, { label: string; color: string; icon: string }> = {
