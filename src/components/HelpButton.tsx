@@ -37,6 +37,7 @@ function getDriverHelp(): HelpCategory[] {
         {
           icon: <AlertTriangle className="h-5 w-5 text-destructive" />,
           title: 'דיווח תאונה',
+          link: '/accidents',
           content: [
             'עצור במקום בטוח והפעל אורות חירום',
             'וודא שאין נפגעים – אם יש, התקשר למד"א 101',
@@ -49,6 +50,7 @@ function getDriverHelp(): HelpCategory[] {
         {
           icon: <RefreshCw className="h-5 w-5 text-info" />,
           title: 'החלפת רכב (מסירה/קבלה)',
+          link: '/vehicle-handover',
           content: [
             'שני הנהגים חייבים לבצע את תהליך ההחלפה במערכת',
             'הנהג המוסר: מתעד את מצב הרכב, קריאת מד-אוץ וצילומים',
@@ -60,6 +62,7 @@ function getDriverHelp(): HelpCategory[] {
         {
           icon: <FileText className="h-5 w-5 text-warning" />,
           title: 'דיווח תקלות',
+          link: '/faults',
           content: [
             'דווח על כל תקלה מיד – גם אם נראית קטנה',
             'תאר את התקלה בצורה ברורה',
@@ -72,6 +75,7 @@ function getDriverHelp(): HelpCategory[] {
         {
           icon: <HeartPulse className="h-5 w-5 text-destructive" />,
           title: 'הצהרת בריאות',
+          link: '/health-declaration',
           content: [
             'מלא הצהרת בריאות דרך תפריט "הצהרת בריאות"',
             'ההצהרה כוללת: שם, ת.ז, מספר רישיון, תאריך',
@@ -87,6 +91,7 @@ function getDriverHelp(): HelpCategory[] {
         {
           icon: <CalendarDays className="h-5 w-5 text-primary" />,
           title: 'סידור עבודה שבועי',
+          link: '/driver-weekly-schedule',
           content: [
             'צפה בסידור העבודה השבועי שלך',
             'אשר או דחה שיבוצים שהוקצו לך',
@@ -97,6 +102,7 @@ function getDriverHelp(): HelpCategory[] {
         {
           icon: <MapPin className="h-5 w-5 text-success" />,
           title: 'מסלולים ונסיעות',
+          link: '/routes',
           content: [
             'בדוק את המסלול המתוכנן לפני יציאה',
             'התחל ועצור נסיעה דרך המערכת',
@@ -107,6 +113,7 @@ function getDriverHelp(): HelpCategory[] {
         {
           icon: <Phone className="h-5 w-5 text-destructive" />,
           title: 'מצב חירום',
+          link: '/emergency',
           content: [
             'לחץ על "חירום" בתפריט לגישה מהירה',
             'משטרה: 100 | מד"א: 101 | כיבוי אש: 102',
@@ -117,6 +124,7 @@ function getDriverHelp(): HelpCategory[] {
         {
           icon: <CheckSquare className="h-5 w-5 text-info" />,
           title: 'בדיקת רכב תקופתית',
+          link: '/private-vehicle-inspection',
           content: [
             'בצע בדיקת רכב תלת/חצי שנתית דרך המערכת',
             'עבור על 19 סעיפי הבדיקה וסמן תקין/לא תקין',
@@ -127,6 +135,7 @@ function getDriverHelp(): HelpCategory[] {
         {
           icon: <MessageCircle className="h-5 w-5 text-primary" />,
           title: 'הודעות והתראות',
+          link: '/driver-notifications',
           content: [
             'צפה בהודעות מהמנהל ב"התראות"',
             'קבל עדכונים על שיבוצים, תקלות ומשימות',
@@ -146,6 +155,7 @@ function getFleetManagerHelp(): HelpCategory[] {
         {
           icon: <Users className="h-5 w-5 text-primary" />,
           title: 'ניהול נהגים',
+          link: '/drivers',
           content: [
             'הוסף וערוך פרטי נהגים מתפריט "נהגים"',
             'עקוב אחרי תוקף רישיונות ועדכן בהתאם',
@@ -157,6 +167,7 @@ function getFleetManagerHelp(): HelpCategory[] {
         {
           icon: <Truck className="h-5 w-5 text-info" />,
           title: 'ניהול רכבים',
+          link: '/vehicles',
           content: [
             'נהל את צי הרכבים מתפריט "רכבים"',
             'בחר סוג ניהול: ליסינג תפעולי, ליסינג מימוני או תחזוקה עצמאית',
@@ -170,6 +181,7 @@ function getFleetManagerHelp(): HelpCategory[] {
         {
           icon: <Upload className="h-5 w-5 text-success" />,
           title: 'יבוא רכבים',
+          link: '/vehicle-import',
           content: [
             'ייבא רכבים מקובץ CSV דרך "יבוא רכבים"',
             'הורד תבנית CSV לדוגמה והשלם את הנתונים',
@@ -180,6 +192,7 @@ function getFleetManagerHelp(): HelpCategory[] {
         {
           icon: <Search className="h-5 w-5 text-primary" />,
           title: 'בדיקת רכב ממשלתי',
+          link: '/vehicle-lookup',
           content: [
             'בדוק פרטי רכב מול מאגר משרד התחבורה',
             'הזן מספר רכב וקבל: יצרן, דגם, שנה, בעלות, דלק, צבע',
@@ -190,6 +203,7 @@ function getFleetManagerHelp(): HelpCategory[] {
         {
           icon: <CheckSquare className="h-5 w-5 text-warning" />,
           title: 'ביקורות רכב ומשימות טיפול',
+          link: '/vehicle-inspections',
           content: [
             'בצע ביקורות תקופתיות עם Checklist של 14 סעיפים',
             'ליקויים שנמצאו נפתחים כמשימות ב"מרכז ליקויים"',
@@ -200,6 +214,7 @@ function getFleetManagerHelp(): HelpCategory[] {
         {
           icon: <ClipboardList className="h-5 w-5 text-warning" />,
           title: 'הוראות שירות',
+          link: '/service-orders',
           content: [
             'צור הוראות שירות לטיפולים ותיקונים',
             'עקוב אחרי סטטוס הטיפולים',
@@ -215,6 +230,7 @@ function getFleetManagerHelp(): HelpCategory[] {
         {
           icon: <Building2 className="h-5 w-5 text-primary" />,
           title: 'ניהול לקוחות והסכמים',
+          link: '/customers',
           content: [
             'צור לקוחות חדשים מתפריט "לקוחות"',
             'הוסף מספר הסכמים לכל לקוח בלחיצה על "+"',
@@ -226,6 +242,7 @@ function getFleetManagerHelp(): HelpCategory[] {
         {
           icon: <Briefcase className="h-5 w-5 text-success" />,
           title: 'עסקאות וסיכומי עבודה',
+          link: '/customers',
           content: [
             'צור עסקאות מדף הלקוח – כפתור "עסקאות"',
             'כל עסקה מקבלת מספור אוטומטי (DL-00001)',
@@ -236,6 +253,7 @@ function getFleetManagerHelp(): HelpCategory[] {
         {
           icon: <MapPin className="h-5 w-5 text-info" />,
           title: 'ניהול מסלולים',
+          link: '/routes',
           content: [
             'צור מסלולים עם מספר מסלול, מוצא ויעד',
             'הגדר תמחור שונה לכל סוג רכב (פרטי, מסחרי, מונית, מיניבוס, אוטובוס)',
@@ -248,6 +266,7 @@ function getFleetManagerHelp(): HelpCategory[] {
         {
           icon: <CalendarDays className="h-5 w-5 text-primary" />,
           title: 'סידור עבודה',
+          link: '/work-orders',
           content: [
             'צור שיבוצים לנהגים מ"סידור עבודה"',
             'שייך נהג, רכב, מסלול ולקוח לכל שיבוץ',
@@ -264,6 +283,7 @@ function getFleetManagerHelp(): HelpCategory[] {
         {
           icon: <AlertTriangle className="h-5 w-5 text-destructive" />,
           title: 'טיפול בתאונות ותקלות',
+          link: '/faults',
           content: [
             'צפה בדיווחי תאונות ותקלות מנהגים',
             'עדכן סטטוס ותיעוד לכל אירוע',
@@ -275,6 +295,7 @@ function getFleetManagerHelp(): HelpCategory[] {
         {
           icon: <BarChart3 className="h-5 w-5 text-success" />,
           title: 'דוחות וניתוח',
+          link: '/reports',
           content: [
             'צפה בדוחות הוצאות וניתוחי עלויות',
             'דוחות זמינים: כספיים, רכבים, טיפולים, נהגים, הפסד/רווח',
@@ -285,6 +306,7 @@ function getFleetManagerHelp(): HelpCategory[] {
         {
           icon: <Bell className="h-5 w-5 text-primary" />,
           title: 'התראות',
+          link: '/alerts',
           content: [
             'המערכת מייצרת התראות אוטומטיות על: טסט, ביטוח חובה, ביטוח מקיף, רישיון',
             'הגדר התראות מותאמות אישית (חד-פעמיות או חוזרות)',
@@ -295,6 +317,7 @@ function getFleetManagerHelp(): HelpCategory[] {
         {
           icon: <Receipt className="h-5 w-5 text-warning" />,
           title: 'הוצאות',
+          link: '/expenses',
           content: [
             'רשום הוצאות לפי רכב: דלק, חניה, שטיפה, קנסות ועוד',
             'צרף צילום חשבונית לכל הוצאה',
@@ -304,6 +327,7 @@ function getFleetManagerHelp(): HelpCategory[] {
         {
           icon: <RefreshCw className="h-5 w-5 text-info" />,
           title: 'מסירות וקבלות רכב',
+          link: '/vehicle-handover',
           content: [
             'תעד מסירת/קבלת רכב עם Checklist מצב',
             'צרף צילומים ותיאור נזקים',
@@ -324,6 +348,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <Shield className="h-5 w-5 text-primary" />,
           title: 'סקירה כללית',
+          link: '/dashboard',
           content: [
             'מסך הדשבורד מציג סיכום של כל הפעילות במערכת',
             'ניתן לנווט בין כל המסכים דרך התפריט הצדדי',
@@ -334,6 +359,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <Users className="h-5 w-5 text-info" />,
           title: 'ניהול משתמשים',
+          link: '/user-management',
           content: [
             'צור משתמשים חדשים מתפריט "ניהול משתמשים"',
             'הגדר תפקידים: נהג, מנהל צי, מנהל על או לקוח פרטי',
@@ -345,6 +371,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <Settings className="h-5 w-5 text-muted-foreground" />,
           title: 'הגדרות מערכת',
+          link: '/alert-settings',
           content: [
             'נהל הגדרות כלליות מ"הגדרות חברות"',
             'הגדר לכל חברה בנפרד: חובת הצמדת נהג, מכסת רכבים פטורים',
@@ -357,6 +384,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <ShieldAlert className="h-5 w-5 text-destructive" />,
           title: 'הגדרות אישורים',
+          link: '/approval-settings',
           content: [
             'הגדר אילו פעולות דורשות אישור מנהל',
             'צפה בבקשות אישור ממתינות',
@@ -366,6 +394,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <BarChart3 className="h-5 w-5 text-success" />,
           title: 'דוחות ונתונים',
+          link: '/reports',
           content: [
             'צפה בדוחות מקיפים על כל הפעילות',
             'סוגי דוחות: כספיים, רכבים, טיפולים, נהגים, הפסד/רווח',
@@ -376,6 +405,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <History className="h-5 w-5 text-muted-foreground" />,
           title: 'לוג מערכת',
+          link: '/system-logs',
           content: [
             'צפה ביומן פעולות המערכת מ"לוג מערכת"',
             'סנן לפי סוג פעולה, משתמש או תאריך',
@@ -390,6 +420,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <Truck className="h-5 w-5 text-primary" />,
           title: 'פתיחת רכב חדש',
+          link: '/vehicles',
           content: [
             'לך ל"רכבים" → לחץ "רכב חדש"',
             'בחר סוג ניהול: ליסינג תפעולי / ליסינג מימוני / תחזוקה עצמאית',
@@ -402,6 +433,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <Shield className="h-5 w-5 text-info" />,
           title: 'ביטוחים והדר תביעות',
+          link: '/vehicles',
           content: [
             'בליסינג מימוני ותחזוקה עצמאית – נפתח אזור ביטוחים',
             'טבלת ביטוחים לפי שנים: חברת ביטוח, עלות חובה, עלות מקיף',
@@ -413,6 +445,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <Upload className="h-5 w-5 text-success" />,
           title: 'יבוא רכבים',
+          link: '/vehicle-import',
           content: [
             'ייבא רכבים מקובץ CSV דרך "יבוא רכבים" בתפריט',
             'הורד תבנית CSV לדוגמה והשלם את הנתונים',
@@ -423,6 +456,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <Search className="h-5 w-5 text-primary" />,
           title: 'בדיקת רכב ממשלתי',
+          link: '/vehicle-lookup',
           content: [
             'בדוק פרטי רכב מול מאגר משרד התחבורה',
             'הזן מספר רכב וקבל: יצרן, דגם, שנה, בעלות, דלק, צבע, תוקף רישוי',
@@ -433,6 +467,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <CheckSquare className="h-5 w-5 text-warning" />,
           title: 'ביקורות רכב ומשימות טיפול',
+          link: '/vehicle-inspections',
           content: [
             'ביקורת תקופתית: Checklist של 14 סעיפים',
             'בדיקה תלת/חצי שנתית: 19 סעיפים (לרכב פרטי)',
@@ -444,6 +479,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <HeartPulse className="h-5 w-5 text-destructive" />,
           title: 'הצהרות בריאות',
+          link: '/health-declaration',
           content: [
             'צפה בהצהרות בריאות שמילאו הנהגים',
             'ההצהרה כוללת: שם, ת.ז, רישיון, חתימה דיגיטלית',
@@ -459,6 +495,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <Building2 className="h-5 w-5 text-primary" />,
           title: 'ניהול לקוחות',
+          link: '/customers',
           content: [
             'צור לקוח חדש מתפריט "לקוחות"',
             'מלא פרטי לקוח: שם, טלפון, מייל, כתובת, ח.פ',
@@ -469,6 +506,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <FileText className="h-5 w-5 text-success" />,
           title: 'הסכמים',
+          link: '/customers',
           content: [
             'בתוך דף עריכת/הקמת לקוח – לחץ "+ הוסף הסכם"',
             'כל הסכם כולל: מספר סידורי, פירוט, סכום לפני ואחרי מע"מ',
@@ -479,6 +517,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <Briefcase className="h-5 w-5 text-warning" />,
           title: 'עסקאות וסיכומי עבודה',
+          link: '/customers',
           content: [
             'צור עסקאות מדף הלקוח – כפתור "עסקאות"',
             'כל עסקה מקבלת מספור אוטומטי ייחודי (DL-00001)',
@@ -490,6 +529,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <MapPin className="h-5 w-5 text-info" />,
           title: 'ניהול מסלולים',
+          link: '/routes',
           content: [
             'צור מסלולים עם מספר מסלול, מוצא ויעד',
             'הגדר תמחור דינמי שונה לכל סוג רכב (פרטי, מסחרי, מונית, מיניבוס, אוטובוס, אחר)',
@@ -502,6 +542,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <UserPlus className="h-5 w-5 text-primary" />,
           title: 'יצירת לקוח פרטי',
+          link: '/user-management',
           content: [
             'לך ל"ניהול משתמשים" ולחץ "משתמש חדש"',
             'בחר תפקיד "לקוח פרטי"',
@@ -512,6 +553,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <UserCheck className="h-5 w-5 text-success" />,
           title: 'שיוך רכב ללקוח פרטי',
+          link: '/attach-car',
           content: [
             'לך לדף "הצמדת רכב" (בתפריט)',
             'בחר רכב מהרשימה',
@@ -539,6 +581,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <UserCheck className="h-5 w-5 text-primary" />,
           title: 'הצמדת רכב לנהג',
+          link: '/attach-car',
           content: [
             'לך לדף "הצמדת רכב"',
             'בחר רכב → בחר נהג מרשימת הנהגים',
@@ -549,6 +592,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <Building2 className="h-5 w-5 text-warning" />,
           title: 'הגדרת חובת הצמדה לחברה',
+          link: '/alert-settings',
           content: [
             'לך ל"הגדרות חברות"',
             'בחר את החברה הרלוונטית מהבורר',
@@ -560,6 +604,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <Users className="h-5 w-5 text-success" />,
           title: 'ניהול מלווים',
+          link: '/companions',
           content: [
             'הוסף מלווים מתפריט "מלווים"',
             'שייך מלווים לרכבים',
@@ -574,6 +619,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <Wrench className="h-5 w-5 text-primary" />,
           title: 'הזמנות שירות',
+          link: '/service-orders',
           content: [
             'צור הזמנת שירות חדשה מ"הוראות שירות"',
             'מלא פרטי רכב, נהג, ספק וסוג טיפול',
@@ -585,6 +631,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <Scale className="h-5 w-5 text-info" />,
           title: 'ניהול ספקים',
+          link: '/suppliers',
           content: [
             'הוסף ספקים קבועים או חד-פעמיים מ"ספקים"',
             'כל ספק מקבל מספר ספק אוטומטי',
@@ -595,6 +642,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <CalendarDays className="h-5 w-5 text-success" />,
           title: 'סידור עבודה',
+          link: '/work-orders',
           content: [
             'צור שיבוצים לנהגים מ"סידור עבודה"',
             'שייך נהג, רכב, מסלול ולקוח לכל שיבוץ',
@@ -607,6 +655,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <RefreshCw className="h-5 w-5 text-warning" />,
           title: 'שינועים ומסירות',
+          link: '/vehicle-handover',
           content: [
             'צור טופס מסירה/קבלה מ"שינועים"',
             'תעד מצב הרכב עם Checklist ותמונות',
@@ -617,6 +666,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <Phone className="h-5 w-5 text-destructive" />,
           title: 'מספרי חירום',
+          link: '/emergency-settings',
           content: [
             'הגדר מספרי חירום לכל חברה מ"מספרי חירום"',
             'צור קטגוריות חירום עם אייקונים וכפתורי חיוג/WhatsApp',
@@ -627,6 +677,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <Megaphone className="h-5 w-5 text-primary" />,
           title: 'מבצעים',
+          link: '/promotions',
           content: [
             'צור מבצעים ופרסומים מ"מבצעים"',
             'הגדר תאריכי התחלה וסיום',
@@ -637,6 +688,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <MessageCircle className="h-5 w-5 text-info" />,
           title: 'צ\'אט פנימי',
+          link: '/internal-chat',
           content: [
             'שלח הודעות ישירות למשתמשים מ"צ\'אט פנימי"',
             'בחר נמען מרשימת המשתמשים',
@@ -646,6 +698,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <BookOpen className="h-5 w-5 text-muted-foreground" />,
           title: 'משימות פיתוח תוכנה',
+          link: '/completed-tasks',
           content: [
             'נהל משימות פיתוח מ"משימות פיתוח תוכנה"',
             'כל משימה כוללת: מספור אוטומטי, דחיפות, גודל (S/M/L)',
@@ -657,6 +710,7 @@ function getSuperAdminHelp(): HelpCategory[] {
         {
           icon: <Receipt className="h-5 w-5 text-warning" />,
           title: 'מנויים וחיוב',
+          link: '/subscriptions',
           content: [
             'נהל מנויי חברות מ"מנויים וחיוב"',
             'הגדר תוכנית, מחיר חודשי ואמצעי תשלום',
@@ -676,6 +730,7 @@ function getPrivateCustomerHelp(): HelpCategory[] {
         {
           icon: <Car className="h-5 w-5 text-primary" />,
           title: 'הרכב שלי',
+          link: '/dashboard',
           content: [
             'פרטי הרכב מופיעים בדשבורד הראשי',
             'אם לא מופיע רכב, פנה למנהל לשיוך הרכב',
@@ -686,6 +741,7 @@ function getPrivateCustomerHelp(): HelpCategory[] {
         {
           icon: <AlertTriangle className="h-5 w-5 text-destructive" />,
           title: 'דיווח תקלה / תאונה',
+          link: '/faults',
           content: [
             'לחץ על "דיווח תקלה / תאונה" בדשבורד',
             'מלא את הפרטים וצרף תמונות',
@@ -696,6 +752,7 @@ function getPrivateCustomerHelp(): HelpCategory[] {
         {
           icon: <Wrench className="h-5 w-5 text-info" />,
           title: 'הזמנת טיפול',
+          link: '/service-orders',
           content: [
             'לחץ "הזמנת טיפול" בדשבורד',
             'בחר סוג שירות: טיפול שוטף, חידוש ביטוח, שינוע לטסט ועוד',
@@ -706,6 +763,7 @@ function getPrivateCustomerHelp(): HelpCategory[] {
         {
           icon: <CheckSquare className="h-5 w-5 text-success" />,
           title: 'בדיקת רכב תלת/חצי שנתית',
+          link: '/private-vehicle-inspection',
           content: [
             'בצע בדיקה תקופתית לרכב שלך',
             'עבור על סעיפי הבדיקה וסמן תקין/לא תקין',
@@ -720,6 +778,7 @@ function getPrivateCustomerHelp(): HelpCategory[] {
         {
           icon: <Phone className="h-5 w-5 text-destructive" />,
           title: 'מצב חירום',
+          link: '/emergency',
           content: [
             'משטרה: 100',
             'מד"א: 101',
@@ -730,6 +789,7 @@ function getPrivateCustomerHelp(): HelpCategory[] {
         {
           icon: <FileText className="h-5 w-5 text-muted-foreground" />,
           title: 'היסטוריה ומסמכים',
+          link: '/history',
           content: [
             'צפה בהיסטוריית טיפולים ואירועים',
             'העלה חשבוניות דלק והוצאות',
@@ -746,6 +806,7 @@ export default function HelpButton() {
   const [showPulse, setShowPulse] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const key = `help_seen_${user?.id || 'guest'}`;
@@ -761,6 +822,11 @@ export default function HelpButton() {
       const key = `help_seen_${user?.id || 'guest'}`;
       localStorage.setItem(key, 'true');
     }
+  };
+
+  const handleNavigate = (link: string) => {
+    setOpen(false);
+    navigate(link);
   };
 
   const role = user?.role || 'driver';
@@ -851,6 +917,15 @@ export default function HelpButton() {
                               </li>
                             ))}
                           </ul>
+                          {section.link && (
+                            <button
+                              onClick={() => handleNavigate(section.link!)}
+                              className="mt-3 mr-8 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 hover:underline transition-colors"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                              עבור לדף
+                            </button>
+                          )}
                         </AccordionContent>
                       </AccordionItem>
                     ))}
