@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Car, Users, Route, Wrench, FileText, AlertTriangle, BarChart3, RefreshCw, Menu, X, LogOut, Settings, Bell, Briefcase, ClipboardList, History, UserCheck, Phone, Building2, ChevronsUpDown, Check, Truck, Shield, CheckSquare, Mail, Tag, MessageCircle, CreditCard, ScrollText } from 'lucide-react';
+import { Home, Car, Users, Route, Wrench, FileText, AlertTriangle, BarChart3, RefreshCw, Menu, X, LogOut, Settings, Bell, Briefcase, ClipboardList, History, UserCheck, Phone, Building2, ChevronsUpDown, Check, Truck, Shield, CheckSquare, Mail, Tag, MessageCircle, CreditCard, ScrollText, Upload, Search as SearchIcon, HeartPulse } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyScope } from '@/contexts/CompanyScopeContext';
 import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
@@ -41,7 +41,11 @@ const managerCategories = [
       { path: '/companions', label: 'מלווים', icon: Users },
       { path: '/attach-car', label: 'הצמדת רכב לנהג', icon: UserCheck },
       { path: '/vehicle-inspections', label: 'ביקורות רכב', icon: CheckSquare },
+      { path: '/private-vehicle-inspection', label: 'בדיקה תלת/חצי', icon: CheckSquare },
       { path: '/vehicle-tasks', label: 'ליקויים', icon: AlertTriangle },
+      { path: '/vehicle-import', label: 'יבוא רכבים', icon: Upload },
+      { path: '/vehicle-lookup', label: 'בדיקת רכב ממשלתי', icon: SearchIcon },
+      { path: '/health-declaration', label: 'הצהרת בריאות', icon: HeartPulse },
       { path: '/history', label: 'היסטוריית שינויים', icon: History },
     ],
   },
