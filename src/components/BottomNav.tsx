@@ -190,6 +190,7 @@ export function DesktopSidebar() {
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({ 'בית': true, 'תפעול ושירות': true });
   const [companyPickerOpen, setCompanyPickerOpen] = useState(false);
   const unreadCount = useUnreadNotifications();
+  const hiddenButtons = useHiddenButtons();
 
   const isDriver = user?.role === 'driver';
   const isSuperAdmin = user?.role === 'super_admin';
