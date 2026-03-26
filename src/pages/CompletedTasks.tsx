@@ -127,7 +127,7 @@ const CompletedTasks = () => {
 
   const SizeBadge = ({ size }: { size: string }) => {
     const cfg = sizeConfig[size] || sizeConfig.M;
-    return <span className={`inline-flex items-center justify-center w-7 h-7 rounded-md border text-xs font-bold ${cfg.color}`}>{cfg.label}</span>;
+    return <span className={`inline-flex items-center justify-center w-5 h-5 rounded text-[10px] leading-none font-bold border ${cfg.color}`}>{cfg.label}</span>;
   };
 
   const TaskTable = ({ items, showComplete }: { items: DevTask[]; showComplete: boolean }) => (
