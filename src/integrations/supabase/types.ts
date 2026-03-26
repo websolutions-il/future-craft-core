@@ -1174,6 +1174,7 @@ export type Database = {
       }
       routes: {
         Row: {
+          amount: number | null
           company_name: string | null
           created_at: string | null
           created_by: string | null
@@ -1188,14 +1189,21 @@ export type Database = {
           name: string
           notes: string | null
           origin: string | null
+          route_number: string | null
+          route_vehicle_type: string | null
+          route_vehicle_type_custom: string | null
           service_type: string | null
           start_time: string | null
           status: string | null
           stops: string[] | null
           updated_at: string | null
+          valid_from: string | null
+          valid_to: string | null
           vehicle_plate: string | null
+          vehicle_type_pricing: Json | null
         }
         Insert: {
+          amount?: number | null
           company_name?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -1210,14 +1218,21 @@ export type Database = {
           name?: string
           notes?: string | null
           origin?: string | null
+          route_number?: string | null
+          route_vehicle_type?: string | null
+          route_vehicle_type_custom?: string | null
           service_type?: string | null
           start_time?: string | null
           status?: string | null
           stops?: string[] | null
           updated_at?: string | null
+          valid_from?: string | null
+          valid_to?: string | null
           vehicle_plate?: string | null
+          vehicle_type_pricing?: Json | null
         }
         Update: {
+          amount?: number | null
           company_name?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -1232,12 +1247,18 @@ export type Database = {
           name?: string
           notes?: string | null
           origin?: string | null
+          route_number?: string | null
+          route_vehicle_type?: string | null
+          route_vehicle_type_custom?: string | null
           service_type?: string | null
           start_time?: string | null
           status?: string | null
           stops?: string[] | null
           updated_at?: string | null
+          valid_from?: string | null
+          valid_to?: string | null
           vehicle_plate?: string | null
+          vehicle_type_pricing?: Json | null
         }
         Relationships: []
       }
