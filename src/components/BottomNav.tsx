@@ -40,6 +40,8 @@ const managerCategories = [
       { path: '/drivers', label: 'נהגים', icon: Users },
       { path: '/companions', label: 'מלווים', icon: Users },
       { path: '/attach-car', label: 'הצמדת רכב לנהג', icon: UserCheck },
+      { path: '/vehicle-inspections', label: 'ביקורות רכב', icon: CheckSquare },
+      { path: '/vehicle-tasks', label: 'ליקויים', icon: AlertTriangle },
       { path: '/history', label: 'היסטוריית שינויים', icon: History },
     ],
   },

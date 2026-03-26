@@ -52,7 +52,7 @@ export default function PrivateVehicleInspection() {
   const [odometer, setOdometer] = useState('');
   const [inspectionDate, setInspectionDate] = useState(new Date().toISOString().split('T')[0]);
   const [items, setItems] = useState<CheckItem[]>(
-    CHECKLIST_ITEMS.map(name => ({ name, status: '', notes: '' }))
+    CHECKLIST_ITEMS.map(name => ({ name, status: 'ok', notes: '' }))
   );
   const [loading, setLoading] = useState(false);
 
@@ -70,8 +70,6 @@ export default function PrivateVehicleInspection() {
   const handleSubmit = async () => {
     if (!vehicleId) { toast.error('יש לבחור רכב'); return; }
     if (!employeeName.trim()) { toast.error('יש להזין שם עובד'); return; }
-    const unmarked = items.filter(i => !i.status);
-    if (unmarked.length > 0) { toast.error(`יש לסמן תקין/לא תקין עבור כל הסעיפים (${unmarked.length} חסרים)`); return; }
 
     setLoading(true);
     const hasDefects = items.some(i => i.status === 'defect');
