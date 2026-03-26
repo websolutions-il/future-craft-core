@@ -80,6 +80,8 @@ const CompletedTasks = () => {
     const { error } = await supabase.from('dev_tasks').insert({
       summary: newSummary.trim(),
       clarification: newClarification.trim(),
+      priority: newPriority,
+      size: newSize,
       status: 'pending',
       created_by: user.id,
     } as any);
@@ -89,6 +91,8 @@ const CompletedTasks = () => {
       toast.success('המשימה נוספה בהצלחה');
       setNewSummary('');
       setNewClarification('');
+      setNewPriority('medium');
+      setNewSize('M');
       fetchTasks();
     }
     setSubmitting(false);
