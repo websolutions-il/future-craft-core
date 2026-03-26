@@ -10,6 +10,9 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 interface DevTask {
   id: string;
@@ -17,9 +20,24 @@ interface DevTask {
   summary: string;
   clarification: string;
   status: string;
+  priority: string;
+  size: string;
   created_at: string;
   completed_at: string | null;
 }
+
+const priorityConfig: Record<string, { label: string; color: string; icon: string }> = {
+  low: { label: 'נמוכה', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400', icon: '🟢' },
+  medium: { label: 'בינונית', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400', icon: '🟡' },
+  high: { label: 'גבוהה', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400', icon: '🟠' },
+  critical: { label: 'קריטית', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400', icon: '🔴' },
+};
+
+const sizeConfig: Record<string, { label: string; color: string; hours: string }> = {
+  S: { label: 'S', color: 'bg-sky-100 text-sky-700 border-sky-300 dark:bg-sky-900/40 dark:text-sky-400 dark:border-sky-700', hours: '~1-2 שעות' },
+  M: { label: 'M', color: 'bg-violet-100 text-violet-700 border-violet-300 dark:bg-violet-900/40 dark:text-violet-400 dark:border-violet-700', hours: '~3-5 שעות' },
+  L: { label: 'L', color: 'bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-900/40 dark:text-rose-400 dark:border-rose-700', hours: '~יום עבודה+' },
+};
 
 const CompletedTasks = () => {
   const { user } = useAuth();
@@ -27,6 +45,8 @@ const CompletedTasks = () => {
   const [loading, setLoading] = useState(true);
   const [newSummary, setNewSummary] = useState('');
   const [newClarification, setNewClarification] = useState('');
+  const [newPriority, setNewPriority] = useState('medium');
+  const [newSize, setNewSize] = useState('M');
   const [submitting, setSubmitting] = useState(false);
 
   const isSuperAdmin = user?.role === 'super_admin';
@@ -60,6 +80,8 @@ const CompletedTasks = () => {
     const { error } = await supabase.from('dev_tasks').insert({
       summary: newSummary.trim(),
       clarification: newClarification.trim(),
+      priority: newPriority,
+      size: newSize,
       status: 'pending',
       created_by: user.id,
     } as any);
@@ -69,6 +91,8 @@ const CompletedTasks = () => {
       toast.success('המשימה נוספה בהצלחה');
       setNewSummary('');
       setNewClarification('');
+      setNewPriority('medium');
+      setNewSize('M');
       fetchTasks();
     }
     setSubmitting(false);
@@ -96,27 +120,41 @@ const CompletedTasks = () => {
     }
   };
 
+  const PriorityBadge = ({ priority }: { priority: string }) => {
+    const cfg = priorityConfig[priority] || priorityConfig.medium;
+    return <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>{cfg.icon} {cfg.label}</span>;
+  };
+
+  const SizeBadge = ({ size }: { size: string }) => {
+    const cfg = sizeConfig[size] || sizeConfig.M;
+    return <span className={`inline-flex items-center justify-center w-7 h-7 rounded-md border text-xs font-bold ${cfg.color}`}>{cfg.label}</span>;
+  };
+
   const TaskTable = ({ items, showComplete }: { items: DevTask[]; showComplete: boolean }) => (
     <div className="border border-border rounded-lg overflow-hidden overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-muted">
             <th className="text-right p-3 font-semibold w-8">#</th>
-            <th className="text-right p-3 font-semibold w-32">
+            <th className="text-center p-3 font-semibold w-10">גודל</th>
+            <th className="text-center p-3 font-semibold w-24">דחיפות</th>
+            <th className="text-right p-3 font-semibold w-28">
               <div className="flex items-center gap-1"><Calendar size={14} />תאריך</div>
             </th>
             <th className="text-right p-3 font-semibold">תיאור המשימה</th>
-            <th className="text-center p-3 font-semibold w-20">סטטוס</th>
+            <th className="text-center p-3 font-semibold w-16">סטטוס</th>
             {isSuperAdmin && <th className="text-center p-3 font-semibold w-24">פעולה</th>}
           </tr>
         </thead>
         <tbody>
           {items.length === 0 && (
-            <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">אין משימות</td></tr>
+            <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">אין משימות</td></tr>
           )}
           {items.map((task, i) => (
             <tr key={task.id} className={i % 2 === 0 ? 'bg-background' : 'bg-muted/30'}>
               <td className="p-3 text-muted-foreground">{task.task_number}</td>
+              <td className="p-3 text-center"><SizeBadge size={task.size} /></td>
+              <td className="p-3 text-center"><PriorityBadge priority={task.priority} /></td>
               <td className="p-3 text-muted-foreground font-mono text-xs">
                 {task.created_at?.split('T')[0]}
               </td>
@@ -217,6 +255,36 @@ const CompletedTasks = () => {
                 onChange={(e) => setNewClarification(e.target.value)}
                 rows={3}
               />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">דחיפות</label>
+                <Select value={newPriority} onValueChange={setNewPriority}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">🟢 נמוכה</SelectItem>
+                    <SelectItem value="medium">🟡 בינונית</SelectItem>
+                    <SelectItem value="high">🟠 גבוהה</SelectItem>
+                    <SelectItem value="critical">🔴 קריטית</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">גודל משימה</label>
+                <RadioGroup value={newSize} onValueChange={setNewSize} className="flex gap-3">
+                  {Object.entries(sizeConfig).map(([key, cfg]) => (
+                    <div key={key} className="flex items-center gap-1.5">
+                      <RadioGroupItem value={key} id={`size-${key}`} />
+                      <Label htmlFor={`size-${key}`} className="cursor-pointer text-sm">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded border text-xs font-bold ${cfg.color}`}>{cfg.label}</span>
+                        <span className="text-muted-foreground text-xs mr-1">{cfg.hours}</span>
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
             </div>
             <Button onClick={handleAddTask} disabled={submitting} className="gap-1.5">
               <Plus size={16} />
