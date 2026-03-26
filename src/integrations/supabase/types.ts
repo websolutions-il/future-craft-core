@@ -175,6 +175,7 @@ export type Database = {
           alert_days_before: number | null
           company_name: string
           created_at: string | null
+          hidden_buttons: string[]
           id: string
           max_vehicles_without_assignment: number
           reminder_1_day: boolean | null
@@ -194,6 +195,7 @@ export type Database = {
           alert_days_before?: number | null
           company_name: string
           created_at?: string | null
+          hidden_buttons?: string[]
           id?: string
           max_vehicles_without_assignment?: number
           reminder_1_day?: boolean | null
@@ -213,6 +215,7 @@ export type Database = {
           alert_days_before?: number | null
           company_name?: string
           created_at?: string | null
+          hidden_buttons?: string[]
           id?: string
           max_vehicles_without_assignment?: number
           reminder_1_day?: boolean | null

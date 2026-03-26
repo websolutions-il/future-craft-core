@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Building2, Save, Search, ChevronDown, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { MANAGEABLE_BUTTONS } from '@/hooks/useHiddenButtons';
+
 interface CompanyAlertConfig {
   id: string;
   company_name: string;
@@ -16,6 +18,7 @@ interface CompanyAlertConfig {
   vehicle_approval_required: boolean;
   require_insurance_docs: boolean;
   require_no_claims: boolean;
+  hidden_buttons: string[];
 }
 
 interface ProfileCompany {
@@ -43,7 +46,7 @@ export default function AlertSettings() {
     // Load all company settings
     const { data: settingsData } = await supabase
       .from('company_settings')
-      .select('id, company_name, alert_days_before, reminder_30_days, reminder_7_days, reminder_1_day, require_driver_assignment, max_vehicles_without_assignment, vehicle_approval_required, require_insurance_docs, require_no_claims');
+      .select('id, company_name, alert_days_before, reminder_30_days, reminder_7_days, reminder_1_day, require_driver_assignment, max_vehicles_without_assignment, vehicle_approval_required, require_insurance_docs, require_no_claims, hidden_buttons');
     
     if (settingsData) setConfigs(settingsData as CompanyAlertConfig[]);
 
@@ -83,7 +86,7 @@ export default function AlertSettings() {
           const { data: inserted } = await supabase
             .from('company_settings')
             .insert(newSettings)
-            .select('id, company_name, alert_days_before, reminder_30_days, reminder_7_days, reminder_1_day, require_driver_assignment, max_vehicles_without_assignment, vehicle_approval_required, require_insurance_docs, require_no_claims');
+            .select('id, company_name, alert_days_before, reminder_30_days, reminder_7_days, reminder_1_day, require_driver_assignment, max_vehicles_without_assignment, vehicle_approval_required, require_insurance_docs, require_no_claims, hidden_buttons');
           
           if (inserted) {
             setConfigs(prev => [...prev, ...(inserted as CompanyAlertConfig[])]);
@@ -110,6 +113,7 @@ export default function AlertSettings() {
       vehicle_approval_required: activeConfig.vehicle_approval_required,
       require_insurance_docs: activeConfig.require_insurance_docs,
       require_no_claims: activeConfig.require_no_claims,
+      hidden_buttons: activeConfig.hidden_buttons || [],
     }).eq('id', activeConfig.id);
     setSaving(false);
     if (error) toast.error('שגיאה בשמירה');
@@ -330,6 +334,40 @@ export default function AlertSettings() {
                   />
                   <span className="text-base font-medium">חובת מילוי היסטוריית הדר תביעות</span>
                 </label>
+              </div>
+
+              {/* Button Visibility Settings */}
+              <div className="border-t border-border pt-4 space-y-3">
+                <h3 className="font-bold text-lg">🎛️ ניהול כפתורים — הצגה / הסתרה</h3>
+                <p className="text-sm text-muted-foreground">סמן את הכפתורים שברצונך <strong>להסתיר</strong> עבור משתמשי חברה זו. ההגדרה לא משפיעה על מנהל על.</p>
+                {(() => {
+                  const categories = [...new Set(MANAGEABLE_BUTTONS.map(b => b.category))];
+                  const hiddenSet = new Set(activeConfig.hidden_buttons || []);
+                  const toggleButton = (path: string) => {
+                    const current = activeConfig.hidden_buttons || [];
+                    const next = current.includes(path) ? current.filter(p => p !== path) : [...current, path];
+                    updateConfig('hidden_buttons', next);
+                  };
+                  return categories.map(cat => (
+                    <div key={cat}>
+                      <p className="text-xs font-bold text-muted-foreground mb-1.5 mt-3">{cat}</p>
+                      <div className="space-y-1">
+                        {MANAGEABLE_BUTTONS.filter(b => b.category === cat).map(btn => (
+                          <label key={btn.path} className={`flex items-center gap-3 p-2.5 rounded-xl cursor-pointer hover:bg-muted/80 transition-colors ${hiddenSet.has(btn.path) ? 'bg-destructive/10' : 'bg-muted'}`}>
+                            <input
+                              type="checkbox"
+                              checked={hiddenSet.has(btn.path)}
+                              onChange={() => toggleButton(btn.path)}
+                              className="rounded w-5 h-5 accent-destructive"
+                            />
+                            <span className={`text-base font-medium ${hiddenSet.has(btn.path) ? 'text-destructive line-through' : ''}`}>{btn.label}</span>
+                            {hiddenSet.has(btn.path) && <span className="mr-auto text-xs text-destructive">מוסתר</span>}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ));
+                })()}
               </div>
 
               {/* Save button at bottom too */}

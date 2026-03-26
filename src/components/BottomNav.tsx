@@ -3,6 +3,7 @@ import { Home, Car, Users, Route, Wrench, FileText, AlertTriangle, BarChart3, Re
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyScope } from '@/contexts/CompanyScopeContext';
 import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
+import { useHiddenButtons } from '@/hooks/useHiddenButtons';
 import logo from '@/assets/white-logo.png';
 import { useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -119,6 +120,7 @@ export default function BottomNav() {
   const location = useLocation();
   const [showMore, setShowMore] = useState(false);
   const unreadCount = useUnreadNotifications();
+  const hiddenButtons = useHiddenButtons();
 
   const isDriver = user?.role === 'driver';
   const isPrivateCustomer = user?.role === 'private_customer';
@@ -128,7 +130,7 @@ export default function BottomNav() {
     ...allManagerItems,
     ...extraItems,
     ...(isSuperAdmin ? superAdminExtra : []),
-  ];
+  ].filter(item => !hiddenButtons.includes(item.path));
   const moreItems = (isDriver || isPrivateCustomer) ? [] : allItemsForMobile.filter(
     item => !managerMobileNav.some(m => m.path === item.path)
   );
@@ -188,6 +190,7 @@ export function DesktopSidebar() {
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({ 'בית': true, 'תפעול ושירות': true });
   const [companyPickerOpen, setCompanyPickerOpen] = useState(false);
   const unreadCount = useUnreadNotifications();
+  const hiddenButtons = useHiddenButtons();
 
   const isDriver = user?.role === 'driver';
   const isSuperAdmin = user?.role === 'super_admin';
@@ -276,7 +279,10 @@ export function DesktopSidebar() {
           ))
         ) : (
           <>
-            {managerCategories.map(cat => (
+            {managerCategories.map(cat => {
+              const visibleItems = cat.items.filter(item => !hiddenButtons.includes(item.path));
+              if (visibleItems.length === 0) return null;
+              return (
               <div key={cat.title} className="mb-0.5">
                 <button onClick={() => toggleCategory(cat.title)}
                   className="w-full flex items-center justify-between px-5 py-2.5 text-xs font-bold uppercase tracking-wider opacity-50 hover:opacity-80 transition-opacity">
@@ -285,7 +291,7 @@ export function DesktopSidebar() {
                 </button>
                 {openCategories[cat.title] && (
                   <div>
-                    {cat.items.map(item => (
+                    {visibleItems.map(item => (
                       <NavLink key={item.path} to={item.path}
                         className={({ isActive }) => `flex items-center gap-3 px-7 py-2.5 text-[15px] font-medium transition-colors ${isActive ? 'bg-primary-foreground/20 font-bold border-r-4 border-primary-foreground' : 'hover:bg-primary-foreground/10'}`}>
                         <item.icon size={18} /><span>{item.label}</span>
@@ -294,11 +300,12 @@ export function DesktopSidebar() {
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
 
             {/* Extra: Promotions, Chat */}
             <div className="border-t border-primary-foreground/10 mt-2 pt-2">
-              {extraItems.map(item => (
+              {extraItems.filter(item => !hiddenButtons.includes(item.path)).map(item => (
                 <NavLink key={item.path} to={item.path}
                   className={({ isActive }) => `flex items-center gap-3 px-7 py-2.5 text-[15px] font-medium transition-colors ${isActive ? 'bg-primary-foreground/20 font-bold border-r-4 border-primary-foreground' : 'hover:bg-primary-foreground/10'}`}>
                   <item.icon size={18} /><span>{item.label}</span>
