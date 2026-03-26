@@ -120,6 +120,7 @@ export default function BottomNav() {
   const location = useLocation();
   const [showMore, setShowMore] = useState(false);
   const unreadCount = useUnreadNotifications();
+  const hiddenButtons = useHiddenButtons();
 
   const isDriver = user?.role === 'driver';
   const isPrivateCustomer = user?.role === 'private_customer';
@@ -129,7 +130,7 @@ export default function BottomNav() {
     ...allManagerItems,
     ...extraItems,
     ...(isSuperAdmin ? superAdminExtra : []),
-  ];
+  ].filter(item => !hiddenButtons.includes(item.path));
   const moreItems = (isDriver || isPrivateCustomer) ? [] : allItemsForMobile.filter(
     item => !managerMobileNav.some(m => m.path === item.path)
   );
