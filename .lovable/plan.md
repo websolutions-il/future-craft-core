@@ -1,49 +1,25 @@
 
 
-## תוכנית: דף נחיתה / אודות (Pre-Sale) למערכת דליה
+## Plan: Add Task Editing with "Edited" Indicator
 
-### מה ייבנה
+### Database Migration
+Add `edited_at` (timestamptz, nullable) column to `dev_tasks` table to track when a task was last edited.
 
-דף נחיתה מקצועי בנתיב `/about` שיוצג **לפני** דף ההתחברות, עם המיתוג של דליה. הדף יכלול:
+### UI Changes (src/pages/CompletedTasks.tsx)
 
-### מבנה הדף
+1. **Edit state**: Add `editingTask` state (DevTask | null) and edit form fields (`editSummary`, `editClarification`, `editPriority`, `editSize`).
 
-1. **Header (ניווט עליון)** -- לוגו דליה + קישורי עוגן לחלקי הדף + כפתור "כניסה למערכת" שמוביל ל-`/login`
+2. **Edit modal/inline form**: When clicking an edit button (Pencil icon) on a task row, open a Dialog with pre-filled fields (summary, clarification, priority, size selectors — same as the "add" form). Save updates via `supabase.update()` setting `edited_at = now()`.
 
-2. **Hero Section** -- כותרת ראשית "דליה -- פתרונות תפעול ותחזוקה לרכב", תת-כותרת שמסבירה את הערך העסקי, כפתור CTA "התחל עכשיו" → `/login`
+3. **Edit button**: Add a Pencil icon button in the action column (for super_admin users) next to the existing "בוצע"/"החזר" buttons.
 
-3. **בעיות שאנחנו פותרים** -- 4-6 כרטיסים עם אייקונים:
-   - ניהול צי רכב מבוזר ולא מסודר
-   - חוסר שליטה בתקלות ותחזוקה
-   - היעדר תיעוד ואישורים
-   - קושי בניהול ספקים ושינועים
-   - חוסר הפרדה בין חברות
-   - דוחות ידניים וזמן בזבוז
+4. **"Edited" indicator**: In the task row, if `task.edited_at` is not null, show a small badge/text like "✏️ נערך" next to the summary or status, indicating the task was modified.
 
-4. **איך זה עובד (Flow)** -- 4 שלבים ויזואליים:
-   1. פותחים חשבון למנהל צי
-   2. מוסיפים רכבים ונהגים
-   3. מנהלים תקלות, מסלולים ושירות
-   4. מקבלים דוחות ובקרה מלאה
+5. **Update DevTask interface** to include `edited_at: string | null`.
 
-5. **תכונות המערכת** -- רשימה מסודרת של המודולים: ניהול לקוחות, צי רכב, תפעול ושירות, דוחות, צ'אט פנימי, WhatsApp, מנויים וחיוב וכו'
-
-6. **צילומי מסך** -- תמונות placeholder מתוך המערכת (דשבורד, תקלות, רכבים) -- ניתן להחליפן בעתיד
-
-7. **Footer** -- "נבנה ע״י MAO.CO.IL | מערכת ניהול twaek-soft.com -- מערכות ארגוניות לעסקים"
-
-### שינויים טכניים
-
-| קובץ | שינוי |
-|---|---|
-| `src/pages/About.tsx` | **חדש** -- דף הנחיתה המלא |
-| `src/App.tsx` | הוספת route `/about`, שינוי ברירת מחדל: משתמש לא מחובר מגיע ל-`/about` במקום ישר ל-Login. נתיב `/login` יציג את Login |
-| `src/pages/Login.tsx` | עדכון הטקסט ל"פתרונות תפעול ותחזוקה לרכב" + קישור חזרה לדף אודות |
-
-### עיצוב
-- שימוש בצבעי המיתוג הקיימים (Navy כהה כ-primary)
-- גופן Heebo
-- RTL מלא
-- רספונסיבי למובייל ודסקטופ
-- אנימציות כניסה עדינות עם Tailwind
+### Technical Details
+- Single file edit: `src/pages/CompletedTasks.tsx`
+- One DB migration: add `edited_at` column
+- Uses existing Dialog component from shadcn/ui
+- Edit permission: super_admin only (consistent with existing action buttons)
 
