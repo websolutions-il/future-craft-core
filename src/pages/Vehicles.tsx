@@ -1,11 +1,52 @@
 import { useState, useEffect } from 'react';
-import { Car, Search, Plus, ArrowRight, Edit2, Phone, Trash2, Truck, Download, PlusCircle, X } from 'lucide-react';
+import { Car, Search, Plus, ArrowRight, Edit2, Phone, Trash2, Truck, Download, PlusCircle, X, Loader2 } from 'lucide-react';
 import { exportToCsv } from '@/utils/exportCsv';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { toast } from 'sonner';
 import ImageUpload from '@/components/ImageUpload';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+
+interface GovVehicleData {
+  mispar_rechev: number;
+  tozeret_nm: string;
+  degem_nm: string;
+  kinuy_mishari: string;
+  shnat_yitzur: number;
+  tzeva_rechev: string;
+  sug_delek_nm: string;
+  misgeret: string;
+  baalut: string;
+  tokef_dt: string;
+  mivchan_acharon_dt: string;
+  zmig_kidmi: string;
+  zmig_ahori: string;
+  ramat_gimur: string;
+  degem_manoa: string;
+  moed_aliya_lakvish: string;
+}
+
+async function fetchVehicleFromGov(licensePlate: string): Promise<GovVehicleData | null> {
+  const cleanPlate = licensePlate.replace(/[-\s]/g, '');
+  if (!cleanPlate || cleanPlate.length < 5) return null;
+  
+  const res = await fetch('https://data.gov.il/api/3/action/datastore_search', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      resource_id: '053cea08-09bc-40ec-8f7a-156f0677aff3',
+      filters: { mispar_rechev: cleanPlate },
+      limit: 1,
+    }),
+  });
+  const json = await res.json();
+  if (json.success && json.result?.records?.length > 0) {
+    return json.result.records[0] as GovVehicleData;
+  }
+  return null;
+}
 
 interface VehicleRow {
   id: string;
