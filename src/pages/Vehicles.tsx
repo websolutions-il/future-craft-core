@@ -32,18 +32,24 @@ async function fetchVehicleFromGov(licensePlate: string): Promise<GovVehicleData
   const cleanPlate = licensePlate.replace(/[-\s]/g, '');
   if (!cleanPlate || cleanPlate.length < 5) return null;
   
-  const res = await fetch('https://data.gov.il/api/3/action/datastore_search', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      resource_id: '053cea08-09bc-40ec-8f7a-156f0677aff3',
-      filters: { mispar_rechev: cleanPlate },
-      limit: 1,
-    }),
-  });
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+  const res = await fetch(
+    `${supabaseUrl}/functions/v1/vehicle-lookup?plate=${encodeURIComponent(cleanPlate)}`,
+    {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${anonKey}`,
+        'apikey': anonKey,
+      },
+    }
+  );
+
+  if (!res.ok) return null;
   const json = await res.json();
-  if (json.success && json.result?.records?.length > 0) {
-    return json.result.records[0] as GovVehicleData;
+  if (json.raw) {
+    return json.raw as GovVehicleData;
   }
   return null;
 }
@@ -637,8 +643,18 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
     if (!govData) return;
     if (govData.tozeret_nm) setManufacturer(govData.tozeret_nm.trim());
     if (govData.kinuy_mishari) setModel(govData.kinuy_mishari.trim());
+    if (govData.degem_nm) {
+      // Use degem_nm as model if kinuy_mishari is empty
+      if (!govData.kinuy_mishari) setModel(govData.degem_nm.trim());
+    }
     if (govData.shnat_yitzur) setYear(govData.shnat_yitzur.toString());
-    if (govData.tokef_dt) setTestExpiry(govData.tokef_dt);
+    if (govData.tokef_dt) {
+      try {
+        const d = new Date(govData.tokef_dt);
+        if (!isNaN(d.getTime())) setTestExpiry(d.toISOString().split('T')[0]);
+        else setTestExpiry(govData.tokef_dt);
+      } catch { setTestExpiry(govData.tokef_dt); }
+    }
     setGovDialogOpen(false);
     toast.success('פרטי הרכב מולאו בהצלחה');
   };
