@@ -1,11 +1,52 @@
 import { useState, useEffect } from 'react';
-import { Car, Search, Plus, ArrowRight, Edit2, Phone, Trash2, Truck, Download, PlusCircle, X } from 'lucide-react';
+import { Car, Search, Plus, ArrowRight, Edit2, Phone, Trash2, Truck, Download, PlusCircle, X, Loader2 } from 'lucide-react';
 import { exportToCsv } from '@/utils/exportCsv';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { toast } from 'sonner';
 import ImageUpload from '@/components/ImageUpload';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+
+interface GovVehicleData {
+  mispar_rechev: number;
+  tozeret_nm: string;
+  degem_nm: string;
+  kinuy_mishari: string;
+  shnat_yitzur: number;
+  tzeva_rechev: string;
+  sug_delek_nm: string;
+  misgeret: string;
+  baalut: string;
+  tokef_dt: string;
+  mivchan_acharon_dt: string;
+  zmig_kidmi: string;
+  zmig_ahori: string;
+  ramat_gimur: string;
+  degem_manoa: string;
+  moed_aliya_lakvish: string;
+}
+
+async function fetchVehicleFromGov(licensePlate: string): Promise<GovVehicleData | null> {
+  const cleanPlate = licensePlate.replace(/[-\s]/g, '');
+  if (!cleanPlate || cleanPlate.length < 5) return null;
+  
+  const res = await fetch('https://data.gov.il/api/3/action/datastore_search', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      resource_id: '053cea08-09bc-40ec-8f7a-156f0677aff3',
+      filters: { mispar_rechev: cleanPlate },
+      limit: 1,
+    }),
+  });
+  const json = await res.json();
+  if (json.success && json.result?.records?.length > 0) {
+    return json.result.records[0] as GovVehicleData;
+  }
+  return null;
+}
 
 interface VehicleRow {
   id: string;
@@ -540,6 +581,15 @@ function ExpiryRow({ label, date, daysLeft, colorCls }: { label: string; date: s
   );
 }
 
+function InfoRow({ label, value }: { label: string; value: string | null | undefined }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-muted-foreground text-xs">{label}</span>
+      <span className="font-medium text-foreground">{value || '—'}</span>
+    </div>
+  );
+}
+
 // === Vehicle Form (Add / Edit) ===
 type ManagementType = 'operational_leasing' | 'financial_leasing' | 'self_maintained';
 
@@ -557,6 +607,41 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
   const [model, setModel] = useState(vehicle?.model || '');
   const [year, setYear] = useState(vehicle?.year?.toString() || new Date().getFullYear().toString());
   const [vehicleType, setVehicleType] = useState(vehicle?.vehicle_type || '');
+
+  // Gov API lookup state
+  const [govData, setGovData] = useState<GovVehicleData | null>(null);
+  const [govDialogOpen, setGovDialogOpen] = useState(false);
+  const [govLoading, setGovLoading] = useState(false);
+
+  const handleGovLookup = async () => {
+    if (!licensePlate.replace(/[-\s]/g, '')) {
+      toast.error('יש להזין מספר רכב לפני החיפוש');
+      return;
+    }
+    setGovLoading(true);
+    try {
+      const data = await fetchVehicleFromGov(licensePlate);
+      if (data) {
+        setGovData(data);
+        setGovDialogOpen(true);
+      } else {
+        toast.error('לא נמצא רכב עם מספר זה במאגר הממשלתי');
+      }
+    } catch {
+      toast.error('שגיאה בחיפוש במאגר הממשלתי');
+    }
+    setGovLoading(false);
+  };
+
+  const applyGovData = () => {
+    if (!govData) return;
+    if (govData.tozeret_nm) setManufacturer(govData.tozeret_nm.trim());
+    if (govData.kinuy_mishari) setModel(govData.kinuy_mishari.trim());
+    if (govData.shnat_yitzur) setYear(govData.shnat_yitzur.toString());
+    if (govData.tokef_dt) setTestExpiry(govData.tokef_dt);
+    setGovDialogOpen(false);
+    toast.success('פרטי הרכב מולאו בהצלחה');
+  };
   const [status, setStatus] = useState(vehicle?.status || 'active');
   const [odometer, setOdometer] = useState(vehicle?.odometer?.toString() || '0');
   const [assignedDriver, setAssignedDriver] = useState(vehicle?.assigned_driver_id || '');
@@ -809,8 +894,59 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
         {/* Basic info */}
         <div>
           <label className="block text-lg font-medium mb-2">מספר רכב *</label>
-          <input value={licensePlate} onChange={e => setLicensePlate(e.target.value)} placeholder="12-345-67" className={inputClass} dir="ltr" style={{ textAlign: 'right' }} />
+          <div className="flex gap-2">
+            <input value={licensePlate} onChange={e => setLicensePlate(e.target.value)} placeholder="12-345-67" className={`${inputClass} flex-1`} dir="ltr" style={{ textAlign: 'right' }} />
+            <Button
+              type="button"
+              onClick={handleGovLookup}
+              disabled={govLoading}
+              variant="outline"
+              className="h-auto px-4 text-lg rounded-xl border-2 whitespace-nowrap"
+            >
+              {govLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5 ml-1" />}
+              שליפה
+            </Button>
+          </div>
         </div>
+
+        {/* Gov Vehicle Data Dialog */}
+        <Dialog open={govDialogOpen} onOpenChange={setGovDialogOpen}>
+          <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="text-xl">פרטי רכב מהמאגר הממשלתי</DialogTitle>
+            </DialogHeader>
+            {govData && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <InfoRow label="מספר רכב" value={govData.mispar_rechev?.toString()} />
+                  <InfoRow label="יצרן" value={govData.tozeret_nm} />
+                  <InfoRow label="דגם" value={govData.degem_nm} />
+                  <InfoRow label="כינוי מסחרי" value={govData.kinuy_mishari} />
+                  <InfoRow label="שנת ייצור" value={govData.shnat_yitzur?.toString()} />
+                  <InfoRow label="צבע" value={govData.tzeva_rechev} />
+                  <InfoRow label="סוג דלק" value={govData.sug_delek_nm} />
+                  <InfoRow label="בעלות" value={govData.baalut} />
+                  <InfoRow label="תוקף רישיון" value={govData.tokef_dt} />
+                  <InfoRow label="טסט אחרון" value={govData.mivchan_acharon_dt} />
+                  <InfoRow label="צמיג קדמי" value={govData.zmig_kidmi} />
+                  <InfoRow label="צמיג אחורי" value={govData.zmig_ahori} />
+                  <InfoRow label="רמת גימור" value={govData.ramat_gimur} />
+                  <InfoRow label="דגם מנוע" value={govData.degem_manoa} />
+                  <InfoRow label="מס׳ שלדה" value={govData.misgeret} />
+                  <InfoRow label="עלייה לכביש" value={govData.moed_aliya_lakvish} />
+                </div>
+                <div className="flex gap-2 pt-3 border-t border-border">
+                  <Button onClick={applyGovData} className="flex-1 text-lg py-3">
+                    מלא פרטים בטופס
+                  </Button>
+                  <Button variant="outline" onClick={() => setGovDialogOpen(false)} className="text-lg py-3">
+                    סגור
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
         <div>
           <label className="block text-lg font-medium mb-2">מספר פנימי</label>
           <input value={internalNumber} onChange={e => setInternalNumber(e.target.value)} placeholder="מספר פנימי בארגון..." className={inputClass} />
