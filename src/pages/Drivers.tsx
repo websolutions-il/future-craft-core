@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Search, ArrowRight, Phone, Mail, Plus, Save, Edit2, X, Download } from 'lucide-react';
+import { Users, Search, ArrowRight, Phone, Mail, Plus, Save, Edit2, X, Download, Upload, FileImage, Eye } from 'lucide-react';
 import { exportToCsv } from '@/utils/exportCsv';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,6 +20,7 @@ interface DriverRow {
   notes: string;
   company_name: string;
   id_number: string;
+  license_image_url?: string;
 }
 
 const licenseOptions = ['A', 'A1', 'A2', 'B', 'C', 'C1', 'D', 'D1', 'E'];
