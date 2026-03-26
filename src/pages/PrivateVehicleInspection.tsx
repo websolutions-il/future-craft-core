@@ -52,7 +52,7 @@ export default function PrivateVehicleInspection() {
   const [odometer, setOdometer] = useState('');
   const [inspectionDate, setInspectionDate] = useState(new Date().toISOString().split('T')[0]);
   const [items, setItems] = useState<CheckItem[]>(
-    CHECKLIST_ITEMS.map(name => ({ name, status: '', notes: '' }))
+    CHECKLIST_ITEMS.map(name => ({ name, status: 'ok', notes: '' }))
   );
   const [loading, setLoading] = useState(false);
 
