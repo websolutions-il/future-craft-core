@@ -31,12 +31,6 @@ const CompletedTasks = () => {
 
   const isSuperAdmin = user?.role === 'super_admin';
 
-  useEffect(() => { fetchTasks(); }, []);
-
-  if (!user || (user.role !== 'super_admin' && user.role !== 'fleet_manager')) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   const fetchTasks = async () => {
     const { data, error } = await supabase
       .from('dev_tasks')
@@ -49,6 +43,10 @@ const CompletedTasks = () => {
   };
 
   useEffect(() => { fetchTasks(); }, []);
+
+  if (!user || (user.role !== 'super_admin' && user.role !== 'fleet_manager')) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const pendingTasks = tasks.filter(t => t.status === 'pending');
   const completedTasks = tasks.filter(t => t.status === 'completed');
