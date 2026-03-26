@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Building2, Save, Search, ChevronDown, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { MANAGEABLE_BUTTONS } from '@/hooks/useHiddenButtons';
+
 interface CompanyAlertConfig {
   id: string;
   company_name: string;
@@ -16,6 +18,7 @@ interface CompanyAlertConfig {
   vehicle_approval_required: boolean;
   require_insurance_docs: boolean;
   require_no_claims: boolean;
+  hidden_buttons: string[];
 }
 
 interface ProfileCompany {
