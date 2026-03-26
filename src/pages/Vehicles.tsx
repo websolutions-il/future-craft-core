@@ -32,18 +32,24 @@ async function fetchVehicleFromGov(licensePlate: string): Promise<GovVehicleData
   const cleanPlate = licensePlate.replace(/[-\s]/g, '');
   if (!cleanPlate || cleanPlate.length < 5) return null;
   
-  const res = await fetch('https://data.gov.il/api/3/action/datastore_search', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      resource_id: '053cea08-09bc-40ec-8f7a-156f0677aff3',
-      filters: { mispar_rechev: cleanPlate },
-      limit: 1,
-    }),
-  });
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+  const res = await fetch(
+    `${supabaseUrl}/functions/v1/vehicle-lookup?plate=${encodeURIComponent(cleanPlate)}`,
+    {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${anonKey}`,
+        'apikey': anonKey,
+      },
+    }
+  );
+
+  if (!res.ok) return null;
   const json = await res.json();
-  if (json.success && json.result?.records?.length > 0) {
-    return json.result.records[0] as GovVehicleData;
+  if (json.raw) {
+    return json.raw as GovVehicleData;
   }
   return null;
 }
