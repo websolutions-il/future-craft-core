@@ -1,0 +1,1 @@
+ALTER TABLE public.company_settings ADD COLUMN hidden_buttons text[] NOT NULL DEFAULT '{}'::text[];
