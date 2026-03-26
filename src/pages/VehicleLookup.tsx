@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VehicleResult {
   [key: string]: string | number;
@@ -42,30 +43,32 @@ export default function VehicleLookup() {
     setResult(null);
 
     try {
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
       const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/vehicle-lookup?plate=${clean}`,
+        `${supabaseUrl}/functions/v1/vehicle-lookup?plate=${encodeURIComponent(clean)}`,
         {
+          method: 'GET',
           headers: {
-            Authorization: `Bearer ${anonKey}`,
-            apikey: anonKey,
+            'Authorization': `Bearer ${anonKey}`,
+            'apikey': anonKey,
           },
         }
       );
 
-      const json = await res.json();
+      const responseJson = await res.json();
+      console.log("Vehicle lookup response:", res.status, responseJson);
 
       if (!res.ok) {
-        setError(json.error || "שגיאה בחיבור למשרד התחבורה");
+        setError(responseJson.error || "שגיאה בחיבור למשרד התחבורה");
         return;
       }
 
-      setResult(json.data);
-      lookupCache.set(clean, { data: json.data, ts: Date.now() });
+      setResult(responseJson.data);
+      lookupCache.set(clean, { data: responseJson.data, ts: Date.now() });
     } catch (err) {
-      console.error(err);
+      console.error("Vehicle lookup error:", err);
       setError("שגיאה בחיבור למשרד התחבורה");
     } finally {
       setLoading(false);
