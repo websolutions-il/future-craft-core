@@ -1,0 +1,1 @@
+ALTER TABLE public.dev_tasks ADD COLUMN edited_at timestamptz;

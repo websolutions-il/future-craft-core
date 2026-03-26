@@ -498,6 +498,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           created_by: string | null
+          edited_at: string | null
           id: string
           priority: string
           size: string
@@ -510,6 +511,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
+          edited_at?: string | null
           id?: string
           priority?: string
           size?: string
@@ -522,6 +524,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
+          edited_at?: string | null
           id?: string
           priority?: string
           size?: string
