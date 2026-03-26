@@ -140,6 +140,7 @@ function AppRoutes() {
         <Route path="/health-declaration" element={<HealthDeclaration />} />
         <Route path="/vehicle-import" element={<VehicleImport />} />
         <Route path="/private-vehicle-inspection" element={<PrivateVehicleInspection />} />
+        <Route path="/vehicle-lookup" element={<VehicleLookup />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>

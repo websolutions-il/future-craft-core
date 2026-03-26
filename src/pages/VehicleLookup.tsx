@@ -43,13 +43,6 @@ export default function VehicleLookup() {
     setResult(null);
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("vehicle-lookup", {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        body: undefined,
-      });
-
-      // supabase.functions.invoke doesn't support query params well, so use fetch directly
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
