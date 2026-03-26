@@ -1,5 +1,5 @@
 
-import { CheckCircle, Calendar, Rocket, Plus, Clock, ArrowLeftRight } from 'lucide-react';
+import { CheckCircle, Calendar, Rocket, Plus, Clock, ArrowLeftRight, Pencil } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface DevTask {
   id: string;
