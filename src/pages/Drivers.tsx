@@ -279,6 +279,7 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
       street,
       status,
       notes,
+      license_image_url: licenseImageUrl,
       company_name: user?.company_name || '',
       ...(isEdit ? {} : { created_by: user?.id }),
     };
