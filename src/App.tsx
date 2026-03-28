@@ -43,6 +43,7 @@ import HealthDeclaration from "@/pages/HealthDeclaration";
 import VehicleImport from "@/pages/VehicleImport";
 import PrivateVehicleInspection from "@/pages/PrivateVehicleInspection";
 import VehicleLookup from "@/pages/VehicleLookup";
+import VehicleExchange from "@/pages/VehicleExchange";
 
 // New pages
 import Companions from "@/pages/Companions";
