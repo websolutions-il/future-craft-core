@@ -91,6 +91,7 @@ function RadioRow({ options, value, onChange }: { options: { value: string; labe
 // ─── Main component ───
 export default function VehicleExchange() {
   const { user } = useAuth();
+  const isPrivate = user?.role === 'private_customer';
   const companyFilter = useCompanyFilter();
   const [activeTab, setActiveTab] = useState('form');
   const [saving, setSaving] = useState(false);
@@ -169,7 +170,7 @@ export default function VehicleExchange() {
 
   // Auto-fill driver name
   useEffect(() => {
-    if (user?.role === 'driver') {
+    if (user?.role === 'driver' || user?.role === 'private_customer') {
       setGivingDriverName(user.full_name || '');
       setGivingDriverPhone(user.phone || '');
     }
@@ -200,10 +201,12 @@ export default function VehicleExchange() {
     if (!vehiclePlate) return 'חובה להזין מספר רכב';
     if (!givingDriverName) return 'חובה להזין שם נהג מוסר';
     if (!receivingDriverName && !receivingDriverPhone) return 'חובה להזין נהג מקבל או טלפון';
-    if (!locationAddress) return 'חובה לקבל מיקום';
     if (!odometer) return 'חובה להזין קילומטראז\'';
-    if (!photoFront || !photoRear || !photoRight || !photoLeft || !photoInterior || !photoOdometer) return 'חובה לצלם את כל התמונות הנדרשות';
-    if (!givingDriverApproved || !receivingDriverApproved) return 'חובה לקבל אישור משני הנהגים';
+    if (!isPrivate) {
+      if (!locationAddress) return 'חובה לקבל מיקום';
+      if (!photoFront || !photoRear || !photoRight || !photoLeft || !photoInterior || !photoOdometer) return 'חובה לצלם את כל התמונות הנדרשות';
+      if (!givingDriverApproved || !receivingDriverApproved) return 'חובה לקבל אישור משני הנהגים';
+    }
     return null;
   };
 
@@ -483,24 +486,26 @@ export default function VehicleExchange() {
             </div>
           </Section>
 
-          {/* Part 6 – Photos */}
-          <Section icon={Image} title="תמונות (חובה)" id="sec6">
-            <p className="text-xs text-muted-foreground">יש לצלם ישירות מהטלפון. לא ניתן לסיים טופס ללא כל התמונות.</p>
-            <div className="grid grid-cols-2 gap-3">
-              <PhotoUpload label="צילום קדמי" imageUrl={photoFront} onUpload={setPhotoFront} required />
-              <PhotoUpload label="צילום אחורי" imageUrl={photoRear} onUpload={setPhotoRear} required />
-              <PhotoUpload label="צד ימין" imageUrl={photoRight} onUpload={setPhotoRight} required />
-              <PhotoUpload label="צד שמאל" imageUrl={photoLeft} onUpload={setPhotoLeft} required />
-              <PhotoUpload label="צילום פנים" imageUrl={photoInterior} onUpload={setPhotoInterior} required />
-              <PhotoUpload label="צילום ק״מ" imageUrl={photoOdometer} onUpload={setPhotoOdometer} required />
-            </div>
-            {hasDamages && (
-              <div>
-                <p className="text-sm font-medium mb-2">צילום נזק</p>
-                <PhotoUpload label="צילום נזק" imageUrl={photoDamage} onUpload={setPhotoDamage} />
+          {/* Part 6 – Photos (not for private customers) */}
+          {!isPrivate && (
+            <Section icon={Image} title="תמונות (חובה)" id="sec6">
+              <p className="text-xs text-muted-foreground">יש לצלם ישירות מהטלפון. לא ניתן לסיים טופס ללא כל התמונות.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <PhotoUpload label="צילום קדמי" imageUrl={photoFront} onUpload={setPhotoFront} required />
+                <PhotoUpload label="צילום אחורי" imageUrl={photoRear} onUpload={setPhotoRear} required />
+                <PhotoUpload label="צד ימין" imageUrl={photoRight} onUpload={setPhotoRight} required />
+                <PhotoUpload label="צד שמאל" imageUrl={photoLeft} onUpload={setPhotoLeft} required />
+                <PhotoUpload label="צילום פנים" imageUrl={photoInterior} onUpload={setPhotoInterior} required />
+                <PhotoUpload label="צילום ק״מ" imageUrl={photoOdometer} onUpload={setPhotoOdometer} required />
               </div>
-            )}
-          </Section>
+              {hasDamages && (
+                <div>
+                  <p className="text-sm font-medium mb-2">צילום נזק</p>
+                  <PhotoUpload label="צילום נזק" imageUrl={photoDamage} onUpload={setPhotoDamage} />
+                </div>
+              )}
+            </Section>
+          )}
 
           {/* Part 7 – Equipment */}
           <Section icon={Package} title="ציוד ברכב" id="sec7">

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   AlertTriangle, Car, Wrench, Phone, Shield,
   ClipboardList, Bell, Tag, Truck, Scale,
-  History, Upload, CarFront, MessageCircle,
+  History, Upload, CarFront, MessageCircle, RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,6 +37,14 @@ const serviceActions: ServiceAction[] = [
     category: 'primary',
   },
   // Service actions
+  {
+    label: 'החלפת רכב',
+    description: 'תיעוד מסירה וקבלה של רכב',
+    icon: RefreshCw,
+    link: '/vehicle-exchange',
+    color: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+    category: 'service',
+  },
   {
     label: 'שינוע רכב לטסט',
     description: 'בקשת שינוע הרכב לבדיקת טסט',
