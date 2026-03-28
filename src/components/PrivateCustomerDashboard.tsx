@@ -38,6 +38,14 @@ const serviceActions: ServiceAction[] = [
   },
   // Service actions
   {
+    label: 'החלפת רכב',
+    description: 'תיעוד מסירה וקבלה של רכב',
+    icon: RefreshCw,
+    link: '/vehicle-exchange',
+    color: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+    category: 'service',
+  },
+  {
     label: 'שינוע רכב לטסט',
     description: 'בקשת שינוע הרכב לבדיקת טסט',
     icon: Truck,
