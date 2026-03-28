@@ -201,10 +201,12 @@ export default function VehicleExchange() {
     if (!vehiclePlate) return 'חובה להזין מספר רכב';
     if (!givingDriverName) return 'חובה להזין שם נהג מוסר';
     if (!receivingDriverName && !receivingDriverPhone) return 'חובה להזין נהג מקבל או טלפון';
-    if (!locationAddress) return 'חובה לקבל מיקום';
     if (!odometer) return 'חובה להזין קילומטראז\'';
-    if (!photoFront || !photoRear || !photoRight || !photoLeft || !photoInterior || !photoOdometer) return 'חובה לצלם את כל התמונות הנדרשות';
-    if (!givingDriverApproved || !receivingDriverApproved) return 'חובה לקבל אישור משני הנהגים';
+    if (!isPrivate) {
+      if (!locationAddress) return 'חובה לקבל מיקום';
+      if (!photoFront || !photoRear || !photoRight || !photoLeft || !photoInterior || !photoOdometer) return 'חובה לצלם את כל התמונות הנדרשות';
+      if (!givingDriverApproved || !receivingDriverApproved) return 'חובה לקבל אישור משני הנהגים';
+    }
     return null;
   };
 
