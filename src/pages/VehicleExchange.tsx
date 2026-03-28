@@ -170,7 +170,7 @@ export default function VehicleExchange() {
 
   // Auto-fill driver name
   useEffect(() => {
-    if (user?.role === 'driver') {
+    if (user?.role === 'driver' || user?.role === 'private_customer') {
       setGivingDriverName(user.full_name || '');
       setGivingDriverPhone(user.phone || '');
     }
