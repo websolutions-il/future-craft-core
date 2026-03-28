@@ -1779,6 +1779,186 @@ export type Database = {
           },
         ]
       }
+      vehicle_exchanges: {
+        Row: {
+          action_type: string | null
+          branch: string | null
+          cleanliness: string | null
+          company_name: string | null
+          created_at: string
+          created_by: string | null
+          damage_details: string | null
+          exchange_date: string | null
+          exchange_number: string
+          exchange_reason: string | null
+          exchange_time: string | null
+          extra_equipment: string | null
+          fuel_level: string | null
+          giving_driver_approved: boolean | null
+          giving_driver_name: string | null
+          giving_driver_notes: string | null
+          giving_driver_phone: string | null
+          giving_driver_signature: string | null
+          handover_date: string | null
+          handover_time: string | null
+          has_damages: boolean | null
+          has_insurance_doc: boolean | null
+          has_jack: boolean | null
+          has_license_doc: boolean | null
+          has_permanent_driver: boolean | null
+          has_spare_tire: boolean | null
+          has_warning_light: boolean | null
+          id: string
+          internal_number: string | null
+          key_count: number | null
+          lat: number | null
+          lng: number | null
+          location_address: string | null
+          manager_approved: boolean | null
+          manager_approved_by: string | null
+          odometer: number
+          permanent_driver_name: string | null
+          photo_damage: string | null
+          photo_front: string | null
+          photo_interior: string | null
+          photo_left: string | null
+          photo_odometer: string | null
+          photo_rear: string | null
+          photo_right: string | null
+          receiving_driver_approved: boolean | null
+          receiving_driver_name: string | null
+          receiving_driver_notes: string | null
+          receiving_driver_phone: string | null
+          receiving_driver_signature: string | null
+          receiving_driver_type: string | null
+          special_instructions: string | null
+          status: string | null
+          vehicle_plate: string
+          vehicle_type: string | null
+          vehicle_type_custom: string | null
+          whatsapp_phone: string | null
+          whatsapp_status: string | null
+        }
+        Insert: {
+          action_type?: string | null
+          branch?: string | null
+          cleanliness?: string | null
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          damage_details?: string | null
+          exchange_date?: string | null
+          exchange_number?: string
+          exchange_reason?: string | null
+          exchange_time?: string | null
+          extra_equipment?: string | null
+          fuel_level?: string | null
+          giving_driver_approved?: boolean | null
+          giving_driver_name?: string | null
+          giving_driver_notes?: string | null
+          giving_driver_phone?: string | null
+          giving_driver_signature?: string | null
+          handover_date?: string | null
+          handover_time?: string | null
+          has_damages?: boolean | null
+          has_insurance_doc?: boolean | null
+          has_jack?: boolean | null
+          has_license_doc?: boolean | null
+          has_permanent_driver?: boolean | null
+          has_spare_tire?: boolean | null
+          has_warning_light?: boolean | null
+          id?: string
+          internal_number?: string | null
+          key_count?: number | null
+          lat?: number | null
+          lng?: number | null
+          location_address?: string | null
+          manager_approved?: boolean | null
+          manager_approved_by?: string | null
+          odometer?: number
+          permanent_driver_name?: string | null
+          photo_damage?: string | null
+          photo_front?: string | null
+          photo_interior?: string | null
+          photo_left?: string | null
+          photo_odometer?: string | null
+          photo_rear?: string | null
+          photo_right?: string | null
+          receiving_driver_approved?: boolean | null
+          receiving_driver_name?: string | null
+          receiving_driver_notes?: string | null
+          receiving_driver_phone?: string | null
+          receiving_driver_signature?: string | null
+          receiving_driver_type?: string | null
+          special_instructions?: string | null
+          status?: string | null
+          vehicle_plate?: string
+          vehicle_type?: string | null
+          vehicle_type_custom?: string | null
+          whatsapp_phone?: string | null
+          whatsapp_status?: string | null
+        }
+        Update: {
+          action_type?: string | null
+          branch?: string | null
+          cleanliness?: string | null
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          damage_details?: string | null
+          exchange_date?: string | null
+          exchange_number?: string
+          exchange_reason?: string | null
+          exchange_time?: string | null
+          extra_equipment?: string | null
+          fuel_level?: string | null
+          giving_driver_approved?: boolean | null
+          giving_driver_name?: string | null
+          giving_driver_notes?: string | null
+          giving_driver_phone?: string | null
+          giving_driver_signature?: string | null
+          handover_date?: string | null
+          handover_time?: string | null
+          has_damages?: boolean | null
+          has_insurance_doc?: boolean | null
+          has_jack?: boolean | null
+          has_license_doc?: boolean | null
+          has_permanent_driver?: boolean | null
+          has_spare_tire?: boolean | null
+          has_warning_light?: boolean | null
+          id?: string
+          internal_number?: string | null
+          key_count?: number | null
+          lat?: number | null
+          lng?: number | null
+          location_address?: string | null
+          manager_approved?: boolean | null
+          manager_approved_by?: string | null
+          odometer?: number
+          permanent_driver_name?: string | null
+          photo_damage?: string | null
+          photo_front?: string | null
+          photo_interior?: string | null
+          photo_left?: string | null
+          photo_odometer?: string | null
+          photo_rear?: string | null
+          photo_right?: string | null
+          receiving_driver_approved?: boolean | null
+          receiving_driver_name?: string | null
+          receiving_driver_notes?: string | null
+          receiving_driver_phone?: string | null
+          receiving_driver_signature?: string | null
+          receiving_driver_type?: string | null
+          special_instructions?: string | null
+          status?: string | null
+          vehicle_plate?: string
+          vehicle_type?: string | null
+          vehicle_type_custom?: string | null
+          whatsapp_phone?: string | null
+          whatsapp_status?: string | null
+        }
+        Relationships: []
+      }
       vehicle_handovers: {
         Row: {
           action_type: string | null
