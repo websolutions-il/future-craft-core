@@ -43,6 +43,7 @@ import HealthDeclaration from "@/pages/HealthDeclaration";
 import VehicleImport from "@/pages/VehicleImport";
 import PrivateVehicleInspection from "@/pages/PrivateVehicleInspection";
 import VehicleLookup from "@/pages/VehicleLookup";
+import VehicleExchange from "@/pages/VehicleExchange";
 
 // New pages
 import Companions from "@/pages/Companions";
@@ -141,6 +142,7 @@ function AppRoutes() {
         <Route path="/vehicle-import" element={<VehicleImport />} />
         <Route path="/private-vehicle-inspection" element={<PrivateVehicleInspection />} />
         <Route path="/vehicle-lookup" element={<VehicleLookup />} />
+        <Route path="/vehicle-exchange" element={<VehicleExchange />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
