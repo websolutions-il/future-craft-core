@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   AlertTriangle, Car, Wrench, Phone, Shield,
   ClipboardList, Bell, Tag, Truck, Scale,
-  History, Upload, CarFront, MessageCircle,
+  History, Upload, CarFront, MessageCircle, RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
