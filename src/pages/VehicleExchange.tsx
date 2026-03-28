@@ -91,6 +91,7 @@ function RadioRow({ options, value, onChange }: { options: { value: string; labe
 // ─── Main component ───
 export default function VehicleExchange() {
   const { user } = useAuth();
+  const isPrivate = user?.role === 'private_customer';
   const companyFilter = useCompanyFilter();
   const [activeTab, setActiveTab] = useState('form');
   const [saving, setSaving] = useState(false);
