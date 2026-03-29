@@ -236,10 +236,10 @@ export default function Reports() {
     }
     if (showReport('service_orders') && filtered.serviceOrders.length > 0) {
       rows.push(['--- הזמנות שירות ---']);
-      rows.push(['תאריך', 'קטגוריה', 'תיאור', 'מספר רכב', 'נהג', 'ספק', 'סטטוס']);
+      rows.push(['תאריך', 'קטגוריה', 'תיאור', 'מספר רכב', 'מס\' פנימי', 'נהג', 'ספק', 'סטטוס']);
       filtered.serviceOrders.forEach(s => rows.push([
         s.service_date ? new Date(s.service_date).toLocaleDateString('he-IL') : '',
-        s.service_category || '', s.description || '', s.vehicle_plate || '',
+        s.service_category || '', s.description || '', s.vehicle_plate || '', getInternal(s.vehicle_plate),
         s.driver_name || '', s.vendor_name || '', s.treatment_status || '',
       ]));
       rows.push([]);
