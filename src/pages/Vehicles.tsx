@@ -1018,7 +1018,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
             </div>
           )}
           <div>
-            <label className="block text-lg font-medium mb-2">ק"מ נוכחי *</label>
+            <label className="block text-lg font-medium mb-2">ק"מ נוכחי</label>
             <input type="number" value={odometer} onChange={e => setOdometer(e.target.value)} placeholder="0" className={inputClass} />
           </div>
         </div>
