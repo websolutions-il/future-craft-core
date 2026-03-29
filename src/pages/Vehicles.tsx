@@ -1105,7 +1105,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
             {hasLoan && (
               <>
                 <div>
-                  <label className="block text-sm font-medium mb-1">גובה החזר חודשי (₪) *</label>
+                  <label className="block text-sm font-medium mb-1">גובה החזר חודשי (₪)</label>
                   <input type="number" value={monthlyLoanPayment} onChange={e => setMonthlyLoanPayment(e.target.value)} placeholder="החזר חודשי..." className={inputClass} />
                 </div>
                 <div>
