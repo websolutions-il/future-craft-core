@@ -822,7 +822,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
       manufacturer,
       model,
       year: parseInt(year) || null,
-      vehicle_type: vehicleType,
+      vehicle_type: vehicleType === 'אחר' ? vehicleTypeCustom : vehicleType,
       status: approvalStatus === 'pending_approval' ? 'out_of_service' : status,
       odometer: parseInt(odometer) || 0,
       assigned_driver_id: assignedDriver || null,
