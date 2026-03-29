@@ -973,7 +973,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-lg font-medium mb-2">יצרן *</label>
+            <label className="block text-lg font-medium mb-2">יצרן</label>
             <input value={manufacturer} onChange={e => setManufacturer(e.target.value)} placeholder="יצרן..." className={inputClass} />
           </div>
           <div>
