@@ -524,7 +524,7 @@ function FleetManagerDashboard({
         withCompanyScope(
           supabase
             .from('vehicles')
-            .select('id, manufacturer, model, year, odometer, status, test_expiry, insurance_expiry')
+            .select('id, manufacturer, model, year, odometer, status, test_expiry, insurance_expiry, next_service_date, internal_number')
         ),
         withCompanyScope(supabase.from('drivers').select('*', { count: 'exact', head: true })),
         withCompanyScope(supabase.from('faults').select('id, status')),
@@ -570,11 +570,10 @@ function FleetManagerDashboard({
         return days !== null && days <= 30;
       }).length;
 
-      const periodicServiceDue = serviceOrders.filter(
-        (order) =>
-          isOpenStatus(order.treatment_status) &&
-          (order.service_category || '').toLowerCase().includes('תקופ')
-      ).length;
+      const inspectionDue = vehicles.filter((vehicle) => {
+        const days = daysUntil(vehicle.next_service_date);
+        return days !== null && days <= 30;
+      }).length;
 
       const vehiclesInGarage = vehicles.filter((vehicle) =>
         MAINTENANCE_STATUSES.includes((vehicle.status || '').toLowerCase()) ||
@@ -610,7 +609,7 @@ function FleetManagerDashboard({
       setAlerts([
         { key: 'insurance', label: 'ביטוח מתקרב', count: insuranceDue, link: '/alerts' },
         { key: 'test', label: 'טסט מתקרב', count: testDue, link: '/alerts' },
-        { key: 'periodic', label: 'טיפול תקופתי מתקרב', count: periodicServiceDue, link: '/service-orders' },
+        { key: 'inspection', label: 'ביקורת / טיפול מתקרב', count: inspectionDue, link: '/alerts' },
         { key: 'garage', label: 'רכב שנמצא כרגע במוסך', count: vehiclesInGarage, link: '/vehicles' },
         { key: 'faults', label: 'תקלות פתוחות', count: openFaults, link: '/faults' },
         { key: 'accidents', label: 'תאונות פתוחות', count: openAccidents, link: '/accidents' },

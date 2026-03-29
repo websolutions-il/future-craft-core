@@ -76,6 +76,14 @@ export default function Reports() {
   const vendors = useMemo(() => [...new Set([...raw.expenses.map(e => e.vendor), ...raw.serviceOrders.map(s => s.vendor_name)].filter(Boolean))], [raw]);
   const vehiclePlates = useMemo(() => [...new Set(raw.vehicles.map(v => v.license_plate).filter(Boolean))], [raw]);
   const driverNames = useMemo(() => [...new Set(raw.drivers.map(d => d.full_name).filter(Boolean))], [raw]);
+  
+  // Lookup: vehicle_plate → internal_number
+  const plateToInternal = useMemo(() => {
+    const map: Record<string, string> = {};
+    raw.vehicles.forEach(v => { if (v.license_plate) map[v.license_plate] = v.internal_number || ''; });
+    return map;
+  }, [raw]);
+  const getInternal = (plate: string | null) => plate ? (plateToInternal[plate] || '-') : '-';
 
   const filtered = useMemo(() => {
     const inDateRange = (dateStr: string | null) => {
@@ -186,7 +194,7 @@ export default function Reports() {
     if (showReport('vehicles')) {
       lines.push('--- רכבים ---');
       filtered.vehicles.forEach(v => {
-        lines.push(`${v.license_plate || ''} | ${v.manufacturer || ''} ${v.model || ''} | ${v.year || ''} | ${v.status === 'active' ? 'פעיל' : v.status || ''} | ${(v.odometer || 0).toLocaleString()} ק"מ`);
+        lines.push(`${v.license_plate || ''} | ${v.internal_number || ''} | ${v.manufacturer || ''} ${v.model || ''} | ${v.year || ''} | ${v.status === 'active' ? 'פעיל' : v.status || ''} | ${(v.odometer || 0).toLocaleString()} ק"מ`);
       });
       lines.push('');
     }
@@ -198,49 +206,49 @@ export default function Reports() {
 
     if (showReport('expenses') && filtered.expenses.length > 0) {
       rows.push(['--- הוצאות ---']);
-      rows.push(['תאריך', 'קטגוריה', 'ספק', 'מספר רכב', 'נהג', 'סכום', 'חשבונית']);
+      rows.push(['תאריך', 'קטגוריה', 'ספק', 'מספר רכב', 'מס\' פנימי', 'נהג', 'סכום', 'חשבונית']);
       filtered.expenses.forEach(e => rows.push([
         e.date ? new Date(e.date).toLocaleDateString('he-IL') : '',
-        e.category || '', e.vendor || '', e.vehicle_plate || '', e.driver_name || '',
+        e.category || '', e.vendor || '', e.vehicle_plate || '', getInternal(e.vehicle_plate), e.driver_name || '',
         (e.amount || 0).toString(), e.invoice_number || '',
       ]));
       rows.push([]);
     }
     if (showReport('faults') && filtered.faults.length > 0) {
       rows.push(['--- תקלות ---']);
-      rows.push(['תאריך', 'סוג', 'תיאור', 'מספר רכב', 'נהג', 'סטטוס', 'דחיפות']);
+      rows.push(['תאריך', 'סוג', 'תיאור', 'מספר רכב', 'מס\' פנימי', 'נהג', 'סטטוס', 'דחיפות']);
       filtered.faults.forEach(f => rows.push([
         f.date ? new Date(f.date).toLocaleDateString('he-IL') : '',
-        f.fault_type || '', f.description || '', f.vehicle_plate || '', f.driver_name || '',
+        f.fault_type || '', f.description || '', f.vehicle_plate || '', getInternal(f.vehicle_plate), f.driver_name || '',
         f.status || '', f.urgency || '',
       ]));
       rows.push([]);
     }
     if (showReport('accidents') && filtered.accidents.length > 0) {
       rows.push(['--- תאונות ---']);
-      rows.push(['תאריך', 'תיאור', 'מספר רכב', 'נהג', 'מיקום', 'סטטוס', 'עלות']);
+      rows.push(['תאריך', 'תיאור', 'מספר רכב', 'מס\' פנימי', 'נהג', 'מיקום', 'סטטוס', 'עלות']);
       filtered.accidents.forEach(a => rows.push([
         a.date ? new Date(a.date).toLocaleDateString('he-IL') : '',
-        a.description || '', a.vehicle_plate || '', a.driver_name || '',
+        a.description || '', a.vehicle_plate || '', getInternal(a.vehicle_plate), a.driver_name || '',
         a.location || '', a.status || '', (a.estimated_cost || 0).toString(),
       ]));
       rows.push([]);
     }
     if (showReport('service_orders') && filtered.serviceOrders.length > 0) {
       rows.push(['--- הזמנות שירות ---']);
-      rows.push(['תאריך', 'קטגוריה', 'תיאור', 'מספר רכב', 'נהג', 'ספק', 'סטטוס']);
+      rows.push(['תאריך', 'קטגוריה', 'תיאור', 'מספר רכב', 'מס\' פנימי', 'נהג', 'ספק', 'סטטוס']);
       filtered.serviceOrders.forEach(s => rows.push([
         s.service_date ? new Date(s.service_date).toLocaleDateString('he-IL') : '',
-        s.service_category || '', s.description || '', s.vehicle_plate || '',
+        s.service_category || '', s.description || '', s.vehicle_plate || '', getInternal(s.vehicle_plate),
         s.driver_name || '', s.vendor_name || '', s.treatment_status || '',
       ]));
       rows.push([]);
     }
     if (showReport('vehicles')) {
       rows.push(['--- רכבים ---']);
-      rows.push(['מספר רכב', 'יצרן', 'דגם', 'שנה', 'סטטוס', 'ק"מ', 'חברה']);
+      rows.push(['מספר רכב', 'מס\' פנימי', 'יצרן', 'דגם', 'שנה', 'סטטוס', 'ק"מ', 'חברה']);
       filtered.vehicles.forEach(v => rows.push([
-        v.license_plate || '', v.manufacturer || '', v.model || '',
+        v.license_plate || '', v.internal_number || '', v.manufacturer || '', v.model || '',
         (v.year || '').toString(), v.status || '', (v.odometer || 0).toString(), v.company_name || '',
       ]));
       rows.push([]);
@@ -432,10 +440,10 @@ export default function Reports() {
               />
             }
             table={filtered.expenses.length > 0 ? (
-              <DetailTable headers={['תאריך', 'קטגוריה', 'ספק', 'מספר רכב', 'נהג', 'סכום']}
+              <DetailTable headers={['תאריך', 'קטגוריה', 'ספק', 'מספר רכב', 'מס\' פנימי', 'נהג', 'סכום']}
                 rows={filtered.expenses.map(e => [
                   e.date ? new Date(e.date).toLocaleDateString('he-IL') : '-',
-                  e.category || '-', e.vendor || '-', e.vehicle_plate || '-', e.driver_name || '-',
+                  e.category || '-', e.vendor || '-', e.vehicle_plate || '-', getInternal(e.vehicle_plate), e.driver_name || '-',
                   `₪${(e.amount || 0).toLocaleString()}`,
                 ])} />
             ) : null}
@@ -458,9 +466,9 @@ export default function Reports() {
               />
             }
             table={filtered.vehicles.length > 0 ? (
-              <DetailTable headers={['מספר רכב', 'יצרן', 'דגם', 'שנה', 'סטטוס', 'ק"מ', 'חברה']}
+              <DetailTable headers={['מספר רכב', 'מס\' פנימי', 'יצרן', 'דגם', 'שנה', 'סטטוס', 'ק"מ', 'חברה']}
                 rows={filtered.vehicles.map(v => [
-                  v.license_plate || '-', v.manufacturer || '-', v.model || '-',
+                  v.license_plate || '-', v.internal_number || '-', v.manufacturer || '-', v.model || '-',
                   (v.year || '-').toString(), v.status === 'active' ? 'פעיל' : v.status || '-',
                   (v.odometer || 0).toLocaleString(), v.company_name || '-',
                 ])} />
@@ -484,10 +492,10 @@ export default function Reports() {
               />
             }
             table={filtered.faults.length > 0 ? (
-              <DetailTable headers={['תאריך', 'סוג', 'מספר רכב', 'נהג', 'סטטוס', 'דחיפות']}
+              <DetailTable headers={['תאריך', 'סוג', 'מספר רכב', 'מס\' פנימי', 'נהג', 'סטטוס', 'דחיפות']}
                 rows={filtered.faults.map(f => [
                   f.date ? new Date(f.date).toLocaleDateString('he-IL') : '-',
-                  f.fault_type || '-', f.vehicle_plate || '-', f.driver_name || '-', f.status || '-', f.urgency || '-',
+                  f.fault_type || '-', f.vehicle_plate || '-', getInternal(f.vehicle_plate), f.driver_name || '-', f.status || '-', f.urgency || '-',
                 ])} />
             ) : null}
           />
@@ -509,10 +517,10 @@ export default function Reports() {
               />
             }
             table={filtered.accidents.length > 0 ? (
-              <DetailTable headers={['תאריך', 'תיאור', 'מספר רכב', 'נהג', 'מיקום', 'עלות']}
+              <DetailTable headers={['תאריך', 'תיאור', 'מספר רכב', 'מס\' פנימי', 'נהג', 'מיקום', 'עלות']}
                 rows={filtered.accidents.map(a => [
                   a.date ? new Date(a.date).toLocaleDateString('he-IL') : '-',
-                  a.description || '-', a.vehicle_plate || '-', a.driver_name || '-',
+                  a.description || '-', a.vehicle_plate || '-', getInternal(a.vehicle_plate), a.driver_name || '-',
                   a.location || '-', `₪${(a.estimated_cost || 0).toLocaleString()}`,
                 ])} />
             ) : null}
@@ -560,10 +568,10 @@ export default function Reports() {
               />
             }
             table={filtered.serviceOrders.length > 0 ? (
-              <DetailTable headers={['תאריך', 'קטגוריה', 'מספר רכב', 'נהג', 'ספק', 'סטטוס']}
+              <DetailTable headers={['תאריך', 'קטגוריה', 'מספר רכב', 'מס\' פנימי', 'נהג', 'ספק', 'סטטוס']}
                 rows={filtered.serviceOrders.map(s => [
                   s.service_date ? new Date(s.service_date).toLocaleDateString('he-IL') : '-',
-                  s.service_category || '-', s.vehicle_plate || '-', s.driver_name || '-',
+                  s.service_category || '-', s.vehicle_plate || '-', getInternal(s.vehicle_plate), s.driver_name || '-',
                   s.vendor_name || '-', s.treatment_status || '-',
                 ])} />
             ) : null}

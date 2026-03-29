@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { Bell, ShieldAlert, Car, IdCard, Wrench, Clock, CheckCircle2, ScrollText, Search, Building2, Briefcase, ClipboardList } from 'lucide-react';
@@ -20,6 +21,7 @@ interface AlertItem {
   daysLeft: number | null;
   date: string | null;
   meta?: string;
+  link?: string;
 }
 
 const categoryLabels: Record<AlertCategory, string> = {
@@ -97,6 +99,7 @@ const ENTITY_LABELS: Record<string, string> = {
 // ─── Main Component ───
 export default function Alerts() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const companyFilter = useCompanyFilter();
   const isSuperAdmin = user?.role === 'super_admin';
 
@@ -140,17 +143,17 @@ export default function Alerts() {
 
         const testDays = getDaysLeft(v.test_expiry);
         if (testDays !== null && testDays <= 30) {
-          allAlerts.push({ id: `test-${v.id}`, category: 'test', severity: getSeverity(testDays), title: testDays <= 0 ? 'טסט פג תוקף!' : 'טסט עומד לפוג', subtitle: label, daysLeft: testDays, date: v.test_expiry });
+          allAlerts.push({ id: `test-${v.id}`, category: 'test', severity: getSeverity(testDays), title: testDays <= 0 ? 'טסט פג תוקף!' : 'טסט עומד לפוג', subtitle: label, daysLeft: testDays, date: v.test_expiry, link: '/vehicles' });
         }
 
         const insDays = getDaysLeft(v.insurance_expiry);
         if (insDays !== null && insDays <= 30) {
-          allAlerts.push({ id: `ins-${v.id}`, category: 'insurance', severity: getSeverity(insDays), title: insDays <= 0 ? 'ביטוח חובה פג!' : 'ביטוח חובה עומד לפוג', subtitle: label, daysLeft: insDays, date: v.insurance_expiry });
+          allAlerts.push({ id: `ins-${v.id}`, category: 'insurance', severity: getSeverity(insDays), title: insDays <= 0 ? 'ביטוח חובה פג!' : 'ביטוח חובה עומד לפוג', subtitle: label, daysLeft: insDays, date: v.insurance_expiry, link: '/vehicles' });
         }
 
         const compDays = getDaysLeft(v.comprehensive_insurance_expiry);
         if (compDays !== null && compDays <= 30) {
-          allAlerts.push({ id: `comp-${v.id}`, category: 'comprehensive_insurance', severity: getSeverity(compDays), title: compDays <= 0 ? 'ביטוח מקיף פג!' : 'ביטוח מקיף עומד לפוג', subtitle: label, daysLeft: compDays, date: v.comprehensive_insurance_expiry });
+          allAlerts.push({ id: `comp-${v.id}`, category: 'comprehensive_insurance', severity: getSeverity(compDays), title: compDays <= 0 ? 'ביטוח מקיף פג!' : 'ביטוח מקיף עומד לפוג', subtitle: label, daysLeft: compDays, date: v.comprehensive_insurance_expiry, link: '/vehicles' });
         }
       }
     }
@@ -161,7 +164,7 @@ export default function Alerts() {
       for (const d of drivers) {
         const licDays = getDaysLeft(d.license_expiry);
         if (licDays !== null && licDays <= 30) {
-          allAlerts.push({ id: `lic-${d.id}`, category: 'license', severity: getSeverity(licDays), title: licDays <= 0 ? 'רישיון נהיגה פג!' : 'רישיון עומד לפוג', subtitle: d.full_name, daysLeft: licDays, date: d.license_expiry, meta: d.phone || undefined });
+          allAlerts.push({ id: `lic-${d.id}`, category: 'license', severity: getSeverity(licDays), title: licDays <= 0 ? 'רישיון נהיגה פג!' : 'רישיון עומד לפוג', subtitle: d.full_name, daysLeft: licDays, date: d.license_expiry, meta: d.phone || undefined, link: '/drivers' });
         }
       }
     }
@@ -173,7 +176,7 @@ export default function Alerts() {
     );
     if (faults) {
       for (const f of faults) {
-        allAlerts.push({ id: `fault-${f.id}`, category: 'fault', severity: 'critical', title: `תקלה דחופה - ${f.fault_type || 'כללי'}`, subtitle: `${f.vehicle_plate || 'ללא רכב'} • ${f.driver_name || 'ללא נהג'}`, daysLeft: null, date: f.date ? new Date(f.date).toISOString().split('T')[0] : null, meta: f.description || undefined });
+        allAlerts.push({ id: `fault-${f.id}`, category: 'fault', severity: 'critical', title: `תקלה דחופה - ${f.fault_type || 'כללי'}`, subtitle: `${f.vehicle_plate || 'ללא רכב'} • ${f.driver_name || 'ללא נהג'}`, daysLeft: null, date: f.date ? new Date(f.date).toISOString().split('T')[0] : null, meta: f.description || undefined, link: '/faults' });
       }
     }
 
@@ -195,6 +198,7 @@ export default function Alerts() {
           daysLeft: null,
           date: so.created_at ? new Date(so.created_at).toISOString().split('T')[0] : null,
           meta: `${so.service_category || ''} ${so.description ? '- ' + so.description : ''}`.trim() || undefined,
+          link: '/service-orders',
         });
       }
     }
@@ -216,6 +220,7 @@ export default function Alerts() {
           daysLeft: null,
           date: wa.scheduled_date || null,
           meta: wa.title || undefined,
+          link: '/work-orders',
         });
       }
     }
@@ -330,7 +335,9 @@ export default function Alerts() {
               {filteredAlerts.map(alert => {
                 const Icon = categoryIcons[alert.category];
                 return (
-                  <div key={alert.id} className={`rounded-2xl border-2 p-5 transition-all hover:shadow-md ${severityStyles[alert.severity]}`}>
+                  <div key={alert.id}
+                    onClick={() => alert.link && navigate(alert.link)}
+                    className={`rounded-2xl border-2 p-5 transition-all hover:shadow-md ${alert.link ? 'cursor-pointer' : ''} ${severityStyles[alert.severity]}`}>
                     <div className="flex items-start gap-4">
                       <div className={`p-3 rounded-xl ${severityBadge[alert.severity]}`}>
                         <Icon size={22} />
@@ -344,6 +351,7 @@ export default function Alerts() {
                         </div>
                         <p className="text-sm opacity-80 font-medium">{alert.subtitle}</p>
                         {alert.meta && <p className="text-sm opacity-60 mt-1 line-clamp-2">{alert.meta}</p>}
+                        {alert.link && <p className="text-xs mt-2 opacity-70 underline">לחץ לצפייה →</p>}
                       </div>
                       <div className="text-left shrink-0">
                         {alert.daysLeft !== null && (
