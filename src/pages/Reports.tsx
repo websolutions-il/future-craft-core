@@ -440,10 +440,10 @@ export default function Reports() {
               />
             }
             table={filtered.expenses.length > 0 ? (
-              <DetailTable headers={['תאריך', 'קטגוריה', 'ספק', 'מספר רכב', 'נהג', 'סכום']}
+              <DetailTable headers={['תאריך', 'קטגוריה', 'ספק', 'מספר רכב', 'מס\' פנימי', 'נהג', 'סכום']}
                 rows={filtered.expenses.map(e => [
                   e.date ? new Date(e.date).toLocaleDateString('he-IL') : '-',
-                  e.category || '-', e.vendor || '-', e.vehicle_plate || '-', e.driver_name || '-',
+                  e.category || '-', e.vendor || '-', e.vehicle_plate || '-', getInternal(e.vehicle_plate), e.driver_name || '-',
                   `₪${(e.amount || 0).toLocaleString()}`,
                 ])} />
             ) : null}
