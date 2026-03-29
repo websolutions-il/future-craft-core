@@ -983,7 +983,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-lg font-medium mb-2">שנה *</label>
+            <label className="block text-lg font-medium mb-2">שנה</label>
             <input type="number" value={year} onChange={e => setYear(e.target.value)} className={inputClass} />
           </div>
           <div>
