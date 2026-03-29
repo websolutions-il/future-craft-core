@@ -176,7 +176,7 @@ export default function Alerts() {
     );
     if (faults) {
       for (const f of faults) {
-        allAlerts.push({ id: `fault-${f.id}`, category: 'fault', severity: 'critical', title: `תקלה דחופה - ${f.fault_type || 'כללי'}`, subtitle: `${f.vehicle_plate || 'ללא רכב'} • ${f.driver_name || 'ללא נהג'}`, daysLeft: null, date: f.date ? new Date(f.date).toISOString().split('T')[0] : null, meta: f.description || undefined });
+        allAlerts.push({ id: `fault-${f.id}`, category: 'fault', severity: 'critical', title: `תקלה דחופה - ${f.fault_type || 'כללי'}`, subtitle: `${f.vehicle_plate || 'ללא רכב'} • ${f.driver_name || 'ללא נהג'}`, daysLeft: null, date: f.date ? new Date(f.date).toISOString().split('T')[0] : null, meta: f.description || undefined, link: '/faults' });
       }
     }
 
