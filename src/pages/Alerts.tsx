@@ -21,6 +21,7 @@ interface AlertItem {
   daysLeft: number | null;
   date: string | null;
   meta?: string;
+  link?: string;
 }
 
 const categoryLabels: Record<AlertCategory, string> = {
