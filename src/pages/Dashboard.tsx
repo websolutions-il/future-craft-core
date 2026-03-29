@@ -570,11 +570,10 @@ function FleetManagerDashboard({
         return days !== null && days <= 30;
       }).length;
 
-      const periodicServiceDue = serviceOrders.filter(
-        (order) =>
-          isOpenStatus(order.treatment_status) &&
-          (order.service_category || '').toLowerCase().includes('תקופ')
-      ).length;
+      const inspectionDue = vehicles.filter((vehicle) => {
+        const days = daysUntil(vehicle.next_service_date);
+        return days !== null && days <= 30;
+      }).length;
 
       const vehiclesInGarage = vehicles.filter((vehicle) =>
         MAINTENANCE_STATUSES.includes((vehicle.status || '').toLowerCase()) ||
