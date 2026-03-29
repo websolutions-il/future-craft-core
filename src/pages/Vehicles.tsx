@@ -1023,7 +1023,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
           </div>
         </div>
         <div>
-          <label className="block text-lg font-medium mb-2">נהג משויך {driverRequired && '*'}</label>
+          <label className="block text-lg font-medium mb-2">נהג משויך</label>
           <select value={assignedDriver} onChange={e => setAssignedDriver(e.target.value)} className={inputClass}>
             <option value="">{driverRequired ? 'בחר נהג...' : 'ללא נהג'}</option>
             {drivers.map(d => <option key={d.id} value={d.id}>{d.full_name}</option>)}
