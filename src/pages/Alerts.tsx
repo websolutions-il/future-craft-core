@@ -164,7 +164,7 @@ export default function Alerts() {
       for (const d of drivers) {
         const licDays = getDaysLeft(d.license_expiry);
         if (licDays !== null && licDays <= 30) {
-          allAlerts.push({ id: `lic-${d.id}`, category: 'license', severity: getSeverity(licDays), title: licDays <= 0 ? 'רישיון נהיגה פג!' : 'רישיון עומד לפוג', subtitle: d.full_name, daysLeft: licDays, date: d.license_expiry, meta: d.phone || undefined });
+          allAlerts.push({ id: `lic-${d.id}`, category: 'license', severity: getSeverity(licDays), title: licDays <= 0 ? 'רישיון נהיגה פג!' : 'רישיון עומד לפוג', subtitle: d.full_name, daysLeft: licDays, date: d.license_expiry, meta: d.phone || undefined, link: '/drivers' });
         }
       }
     }
