@@ -1032,7 +1032,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
 
         {/* === Management Type Selection === */}
         <div className="border-t border-border pt-5">
-          <h2 className="text-xl font-bold mb-4">📋 סוג ניהול רכב *</h2>
+          <h2 className="text-xl font-bold mb-4">📋 סוג ניהול רכב</h2>
           <div className="grid grid-cols-1 gap-3">
             {(Object.keys(managementTypeLabels) as ManagementType[]).map(type => (
               <button
