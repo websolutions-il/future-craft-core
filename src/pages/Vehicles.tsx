@@ -1057,7 +1057,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
           <div className="border border-primary/20 rounded-xl p-5 space-y-4 bg-primary/5">
             <h3 className="font-bold text-lg text-primary">🏢 פרטי ליסינג תפעולי</h3>
             <div>
-              <label className="block text-sm font-medium mb-1">עלות חודשית (₪) *</label>
+              <label className="block text-sm font-medium mb-1">עלות חודשית (₪)</label>
               <input type="number" value={monthlyLeasingCost} onChange={e => setMonthlyLeasingCost(e.target.value)} placeholder="עלות חודשית..." className={inputClass} />
             </div>
             <div>
