@@ -786,7 +786,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
   };
 
   // Validation
-  const basicFieldsFilled = licensePlate && manufacturer && model && year && vehicleType && odometer && (driverRequired ? assignedDriver : true);
+  const basicFieldsFilled = licensePlate && testExpiry;
   
   // Management type fields are optional - don't block vehicle creation
   const typeFieldsFilled = true;
