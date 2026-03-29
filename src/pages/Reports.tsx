@@ -206,10 +206,10 @@ export default function Reports() {
 
     if (showReport('expenses') && filtered.expenses.length > 0) {
       rows.push(['--- הוצאות ---']);
-      rows.push(['תאריך', 'קטגוריה', 'ספק', 'מספר רכב', 'נהג', 'סכום', 'חשבונית']);
+      rows.push(['תאריך', 'קטגוריה', 'ספק', 'מספר רכב', 'מס\' פנימי', 'נהג', 'סכום', 'חשבונית']);
       filtered.expenses.forEach(e => rows.push([
         e.date ? new Date(e.date).toLocaleDateString('he-IL') : '',
-        e.category || '', e.vendor || '', e.vehicle_plate || '', e.driver_name || '',
+        e.category || '', e.vendor || '', e.vehicle_plate || '', getInternal(e.vehicle_plate), e.driver_name || '',
         (e.amount || 0).toString(), e.invoice_number || '',
       ]));
       rows.push([]);
