@@ -1065,7 +1065,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
               <input type="date" value={leasingEndDate} onChange={e => setLeasingEndDate(e.target.value)} className={inputClass} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">מועד החזרת הרכב *</label>
+              <label className="block text-sm font-medium mb-1">מועד החזרת הרכב</label>
               <input type="date" value={vehicleReturnDate} onChange={e => setVehicleReturnDate(e.target.value)} className={inputClass} />
             </div>
           </div>
