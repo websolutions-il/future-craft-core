@@ -220,6 +220,7 @@ export default function Alerts() {
           daysLeft: null,
           date: wa.scheduled_date || null,
           meta: wa.title || undefined,
+          link: '/work-orders',
         });
       }
     }
