@@ -76,6 +76,14 @@ export default function Reports() {
   const vendors = useMemo(() => [...new Set([...raw.expenses.map(e => e.vendor), ...raw.serviceOrders.map(s => s.vendor_name)].filter(Boolean))], [raw]);
   const vehiclePlates = useMemo(() => [...new Set(raw.vehicles.map(v => v.license_plate).filter(Boolean))], [raw]);
   const driverNames = useMemo(() => [...new Set(raw.drivers.map(d => d.full_name).filter(Boolean))], [raw]);
+  
+  // Lookup: vehicle_plate → internal_number
+  const plateToInternal = useMemo(() => {
+    const map: Record<string, string> = {};
+    raw.vehicles.forEach(v => { if (v.license_plate) map[v.license_plate] = v.internal_number || ''; });
+    return map;
+  }, [raw]);
+  const getInternal = (plate: string | null) => plate ? (plateToInternal[plate] || '-') : '-';
 
   const filtered = useMemo(() => {
     const inDateRange = (dateStr: string | null) => {
