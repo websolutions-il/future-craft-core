@@ -913,7 +913,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
       <div className="space-y-5">
         {/* Basic info */}
         <div>
-          <label className="block text-lg font-medium mb-2">מספר רכב *</label>
+          <label className="block text-lg font-medium mb-2">מספר רכב (רישוי) *</label>
           <div className="flex gap-2">
             <input value={licensePlate} onChange={e => setLicensePlate(e.target.value)} placeholder="12-345-67" className={`${inputClass} flex-1`} dir="ltr" style={{ textAlign: 'right' }} />
             <Button
