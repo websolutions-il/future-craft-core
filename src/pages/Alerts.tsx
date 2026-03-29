@@ -335,7 +335,9 @@ export default function Alerts() {
               {filteredAlerts.map(alert => {
                 const Icon = categoryIcons[alert.category];
                 return (
-                  <div key={alert.id} className={`rounded-2xl border-2 p-5 transition-all hover:shadow-md ${severityStyles[alert.severity]}`}>
+                  <div key={alert.id}
+                    onClick={() => alert.link && navigate(alert.link)}
+                    className={`rounded-2xl border-2 p-5 transition-all hover:shadow-md ${alert.link ? 'cursor-pointer' : ''} ${severityStyles[alert.severity]}`}>
                     <div className="flex items-start gap-4">
                       <div className={`p-3 rounded-xl ${severityBadge[alert.severity]}`}>
                         <Icon size={22} />
@@ -349,6 +351,7 @@ export default function Alerts() {
                         </div>
                         <p className="text-sm opacity-80 font-medium">{alert.subtitle}</p>
                         {alert.meta && <p className="text-sm opacity-60 mt-1 line-clamp-2">{alert.meta}</p>}
+                        {alert.link && <p className="text-xs mt-2 opacity-70 underline">לחץ לצפייה →</p>}
                       </div>
                       <div className="text-left shrink-0">
                         {alert.daysLeft !== null && (

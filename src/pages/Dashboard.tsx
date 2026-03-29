@@ -609,7 +609,7 @@ function FleetManagerDashboard({
       setAlerts([
         { key: 'insurance', label: 'ביטוח מתקרב', count: insuranceDue, link: '/alerts' },
         { key: 'test', label: 'טסט מתקרב', count: testDue, link: '/alerts' },
-        { key: 'periodic', label: 'טיפול תקופתי מתקרב', count: periodicServiceDue, link: '/service-orders' },
+        { key: 'inspection', label: 'ביקורת / טיפול מתקרב', count: inspectionDue, link: '/alerts' },
         { key: 'garage', label: 'רכב שנמצא כרגע במוסך', count: vehiclesInGarage, link: '/vehicles' },
         { key: 'faults', label: 'תקלות פתוחות', count: openFaults, link: '/faults' },
         { key: 'accidents', label: 'תאונות פתוחות', count: openAccidents, link: '/accidents' },

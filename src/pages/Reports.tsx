@@ -186,7 +186,7 @@ export default function Reports() {
     if (showReport('vehicles')) {
       lines.push('--- רכבים ---');
       filtered.vehicles.forEach(v => {
-        lines.push(`${v.license_plate || ''} | ${v.manufacturer || ''} ${v.model || ''} | ${v.year || ''} | ${v.status === 'active' ? 'פעיל' : v.status || ''} | ${(v.odometer || 0).toLocaleString()} ק"מ`);
+        lines.push(`${v.license_plate || ''} | ${v.internal_number || ''} | ${v.manufacturer || ''} ${v.model || ''} | ${v.year || ''} | ${v.status === 'active' ? 'פעיל' : v.status || ''} | ${(v.odometer || 0).toLocaleString()} ק"מ`);
       });
       lines.push('');
     }
