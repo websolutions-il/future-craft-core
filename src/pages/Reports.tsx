@@ -517,10 +517,10 @@ export default function Reports() {
               />
             }
             table={filtered.accidents.length > 0 ? (
-              <DetailTable headers={['תאריך', 'תיאור', 'מספר רכב', 'נהג', 'מיקום', 'עלות']}
+              <DetailTable headers={['תאריך', 'תיאור', 'מספר רכב', 'מס\' פנימי', 'נהג', 'מיקום', 'עלות']}
                 rows={filtered.accidents.map(a => [
                   a.date ? new Date(a.date).toLocaleDateString('he-IL') : '-',
-                  a.description || '-', a.vehicle_plate || '-', a.driver_name || '-',
+                  a.description || '-', a.vehicle_plate || '-', getInternal(a.vehicle_plate), a.driver_name || '-',
                   a.location || '-', `₪${(a.estimated_cost || 0).toLocaleString()}`,
                 ])} />
             ) : null}
