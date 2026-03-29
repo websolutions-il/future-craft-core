@@ -99,6 +99,7 @@ const ENTITY_LABELS: Record<string, string> = {
 // ─── Main Component ───
 export default function Alerts() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const companyFilter = useCompanyFilter();
   const isSuperAdmin = user?.role === 'super_admin';
 
