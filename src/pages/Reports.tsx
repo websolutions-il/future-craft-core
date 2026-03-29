@@ -238,9 +238,9 @@ export default function Reports() {
     }
     if (showReport('vehicles')) {
       rows.push(['--- רכבים ---']);
-      rows.push(['מספר רכב', 'יצרן', 'דגם', 'שנה', 'סטטוס', 'ק"מ', 'חברה']);
+      rows.push(['מספר רכב', 'מס\' פנימי', 'יצרן', 'דגם', 'שנה', 'סטטוס', 'ק"מ', 'חברה']);
       filtered.vehicles.forEach(v => rows.push([
-        v.license_plate || '', v.manufacturer || '', v.model || '',
+        v.license_plate || '', v.internal_number || '', v.manufacturer || '', v.model || '',
         (v.year || '').toString(), v.status || '', (v.odometer || 0).toString(), v.company_name || '',
       ]));
       rows.push([]);
