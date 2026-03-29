@@ -492,10 +492,10 @@ export default function Reports() {
               />
             }
             table={filtered.faults.length > 0 ? (
-              <DetailTable headers={['תאריך', 'סוג', 'מספר רכב', 'נהג', 'סטטוס', 'דחיפות']}
+              <DetailTable headers={['תאריך', 'סוג', 'מספר רכב', 'מס\' פנימי', 'נהג', 'סטטוס', 'דחיפות']}
                 rows={filtered.faults.map(f => [
                   f.date ? new Date(f.date).toLocaleDateString('he-IL') : '-',
-                  f.fault_type || '-', f.vehicle_plate || '-', f.driver_name || '-', f.status || '-', f.urgency || '-',
+                  f.fault_type || '-', f.vehicle_plate || '-', getInternal(f.vehicle_plate), f.driver_name || '-', f.status || '-', f.urgency || '-',
                 ])} />
             ) : null}
           />
