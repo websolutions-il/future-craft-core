@@ -613,6 +613,10 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
   const [model, setModel] = useState(vehicle?.model || '');
   const [year, setYear] = useState(vehicle?.year?.toString() || new Date().getFullYear().toString());
   const [vehicleType, setVehicleType] = useState(vehicle?.vehicle_type || '');
+  const [vehicleTypeCustom, setVehicleTypeCustom] = useState(
+    ['רכב פרטי','רכב מסחרי','משאית','אוטובוס','מיניבוס','אופנוע','רכב תפעולי','צמ"ה','רכב זעיר'].includes(vehicle?.vehicle_type || '') ? '' : (vehicle?.vehicle_type || '')
+  );
+  const isCustomVehicleType = vehicleType === 'אחר';
 
   // Gov API lookup state
   const [govData, setGovData] = useState<GovVehicleData | null>(null);
