@@ -12,7 +12,7 @@ export default function ThemeToggle() {
     <div className="fixed top-4 z-50 flex items-center gap-0 md:top-6" style={{ left: 'calc(4rem + 15px)', }}>
       <button
         onClick={() => setVisible(false)}
-        className="absolute -top-2 -left-2 bg-muted text-muted-foreground border border-border rounded-full w-5 h-5 flex items-center justify-center shadow-sm hover:bg-destructive hover:text-destructive-foreground transition-colors"
+        className="absolute -top-2 -left-2 bg-muted text-muted-foreground border border-border rounded-full w-6 h-6 flex items-center justify-center shadow-sm hover:bg-destructive hover:text-destructive-foreground transition-colors"
         aria-label="סגור"
       >
         <X size={12} />
