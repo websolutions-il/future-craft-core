@@ -153,7 +153,7 @@ export default function Alerts() {
 
         const compDays = getDaysLeft(v.comprehensive_insurance_expiry);
         if (compDays !== null && compDays <= 30) {
-          allAlerts.push({ id: `comp-${v.id}`, category: 'comprehensive_insurance', severity: getSeverity(compDays), title: compDays <= 0 ? 'ביטוח מקיף פג!' : 'ביטוח מקיף עומד לפוג', subtitle: label, daysLeft: compDays, date: v.comprehensive_insurance_expiry });
+          allAlerts.push({ id: `comp-${v.id}`, category: 'comprehensive_insurance', severity: getSeverity(compDays), title: compDays <= 0 ? 'ביטוח מקיף פג!' : 'ביטוח מקיף עומד לפוג', subtitle: label, daysLeft: compDays, date: v.comprehensive_insurance_expiry, link: '/vehicles' });
         }
       }
     }
