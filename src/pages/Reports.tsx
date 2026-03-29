@@ -568,10 +568,10 @@ export default function Reports() {
               />
             }
             table={filtered.serviceOrders.length > 0 ? (
-              <DetailTable headers={['תאריך', 'קטגוריה', 'מספר רכב', 'נהג', 'ספק', 'סטטוס']}
+              <DetailTable headers={['תאריך', 'קטגוריה', 'מספר רכב', 'מס\' פנימי', 'נהג', 'ספק', 'סטטוס']}
                 rows={filtered.serviceOrders.map(s => [
                   s.service_date ? new Date(s.service_date).toLocaleDateString('he-IL') : '-',
-                  s.service_category || '-', s.vehicle_plate || '-', s.driver_name || '-',
+                  s.service_category || '-', s.vehicle_plate || '-', getInternal(s.vehicle_plate), s.driver_name || '-',
                   s.vendor_name || '-', s.treatment_status || '-',
                 ])} />
             ) : null}
