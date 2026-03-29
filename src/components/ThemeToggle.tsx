@@ -12,8 +12,8 @@ export default function ThemeToggle() {
     <div className="fixed top-4 z-50 flex items-center gap-0 md:top-6" style={{ left: 'calc(4rem + 15px)', }}>
       <button
         onClick={() => setVisible(false)}
-        className="absolute -top-2 -left-2 bg-muted text-muted-foreground border border-border flex items-center justify-center shadow-sm hover:bg-destructive hover:text-destructive-foreground transition-colors"
-        style={{ width: '20px', height: '20px', borderRadius: '50%' }}
+        className="absolute -top-3 -left-3 bg-muted text-muted-foreground border border-border flex items-center justify-center shadow-sm hover:bg-destructive hover:text-destructive-foreground transition-colors"
+        style={{ width: '24px', height: '24px', borderRadius: '50%', minWidth: '24px', minHeight: '24px' }}
         aria-label="סגור"
       >
         <X size={12} />
