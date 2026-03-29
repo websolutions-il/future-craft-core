@@ -987,8 +987,8 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
             <input type="number" value={year} onChange={e => setYear(e.target.value)} className={inputClass} />
           </div>
           <div>
-            <label className="block text-lg font-medium mb-2">סוג רכב *</label>
-            <select value={vehicleType} onChange={e => setVehicleType(e.target.value)} className={inputClass}>
+            <label className="block text-lg font-medium mb-2">סוג רכב</label>
+            <select value={vehicleType} onChange={e => { setVehicleType(e.target.value); if (e.target.value !== 'אחר') setVehicleTypeCustom(''); }} className={inputClass}>
               <option value="">בחר סוג...</option>
               <option value="רכב פרטי">רכב פרטי</option>
               <option value="רכב מסחרי">רכב מסחרי</option>
@@ -996,7 +996,14 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
               <option value="אוטובוס">אוטובוס</option>
               <option value="מיניבוס">מיניבוס</option>
               <option value="אופנוע">אופנוע</option>
+              <option value="רכב תפעולי">רכב תפעולי</option>
+              <option value='צמ"ה'>צמ"ה</option>
+              <option value="רכב זעיר">רכב זעיר</option>
+              <option value="אחר">אחר</option>
             </select>
+            {isCustomVehicleType && (
+              <input value={vehicleTypeCustom} onChange={e => setVehicleTypeCustom(e.target.value)} placeholder="הזן סוג רכב..." className={`${inputClass} mt-2`} />
+            )}
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
