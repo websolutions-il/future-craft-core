@@ -105,6 +105,10 @@
 }
 
 @layer base {
+  .rounded-full {
+    border-radius: 50% !important;
+  }
+
   * {
     @apply border-border;
     scrollbar-width: thin;
