@@ -524,7 +524,7 @@ function FleetManagerDashboard({
         withCompanyScope(
           supabase
             .from('vehicles')
-            .select('id, manufacturer, model, year, odometer, status, test_expiry, insurance_expiry')
+            .select('id, manufacturer, model, year, odometer, status, test_expiry, insurance_expiry, next_service_date, internal_number')
         ),
         withCompanyScope(supabase.from('drivers').select('*', { count: 'exact', head: true })),
         withCompanyScope(supabase.from('faults').select('id, status')),
