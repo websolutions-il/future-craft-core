@@ -216,10 +216,10 @@ export default function Reports() {
     }
     if (showReport('faults') && filtered.faults.length > 0) {
       rows.push(['--- תקלות ---']);
-      rows.push(['תאריך', 'סוג', 'תיאור', 'מספר רכב', 'נהג', 'סטטוס', 'דחיפות']);
+      rows.push(['תאריך', 'סוג', 'תיאור', 'מספר רכב', 'מס\' פנימי', 'נהג', 'סטטוס', 'דחיפות']);
       filtered.faults.forEach(f => rows.push([
         f.date ? new Date(f.date).toLocaleDateString('he-IL') : '',
-        f.fault_type || '', f.description || '', f.vehicle_plate || '', f.driver_name || '',
+        f.fault_type || '', f.description || '', f.vehicle_plate || '', getInternal(f.vehicle_plate), f.driver_name || '',
         f.status || '', f.urgency || '',
       ]));
       rows.push([]);
