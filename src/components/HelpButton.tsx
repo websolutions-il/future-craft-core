@@ -868,7 +868,8 @@ export default function HelpButton() {
           </button>
           <button
             onClick={() => setDismissed(true)}
-            className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-muted border-2 border-background text-muted-foreground shadow-md flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors"
+            className="absolute -top-2 -right-2 bg-muted border-2 border-background text-muted-foreground shadow-md flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors"
+            style={{ width: '24px', height: '24px', minWidth: '24px', minHeight: '24px', borderRadius: '50%' }}
             aria-label="הסתר עזרה"
           >
             <X className="h-3 w-3" />
