@@ -141,7 +141,8 @@ export default function Vehicles() {
 
   const filtered = vehicles.filter(v => {
     const matchSearch = !search || v.license_plate.includes(search) || v.manufacturer?.includes(search) || v.model?.includes(search) || v.internal_number?.includes(search);
-    const matchStatus = statusFilter === 'all' || v.status === statusFilter;
+    // When "all" is selected, exclude archived vehicles; only show them when "archived" tab is active
+    const matchStatus = statusFilter === 'all' ? v.status !== 'archived' : v.status === statusFilter;
     const matchCompany = !filterCompany || v.company_name === filterCompany;
     const matchDriver = !filterDriver || v.assigned_driver_id === filterDriver;
     return matchSearch && matchStatus && matchCompany && matchDriver;
@@ -613,6 +614,10 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
   const [model, setModel] = useState(vehicle?.model || '');
   const [year, setYear] = useState(vehicle?.year?.toString() || new Date().getFullYear().toString());
   const [vehicleType, setVehicleType] = useState(vehicle?.vehicle_type || '');
+  const [vehicleTypeCustom, setVehicleTypeCustom] = useState(
+    ['רכב פרטי','רכב מסחרי','משאית','אוטובוס','מיניבוס','אופנוע','רכב תפעולי','צמ"ה','רכב זעיר'].includes(vehicle?.vehicle_type || '') ? '' : (vehicle?.vehicle_type || '')
+  );
+  const isCustomVehicleType = vehicleType === 'אחר';
 
   // Gov API lookup state
   const [govData, setGovData] = useState<GovVehicleData | null>(null);
@@ -782,7 +787,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
   };
 
   // Validation
-  const basicFieldsFilled = licensePlate && manufacturer && model && year && vehicleType && odometer && (driverRequired ? assignedDriver : true);
+  const basicFieldsFilled = licensePlate && testExpiry;
   
   // Management type fields are optional - don't block vehicle creation
   const typeFieldsFilled = true;
@@ -818,7 +823,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
       manufacturer,
       model,
       year: parseInt(year) || null,
-      vehicle_type: vehicleType,
+      vehicle_type: vehicleType === 'אחר' ? vehicleTypeCustom : vehicleType,
       status: approvalStatus === 'pending_approval' ? 'out_of_service' : status,
       odometer: parseInt(odometer) || 0,
       assigned_driver_id: assignedDriver || null,
@@ -909,7 +914,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
       <div className="space-y-5">
         {/* Basic info */}
         <div>
-          <label className="block text-lg font-medium mb-2">מספר רכב *</label>
+          <label className="block text-lg font-medium mb-2">מספר רכב (רישוי) *</label>
           <div className="flex gap-2">
             <input value={licensePlate} onChange={e => setLicensePlate(e.target.value)} placeholder="12-345-67" className={`${inputClass} flex-1`} dir="ltr" style={{ textAlign: 'right' }} />
             <Button
@@ -969,22 +974,22 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-lg font-medium mb-2">יצרן *</label>
+            <label className="block text-lg font-medium mb-2">יצרן</label>
             <input value={manufacturer} onChange={e => setManufacturer(e.target.value)} placeholder="יצרן..." className={inputClass} />
           </div>
           <div>
-            <label className="block text-lg font-medium mb-2">דגם *</label>
+            <label className="block text-lg font-medium mb-2">דגם</label>
             <input value={model} onChange={e => setModel(e.target.value)} placeholder="דגם..." className={inputClass} />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-lg font-medium mb-2">שנה *</label>
+            <label className="block text-lg font-medium mb-2">שנה</label>
             <input type="number" value={year} onChange={e => setYear(e.target.value)} className={inputClass} />
           </div>
           <div>
-            <label className="block text-lg font-medium mb-2">סוג רכב *</label>
-            <select value={vehicleType} onChange={e => setVehicleType(e.target.value)} className={inputClass}>
+            <label className="block text-lg font-medium mb-2">סוג רכב</label>
+            <select value={vehicleType} onChange={e => { setVehicleType(e.target.value); if (e.target.value !== 'אחר') setVehicleTypeCustom(''); }} className={inputClass}>
               <option value="">בחר סוג...</option>
               <option value="רכב פרטי">רכב פרטי</option>
               <option value="רכב מסחרי">רכב מסחרי</option>
@@ -992,7 +997,14 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
               <option value="אוטובוס">אוטובוס</option>
               <option value="מיניבוס">מיניבוס</option>
               <option value="אופנוע">אופנוע</option>
+              <option value="רכב תפעולי">רכב תפעולי</option>
+              <option value='צמ"ה'>צמ"ה</option>
+              <option value="רכב זעיר">רכב זעיר</option>
+              <option value="אחר">אחר</option>
             </select>
+            {isCustomVehicleType && (
+              <input value={vehicleTypeCustom} onChange={e => setVehicleTypeCustom(e.target.value)} placeholder="הזן סוג רכב..." className={`${inputClass} mt-2`} />
+            )}
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
@@ -1007,12 +1019,12 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
             </div>
           )}
           <div>
-            <label className="block text-lg font-medium mb-2">ק"מ נוכחי *</label>
+            <label className="block text-lg font-medium mb-2">ק"מ נוכחי</label>
             <input type="number" value={odometer} onChange={e => setOdometer(e.target.value)} placeholder="0" className={inputClass} />
           </div>
         </div>
         <div>
-          <label className="block text-lg font-medium mb-2">נהג משויך {driverRequired && '*'}</label>
+          <label className="block text-lg font-medium mb-2">נהג משויך</label>
           <select value={assignedDriver} onChange={e => setAssignedDriver(e.target.value)} className={inputClass}>
             <option value="">{driverRequired ? 'בחר נהג...' : 'ללא נהג'}</option>
             {drivers.map(d => <option key={d.id} value={d.id}>{d.full_name}</option>)}
@@ -1021,7 +1033,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
 
         {/* === Management Type Selection === */}
         <div className="border-t border-border pt-5">
-          <h2 className="text-xl font-bold mb-4">📋 סוג ניהול רכב *</h2>
+          <h2 className="text-xl font-bold mb-4">📋 סוג ניהול רכב</h2>
           <div className="grid grid-cols-1 gap-3">
             {(Object.keys(managementTypeLabels) as ManagementType[]).map(type => (
               <button
@@ -1046,15 +1058,15 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
           <div className="border border-primary/20 rounded-xl p-5 space-y-4 bg-primary/5">
             <h3 className="font-bold text-lg text-primary">🏢 פרטי ליסינג תפעולי</h3>
             <div>
-              <label className="block text-sm font-medium mb-1">עלות חודשית (₪) *</label>
+              <label className="block text-sm font-medium mb-1">עלות חודשית (₪)</label>
               <input type="number" value={monthlyLeasingCost} onChange={e => setMonthlyLeasingCost(e.target.value)} placeholder="עלות חודשית..." className={inputClass} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">מועד סיום הליסינג *</label>
+              <label className="block text-sm font-medium mb-1">מועד סיום הליסינג</label>
               <input type="date" value={leasingEndDate} onChange={e => setLeasingEndDate(e.target.value)} className={inputClass} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">מועד החזרת הרכב *</label>
+              <label className="block text-sm font-medium mb-1">מועד החזרת הרכב</label>
               <input type="date" value={vehicleReturnDate} onChange={e => setVehicleReturnDate(e.target.value)} className={inputClass} />
             </div>
           </div>
@@ -1064,15 +1076,15 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
           <div className="border border-primary/20 rounded-xl p-5 space-y-4 bg-primary/5">
             <h3 className="font-bold text-lg text-primary">💳 פרטי ליסינג מימוני</h3>
             <div>
-              <label className="block text-sm font-medium mb-1">גובה החזר חודשי (₪) *</label>
+              <label className="block text-sm font-medium mb-1">גובה החזר חודשי (₪)</label>
               <input type="number" value={monthlyLoanPayment} onChange={e => setMonthlyLoanPayment(e.target.value)} placeholder="החזר חודשי..." className={inputClass} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">תאריך סיום ההלוואה *</label>
+              <label className="block text-sm font-medium mb-1">תאריך סיום ההלוואה</label>
               <input type="date" value={loanEndDate} onChange={e => setLoanEndDate(e.target.value)} className={inputClass} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">מועד מתוכנן להחלפת הרכב *</label>
+              <label className="block text-sm font-medium mb-1">מועד מתוכנן להחלפת הרכב</label>
               <input type="date" value={plannedReplacementDate} onChange={e => setPlannedReplacementDate(e.target.value)} className={inputClass} />
             </div>
           </div>
@@ -1094,17 +1106,17 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
             {hasLoan && (
               <>
                 <div>
-                  <label className="block text-sm font-medium mb-1">גובה החזר חודשי (₪) *</label>
+                  <label className="block text-sm font-medium mb-1">גובה החזר חודשי (₪)</label>
                   <input type="number" value={monthlyLoanPayment} onChange={e => setMonthlyLoanPayment(e.target.value)} placeholder="החזר חודשי..." className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">תאריך סיום ההלוואה *</label>
+                  <label className="block text-sm font-medium mb-1">תאריך סיום ההלוואה</label>
                   <input type="date" value={loanEndDate} onChange={e => setLoanEndDate(e.target.value)} className={inputClass} />
                 </div>
               </>
             )}
             <div>
-              <label className="block text-sm font-medium mb-1">מועד מתוכנן להחלפת הרכב *</label>
+              <label className="block text-sm font-medium mb-1">מועד מתוכנן להחלפת הרכב</label>
               <input type="date" value={plannedReplacementDate} onChange={e => setPlannedReplacementDate(e.target.value)} className={inputClass} />
             </div>
           </div>
@@ -1114,7 +1126,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
         <div className="border-t border-border pt-5">
           <h2 className="text-xl font-bold mb-4">📋 תוקף מסמכים</h2>
           <div>
-            <label className="block text-lg font-medium mb-2">תוקף טסט</label>
+            <label className="block text-lg font-medium mb-2">תוקף טסט (רישוי) *</label>
             <input type="date" value={testExpiry} onChange={e => setTestExpiry(e.target.value)} className={inputClass} />
           </div>
         </div>
