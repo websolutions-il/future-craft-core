@@ -226,10 +226,10 @@ export default function Reports() {
     }
     if (showReport('accidents') && filtered.accidents.length > 0) {
       rows.push(['--- תאונות ---']);
-      rows.push(['תאריך', 'תיאור', 'מספר רכב', 'נהג', 'מיקום', 'סטטוס', 'עלות']);
+      rows.push(['תאריך', 'תיאור', 'מספר רכב', 'מס\' פנימי', 'נהג', 'מיקום', 'סטטוס', 'עלות']);
       filtered.accidents.forEach(a => rows.push([
         a.date ? new Date(a.date).toLocaleDateString('he-IL') : '',
-        a.description || '', a.vehicle_plate || '', a.driver_name || '',
+        a.description || '', a.vehicle_plate || '', getInternal(a.vehicle_plate), a.driver_name || '',
         a.location || '', a.status || '', (a.estimated_cost || 0).toString(),
       ]));
       rows.push([]);
