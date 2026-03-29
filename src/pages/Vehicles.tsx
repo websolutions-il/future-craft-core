@@ -1125,7 +1125,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
         <div className="border-t border-border pt-5">
           <h2 className="text-xl font-bold mb-4">📋 תוקף מסמכים</h2>
           <div>
-            <label className="block text-lg font-medium mb-2">תוקף טסט</label>
+            <label className="block text-lg font-medium mb-2">תוקף טסט (רישוי) *</label>
             <input type="date" value={testExpiry} onChange={e => setTestExpiry(e.target.value)} className={inputClass} />
           </div>
         </div>
