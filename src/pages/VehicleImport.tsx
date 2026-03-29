@@ -18,49 +18,109 @@ interface ImportRow {
   notes?: string;
 }
 
+interface ImportError {
+  row: number;
+  license_plate: string;
+  reason: string;
+}
+
 export default function VehicleImport() {
   const { user } = useAuth();
   const [rows, setRows] = useState<ImportRow[]>([]);
   const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState<{ success: number; failed: number } | null>(null);
+  const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: ImportError[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  /** Robust CSV line parser that handles quoted fields with commas */
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQuotes) {
+        if (ch === '"') {
+          if (i + 1 < line.length && line[i + 1] === '"') {
+            current += '"';
+            i++;
+          } else {
+            inQuotes = false;
+          }
+        } else {
+          current += ch;
+        }
+      } else {
+        if (ch === '"') {
+          inQuotes = true;
+        } else if (ch === ',') {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+    }
+    result.push(current.trim());
+    return result;
+  };
+
   const parseCSV = (text: string): ImportRow[] => {
-    const lines = text.split('\n').filter(l => l.trim());
+    // Remove BOM if present
+    const cleanText = text.replace(/^\uFEFF/, '');
+    // Split by multiple line-ending styles
+    const lines = cleanText.split(/\r?\n/).filter(l => l.trim());
     if (lines.length < 2) return [];
-    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-    return lines.slice(1).map(line => {
-      const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+    const headers = parseCSVLine(lines[0]).map(h => h.replace(/"/g, '').trim());
+    console.log('CSV headers:', headers);
+    console.log('CSV total data lines:', lines.length - 1);
+
+    const parsed: ImportRow[] = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCSVLine(lines[i]);
+      if (values.length === 0 || (values.length === 1 && !values[0])) continue;
       const row: any = {};
-      headers.forEach((h, i) => {
+      let hasData = false;
+      headers.forEach((h, idx) => {
         const key = mapHeader(h);
-        if (key) row[key] = values[i] || '';
+        if (key) {
+          const val = (values[idx] || '').replace(/"/g, '').trim();
+          row[key] = val;
+          if (val) hasData = true;
+        }
       });
-      return row as ImportRow;
-    });
+      if (hasData) parsed.push(row as ImportRow);
+    }
+    return parsed;
   };
 
   const mapHeader = (header: string): string | null => {
+    const normalized = header.trim().replace(/"/g, '');
     const map: Record<string, string> = {
       'מספר פנימי': 'internal_number',
       'internal_number': 'internal_number',
+      'מס פנימי': 'internal_number',
       'מספר רישוי': 'license_plate',
       'license_plate': 'license_plate',
+      'מס רישוי': 'license_plate',
+      'רישוי': 'license_plate',
       'מחלקה': 'department',
       'ענף': 'department',
+      'department': 'department',
       'יצרן': 'manufacturer',
       'manufacturer': 'manufacturer',
       'שנת ייצור': 'year',
+      'שנה': 'year',
       'year': 'year',
       'תאריך ביקורת אחרונה': 'last_inspection_date',
       'תאריך ביקורת הבאה': 'next_inspection_date',
       'תוקף רישוי': 'license_expiry',
+      'תוקף רישיון': 'license_expiry',
       'תוקף ביטוח': 'insurance_expiry',
       'תסקיר מהנדס': 'engineer_report',
       'הערות': 'notes',
       'notes': 'notes',
     };
-    return map[header] || null;
+    return map[normalized] || null;
   };
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,7 +132,12 @@ export default function VehicleImport() {
       const text = await file.text();
       const parsed = parseCSV(text);
       setRows(parsed);
-      toast.success(`נקראו ${parsed.length} שורות`);
+      setImportResult(null);
+      if (parsed.length === 0) {
+        toast.error('לא נמצאו שורות בקובץ. ודא שהכותרות תואמות.');
+      } else {
+        toast.success(`נקראו ${parsed.length} שורות`);
+      }
     } else {
       toast.error('נא להעלות קובץ CSV. לייצוא מאקסל: שמור כ-CSV (UTF-8)');
     }
@@ -83,9 +148,15 @@ export default function VehicleImport() {
     setImporting(true);
     let success = 0;
     let failed = 0;
+    const errors: ImportError[] = [];
 
-    for (const row of rows) {
-      if (!row.license_plate) { failed++; continue; }
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row.license_plate) {
+        failed++;
+        errors.push({ row: i + 2, license_plate: '—', reason: 'חסר מספר רישוי' });
+        continue;
+      }
 
       const payload: any = {
         license_plate: row.license_plate,
@@ -107,15 +178,16 @@ export default function VehicleImport() {
 
       const { error } = await supabase.from('vehicles').insert(payload);
       if (error) {
-        console.error('Import error for', row.license_plate, error);
+        console.error('Import error for row', i + 2, row.license_plate, error);
         failed++;
+        errors.push({ row: i + 2, license_plate: row.license_plate, reason: error.message || 'שגיאת הכנסה' });
       } else {
         success++;
       }
     }
 
     setImporting(false);
-    setImportResult({ success, failed });
+    setImportResult({ success, failed, errors });
     if (success > 0) toast.success(`${success} רכבים יובאו בהצלחה`);
     if (failed > 0) toast.error(`${failed} רכבים נכשלו`);
   };
@@ -148,6 +220,7 @@ export default function VehicleImport() {
               <table className="text-sm w-full">
                 <thead>
                   <tr className="border-b border-border">
+                    <th className="text-right p-2">#</th>
                     <th className="text-right p-2">מס' פנימי</th>
                     <th className="text-right p-2">מס' רישוי</th>
                     <th className="text-right p-2">יצרן</th>
@@ -155,17 +228,18 @@ export default function VehicleImport() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.slice(0, 10).map((r, i) => (
-                    <tr key={i} className="border-b border-border">
+                  {rows.slice(0, 20).map((r, i) => (
+                    <tr key={i} className={`border-b border-border ${!r.license_plate ? 'bg-destructive/10' : ''}`}>
+                      <td className="p-2 text-muted-foreground">{i + 1}</td>
                       <td className="p-2">{r.internal_number || '—'}</td>
-                      <td className="p-2 font-bold">{r.license_plate || '—'}</td>
+                      <td className="p-2 font-bold">{r.license_plate || <span className="text-destructive">חסר!</span>}</td>
                       <td className="p-2">{r.manufacturer || '—'}</td>
                       <td className="p-2">{r.year || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {rows.length > 10 && <p className="text-sm text-muted-foreground mt-2 text-center">...ועוד {rows.length - 10} שורות</p>}
+              {rows.length > 20 && <p className="text-sm text-muted-foreground mt-2 text-center">...ועוד {rows.length - 20} שורות</p>}
             </div>
           </div>
 
@@ -192,6 +266,18 @@ export default function VehicleImport() {
               <p className="text-sm text-muted-foreground">נכשלו</p>
             </div>
           </div>
+          {importResult.errors.length > 0 && (
+            <div className="text-right">
+              <h3 className="font-bold text-lg mb-2 text-destructive">פירוט שגיאות:</h3>
+              <div className="max-h-48 overflow-y-auto space-y-1">
+                {importResult.errors.map((err, i) => (
+                  <div key={i} className="text-sm p-2 rounded-lg bg-destructive/5 border border-destructive/20">
+                    שורה {err.row} | רישוי: {err.license_plate} | {err.reason}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <button onClick={() => { setRows([]); setImportResult(null); }}
             className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-bold text-lg">
             ייבוא נוסף
