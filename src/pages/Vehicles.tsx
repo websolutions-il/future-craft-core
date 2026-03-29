@@ -977,7 +977,7 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
             <input value={manufacturer} onChange={e => setManufacturer(e.target.value)} placeholder="יצרן..." className={inputClass} />
           </div>
           <div>
-            <label className="block text-lg font-medium mb-2">דגם *</label>
+            <label className="block text-lg font-medium mb-2">דגם</label>
             <input value={model} onChange={e => setModel(e.target.value)} placeholder="דגם..." className={inputClass} />
           </div>
         </div>
