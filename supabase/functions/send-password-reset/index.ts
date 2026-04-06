@@ -35,15 +35,15 @@ Deno.serve(async (req) => {
       type: 'recovery',
       email,
       options: {
-        redirectTo: redirect_url || 'https://car.mrk.co.il/reset-password',
+        redirectTo: redirect_url || 'https://dalia-car.online/reset-password',
       },
     });
 
     // Replace any lovable.app or preview URLs in the action_link with the production domain
     let resetLink = linkData?.properties?.action_link;
     if (resetLink) {
-      resetLink = resetLink.replace(/https?:\/\/[^\/]*lovable\.app/g, 'https://car.mrk.co.il');
-      resetLink = resetLink.replace(/https?:\/\/[^\/]*\.lovableproject\.com/g, 'https://car.mrk.co.il');
+      resetLink = resetLink.replace(/https?:\/\/[^\/]*lovable\.app/g, 'https://dalia-car.online');
+      resetLink = resetLink.replace(/https?:\/\/[^\/]*\.lovableproject\.com/g, 'https://dalia-car.online');
     }
 
     if (linkError) {
