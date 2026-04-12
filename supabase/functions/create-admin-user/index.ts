@@ -302,6 +302,22 @@ Deno.serve(async (req) => {
         { onConflict: 'id' }
       );
 
+    // Auto-create driver record when role is driver
+    if (role === 'driver') {
+      await supabaseAdmin.from('drivers').upsert(
+        {
+          id: userData.user.id,
+          full_name,
+          phone: phone || '',
+          email,
+          company_name: effectiveCompany,
+          status: 'active',
+          created_by: userData.user.id,
+        },
+        { onConflict: 'id' }
+      );
+    }
+
     // If created by fleet_manager, notify all super_admins
     if (isFleetManager) {
       const { data: callerProfile } = await supabaseAdmin
