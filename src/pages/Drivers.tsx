@@ -130,6 +130,23 @@ export default function Drivers() {
               📦 העבר לארכיון
             </button>
           )}
+          {/* Delete button */}
+          {user?.role !== 'driver' && (
+            <button onClick={async () => {
+              if (!confirm('האם אתה בטוח שברצונך למחוק את הנהג לצמיתות?')) return;
+              const { error } = await supabase.from('drivers').delete().eq('id', d.id);
+              if (error) {
+                toast.error('שגיאה במחיקת הנהג');
+                console.error(error);
+              } else {
+                toast.success('הנהג נמחק בהצלחה');
+                setSelected(null);
+                loadDrivers();
+              }
+            }} className="w-full mt-2 py-3 rounded-xl border-2 border-destructive/30 text-destructive font-bold text-lg flex items-center justify-center gap-2 hover:bg-destructive/5 transition-colors">
+              🗑️ מחק נהג
+            </button>
+          )}
         </div>
       </div>
     );
