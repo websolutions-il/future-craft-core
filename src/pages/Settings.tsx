@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, User, Building2, Phone, Mail, Moon, Sun, LogOut, Shield, Save, ChevronLeft } from 'lucide-react';
+import { Settings as SettingsIcon, User, Building2, Phone, Mail, Moon, Sun, LogOut, Shield, Save, ChevronLeft, Download, Database, FolderDown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -169,6 +169,23 @@ export default function SettingsPage() {
         )}
       </div>
 
+      {/* Backup section - super_admin only */}
+      {(user?.role === 'super_admin') && (
+        <div className="card-elevated space-y-3">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Download size={24} className="text-primary" />
+            </div>
+            <div>
+              <p className="text-lg font-bold">גיבוי מערכת</p>
+              <p className="text-sm text-muted-foreground">הורדת גיבוי מלא של הנתונים והקבצים</p>
+            </div>
+          </div>
+          <BackupButton type="data" label="גיבוי נתונים (DATA)" icon={<Database size={20} />} description="כל הטבלאות בפורמט JSON" />
+          <BackupButton type="files" label="גיבוי קבצים (FILES)" icon={<FolderDown size={20} />} description="רשימת קבצים + קישורי הורדה" />
+        </div>
+      )}
+
       {/* Logout */}
       <div className="card-elevated">
         <button onClick={handleLogout} className="w-full flex items-center gap-4 min-h-[56px] text-destructive">
@@ -182,5 +199,66 @@ export default function SettingsPage() {
       {/* App info */}
       <p className="text-center text-sm text-muted-foreground mt-8">דליה v1.0 • פתרונות מימון ותפעול לרכב</p>
     </div>
+  );
+}
+
+function BackupButton({ type, label, icon, description }: { type: 'data' | 'files'; label: string; icon: React.ReactNode; description: string }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleBackup = async () => {
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('יש להתחבר מחדש');
+        return;
+      }
+
+      const res = await supabase.functions.invoke('backup-data', {
+        body: { type },
+      });
+
+      if (res.error) {
+        toast.error('שגיאה בגיבוי: ' + res.error.message);
+        return;
+      }
+
+      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup_${type}_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      const tableCount = res.data?.table_counts
+        ? Object.values(res.data.table_counts as Record<string, number>).reduce((a: number, b: number) => a + b, 0)
+        : res.data?.total_files || 0;
+      toast.success(`גיבוי הושלם! ${type === 'data' ? `${tableCount} רשומות` : `${tableCount} קבצים`}`);
+    } catch (e) {
+      toast.error('שגיאה בלתי צפויה');
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleBackup}
+      disabled={loading}
+      className="w-full flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-accent/50 transition-colors disabled:opacity-50"
+    >
+      <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
+        {icon}
+      </div>
+      <div className="text-right flex-1">
+        <p className="font-bold text-sm">{label}</p>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+      {loading && <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />}
+    </button>
   );
 }
