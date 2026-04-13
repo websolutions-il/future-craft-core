@@ -375,14 +375,36 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
           <label className="block text-lg font-medium mb-2">תעודת זהות <span className="text-destructive">*</span></label>
           <input value={idNumber} onChange={e => setIdNumber(e.target.value)} placeholder="תעודת זהות..." className={inputClass} />
         </div>
+        {/* Login credentials - only for new drivers */}
+        {!isEdit && (
+          <div className="p-4 rounded-xl border-2 border-primary/30 bg-primary/5 space-y-4">
+            <p className="text-lg font-bold text-primary">פרטי התחברות לאפליקציה</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-lg font-medium mb-2">אימייל <span className="text-destructive">*</span></label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@..." className={inputClass} dir="ltr" style={{ textAlign: 'right' }} />
+              </div>
+              <div>
+                <label className="block text-lg font-medium mb-2">סיסמה <span className="text-destructive">*</span></label>
+                <input type="text" value={password} onChange={e => setPassword(e.target.value)} placeholder="לפחות 6 תווים..." className={inputClass} dir="ltr" style={{ textAlign: 'right' }} />
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">הנהג ישתמש בפרטים אלו כדי להיכנס לאפליקציה. החשבון ממתין לאישור מנהל על.</p>
+          </div>
+        )}
+
+        {/* Email field for editing */}
+        {isEdit && (
+          <div>
+            <label className="block text-lg font-medium mb-2">אימייל</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@..." className={inputClass} dir="ltr" style={{ textAlign: 'right' }} />
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-lg font-medium mb-2">טלפון <span className="text-destructive">*</span></label>
             <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="050-..." className={inputClass} dir="ltr" style={{ textAlign: 'right' }} />
-          </div>
-          <div>
-            <label className="block text-lg font-medium mb-2">אימייל</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@..." className={inputClass} dir="ltr" style={{ textAlign: 'right' }} />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
