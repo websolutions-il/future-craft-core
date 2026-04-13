@@ -247,6 +247,7 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
   const [idNumber, setIdNumber] = useState(driver?.id_number || '');
   const [phone, setPhone] = useState(driver?.phone || '');
   const [email, setEmail] = useState(driver?.email || '');
+  const [password, setPassword] = useState('');
   const [licenseNumber, setLicenseNumber] = useState(driver?.license_number || '');
   const [licenseExpiry, setLicenseExpiry] = useState(driver?.license_expiry || '');
   const [licenseTypes, setLicenseTypes] = useState<string[]>(driver?.license_types || []);
@@ -273,7 +274,9 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
     toast.success('רישיון הועלה בהצלחה');
   };
 
-  const isValid = fullName.trim().length > 0 && phone.trim().length > 0 && licenseNumber.trim().length > 0 && idNumber.trim().length > 0;
+  // For new drivers, email and password are required to create login credentials
+  const isValid = fullName.trim().length > 0 && phone.trim().length > 0 && licenseNumber.trim().length > 0 && idNumber.trim().length > 0
+    && (isEdit || (email.trim().length > 0 && password.trim().length >= 6));
   const inputClass = "w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
 
   const toggleLicense = (type: string) => {
@@ -284,33 +287,73 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
     if (!isValid) return;
     setLoading(true);
 
-    const payload = {
-      full_name: fullName,
-      id_number: idNumber,
-      phone,
-      email,
-      license_number: licenseNumber,
-      license_expiry: licenseExpiry || null,
-      license_types: licenseTypes,
-      city,
-      street,
-      status,
-      notes,
-      license_image_url: licenseImageUrl,
-      company_name: user?.company_name || '',
-      ...(isEdit ? {} : { created_by: user?.id }),
-    };
+    if (isEdit) {
+      // Update existing driver record
+      const payload = {
+        full_name: fullName,
+        id_number: idNumber,
+        phone,
+        email,
+        license_number: licenseNumber,
+        license_expiry: licenseExpiry || null,
+        license_types: licenseTypes,
+        city,
+        street,
+        status,
+        notes,
+        license_image_url: licenseImageUrl,
+        company_name: user?.company_name || '',
+      };
 
-    const { error } = isEdit
-      ? await supabase.from('drivers').update(payload).eq('id', driver!.id)
-      : await supabase.from('drivers').insert(payload);
-
-    setLoading(false);
-    if (error) {
-      toast.error(isEdit ? 'שגיאה בעדכון הנהג' : 'שגיאה בהוספת הנהג');
-      console.error(error);
+      const { error } = await supabase.from('drivers').update(payload).eq('id', driver!.id);
+      setLoading(false);
+      if (error) {
+        toast.error('שגיאה בעדכון הנהג');
+        console.error(error);
+      } else {
+        toast.success('הנהג עודכן בהצלחה');
+        onDone();
+      }
     } else {
-      toast.success(isEdit ? 'הנהג עודכן בהצלחה' : 'הנהג נוסף בהצלחה');
+      // Create new driver: use edge function to create auth user + profile + driver record
+      const effectiveEmail = email.trim() || `${phone.replace(/\D/g, '')}@placeholder.local`;
+
+      const { data, error } = await supabase.functions.invoke('create-admin-user', {
+        body: {
+          email: effectiveEmail,
+          password,
+          full_name: fullName,
+          phone,
+          role: 'driver',
+          company_name: user?.company_name || '',
+          is_active: false, // Requires super_admin approval
+        },
+      });
+
+      if (error || data?.error) {
+        setLoading(false);
+        toast.error(data?.error || 'שגיאה ביצירת הנהג');
+        console.error(error || data?.error);
+        return;
+      }
+
+      // Update the driver record with additional fields
+      if (data?.user_id) {
+        await supabase.from('drivers').update({
+          id_number: idNumber,
+          license_number: licenseNumber,
+          license_expiry: licenseExpiry || null,
+          license_types: licenseTypes,
+          city,
+          street,
+          status,
+          notes,
+          license_image_url: licenseImageUrl,
+        }).eq('id', data.user_id);
+      }
+
+      setLoading(false);
+      toast.success('הנהג נוסף בהצלחה עם פרטי התחברות');
       onDone();
     }
   };
@@ -332,14 +375,36 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
           <label className="block text-lg font-medium mb-2">תעודת זהות <span className="text-destructive">*</span></label>
           <input value={idNumber} onChange={e => setIdNumber(e.target.value)} placeholder="תעודת זהות..." className={inputClass} />
         </div>
+        {/* Login credentials - only for new drivers */}
+        {!isEdit && (
+          <div className="p-4 rounded-xl border-2 border-primary/30 bg-primary/5 space-y-4">
+            <p className="text-lg font-bold text-primary">פרטי התחברות לאפליקציה</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-lg font-medium mb-2">אימייל <span className="text-destructive">*</span></label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@..." className={inputClass} dir="ltr" style={{ textAlign: 'right' }} />
+              </div>
+              <div>
+                <label className="block text-lg font-medium mb-2">סיסמה <span className="text-destructive">*</span></label>
+                <input type="text" value={password} onChange={e => setPassword(e.target.value)} placeholder="לפחות 6 תווים..." className={inputClass} dir="ltr" style={{ textAlign: 'right' }} />
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">הנהג ישתמש בפרטים אלו כדי להיכנס לאפליקציה. החשבון ממתין לאישור מנהל על.</p>
+          </div>
+        )}
+
+        {/* Email field for editing */}
+        {isEdit && (
+          <div>
+            <label className="block text-lg font-medium mb-2">אימייל</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@..." className={inputClass} dir="ltr" style={{ textAlign: 'right' }} />
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-lg font-medium mb-2">טלפון <span className="text-destructive">*</span></label>
             <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="050-..." className={inputClass} dir="ltr" style={{ textAlign: 'right' }} />
-          </div>
-          <div>
-            <label className="block text-lg font-medium mb-2">אימייל</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@..." className={inputClass} dir="ltr" style={{ textAlign: 'right' }} />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
