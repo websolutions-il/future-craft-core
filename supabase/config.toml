@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.paypal-charge]
 verify_jwt = false
+
+[functions.backup-data]
+verify_jwt = false
