@@ -54,6 +54,8 @@ const vehicleTypeOptions = [
   { value: 'private', label: 'רכב פרטי' },
   { value: 'commercial', label: 'רכב מסחרי' },
   { value: 'taxi', label: 'מונית' },
+  { value: 'van_10', label: 'רכב 10 מקומות' },
+  { value: 'van_14', label: 'רכב 14 מקומות' },
   { value: 'minibus', label: 'מיניבוס' },
   { value: 'bus', label: 'אוטובוס' },
   { value: 'other', label: 'אחר' },

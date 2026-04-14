@@ -70,6 +70,7 @@ const driverActions = [
   { label: 'היסטוריית טיפולים לרכב', icon: Car, link: '/history' },
   { label: 'סידור עבודה שלי', icon: ClipboardList, link: '/driver-schedule' },
   { label: 'יצירת קשר עם מוקד', icon: Phone, link: '/emergency' },
+  { label: 'תצהיר נהג', icon: FileText, link: '/driver-declarations' },
 ];
 
 function ExpiryBadge({ days }: { days: number | null }) {

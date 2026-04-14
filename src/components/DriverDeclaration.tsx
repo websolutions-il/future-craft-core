@@ -1,0 +1,326 @@
+import { useState, useEffect, useRef } from 'react';
+import { FileText, Send, Check, Clock, AlertTriangle, ArrowRight, Pencil } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+
+const DECLARATION_TEXT = `אני החתום מטה, בעל תעודת זהות מספר ______,
+מצהיר בזה כי לא נתגלו אצלי, לפי מיטב ידיעתי, מגבלות במערכת העצבים, העצמות,
+הראיה או השמיעה ומצב בריאותי הנוכחי כשיר לנהיגה.
+
+1. לא נפסלתי מלהחזיק ברישיון נהיגה מ: בית משפט, רשות הרישוי או קצין משטרה,
+ולחלופין רישיון הנהיגה אשר ברשותי לא הותלה על ידי גורמים כאמור.
+2. אין לי כל מגבלה בריאותית או רפואית המונעת ממני מלהחזיק ברישיון הנהיגה.
+3. איננו צורך סמים.
+4. איננו צורך אלכוהול מעבר לכמות המותרת על פי דין.
+5. אני מצהיר כי לא חל כל שינוי במצב בריאותי במשך חמש השנים האחרונות.
+
+אני מתחייב כי במידה ויבוטלו הגבלות איזה שהן על רישיון הנהיגה אשר ברשותי,
+ולחלופין במידה ויחול שינוי במצב בריאותי באופן המונע ממני מלהמשיך ולנהוג,
+אדווח על כך מיידית לקצין הבטיחות.
+
+ידוע לי כי בהתאם לתקנות 585א׳ – 585כ׳ יבדקו פרטי רישיון הנהיגה/מידע העבודות שלי
+ע״י קצין הבטיחות המעניק שרותי בטיחות בחברה.
+
+אני מצהיר בזה כי הצהרתי הנ״ל אמת`;
+
+interface Declaration {
+  id: string;
+  driver_id: string;
+  driver_name: string;
+  id_number: string | null;
+  license_number: string | null;
+  company_name: string | null;
+  status: string;
+  signed_at: string | null;
+  signature_url: string | null;
+  expires_at: string | null;
+  sent_via: string | null;
+  sent_at: string | null;
+  token: string | null;
+  created_at: string;
+}
+
+interface DriverDeclarationProps {
+  driverId: string;
+  driverName: string;
+  idNumber?: string;
+  licenseNumber?: string;
+  companyName?: string;
+  mode?: 'manager' | 'driver';
+}
+
+export default function DriverDeclaration({ driverId, driverName, idNumber, licenseNumber, companyName, mode = 'manager' }: DriverDeclarationProps) {
+  const { user } = useAuth();
+  const [declarations, setDeclarations] = useState<Declaration[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [signing, setSigning] = useState(false);
+  const [activeDeclaration, setActiveDeclaration] = useState<Declaration | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+
+  const loadDeclarations = async () => {
+    const { data } = await supabase
+      .from('driver_declarations')
+      .select('*')
+      .eq('driver_id', driverId)
+      .order('created_at', { ascending: false });
+    if (data) setDeclarations(data as Declaration[]);
+    setLoading(false);
+  };
+
+  useEffect(() => { loadDeclarations(); }, [driverId]);
+
+  const createDeclaration = async () => {
+    setCreating(true);
+    const { error } = await supabase.from('driver_declarations').insert({
+      driver_id: driverId,
+      driver_name: driverName,
+      id_number: idNumber || null,
+      license_number: licenseNumber || null,
+      company_name: companyName || user?.company_name || '',
+      declaration_text: DECLARATION_TEXT,
+      status: 'pending',
+      created_by: user?.id,
+    } as any);
+    if (error) {
+      toast.error('שגיאה ביצירת התצהיר');
+      console.error(error);
+    } else {
+      toast.success('תצהיר נוצר בהצלחה');
+      loadDeclarations();
+    }
+    setCreating(false);
+  };
+
+  const sendDeclaration = async (declaration: Declaration, via: 'whatsapp' | 'email') => {
+    const baseUrl = window.location.origin;
+    const signUrl = `${baseUrl}/sign-declaration?token=${declaration.token}`;
+
+    if (via === 'whatsapp') {
+      const msg = encodeURIComponent(`שלום ${driverName}, אנא חתום על תצהיר נהג בקישור הבא:\n${signUrl}`);
+      window.open(`https://wa.me/?text=${msg}`, '_blank');
+    } else {
+      navigator.clipboard.writeText(signUrl);
+      toast.success('קישור הועתק ללוח – שלח אותו באימייל לנהג');
+    }
+
+    await supabase.from('driver_declarations').update({
+      sent_via: via,
+      sent_at: new Date().toISOString(),
+    } as any).eq('id', declaration.id);
+    loadDeclarations();
+  };
+
+  // Canvas signature handling
+  const initCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+  };
+
+  useEffect(() => {
+    if (signing) setTimeout(initCanvas, 100);
+  }, [signing]);
+
+  const getPos = (e: React.TouchEvent | React.MouseEvent) => {
+    const canvas = canvasRef.current!;
+    const rect = canvas.getBoundingClientRect();
+    if ('touches' in e) {
+      return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+    }
+    return { x: (e as React.MouseEvent).clientX - rect.left, y: (e as React.MouseEvent).clientY - rect.top };
+  };
+
+  const startDraw = (e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault();
+    setIsDrawing(true);
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
+    const pos = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  };
+
+  const draw = (e: React.TouchEvent | React.MouseEvent) => {
+    if (!isDrawing) return;
+    e.preventDefault();
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
+    const pos = getPos(e);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+  };
+
+  const endDraw = () => setIsDrawing(false);
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  };
+
+  const signDeclaration = async () => {
+    if (!activeDeclaration || !canvasRef.current) return;
+    const dataUrl = canvasRef.current.toDataURL('image/png');
+
+    // Upload signature image
+    const blob = await (await fetch(dataUrl)).blob();
+    const path = `declarations/sig_${activeDeclaration.id}_${Date.now()}.png`;
+    const { error: uploadErr } = await supabase.storage.from('documents').upload(path, blob);
+    if (uploadErr) { toast.error('שגיאה בשמירת החתימה'); return; }
+    const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path);
+
+    const signedAt = new Date().toISOString();
+    const expiresAt = new Date();
+    expiresAt.setFullYear(expiresAt.getFullYear() + 5);
+
+    await supabase.from('driver_declarations').update({
+      status: 'signed',
+      signed_at: signedAt,
+      signature_url: urlData.publicUrl,
+      expires_at: expiresAt.toISOString(),
+    } as any).eq('id', activeDeclaration.id);
+
+    toast.success('התצהיר נחתם בהצלחה!');
+    setSigning(false);
+    setActiveDeclaration(null);
+    loadDeclarations();
+  };
+
+  const getStatusBadge = (d: Declaration) => {
+    if (d.status === 'signed') {
+      const isExpired = d.expires_at && new Date(d.expires_at) < new Date();
+      const isExpiringSoon = d.expires_at && new Date(d.expires_at) < new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+      if (isExpired) return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-destructive/10 text-destructive text-sm font-bold"><AlertTriangle size={14} /> פג תוקף</span>;
+      if (isExpiringSoon) return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-warning/10 text-warning text-sm font-bold"><Clock size={14} /> תוקף עומד לפוג</span>;
+      return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-success/10 text-success text-sm font-bold"><Check size={14} /> נחתם</span>;
+    }
+    return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-warning/10 text-warning text-sm font-bold"><Clock size={14} /> ממתין לחתימה</span>;
+  };
+
+  if (signing && activeDeclaration) {
+    return (
+      <div className="space-y-4">
+        <button onClick={() => { setSigning(false); setActiveDeclaration(null); }} className="flex items-center gap-2 text-primary text-lg font-medium min-h-[48px]">
+          <ArrowRight size={20} /> חזרה
+        </button>
+        <h2 className="text-xl font-bold">תצהיר בעל רישיון נהיגה</h2>
+        
+        <div className="p-4 rounded-xl border border-border bg-muted/30 text-sm leading-7 whitespace-pre-line" dir="rtl">
+          <p className="font-bold mb-2">אני, {activeDeclaration.driver_name}, ת.ז {activeDeclaration.id_number || '______'}</p>
+          {DECLARATION_TEXT.replace('______', activeDeclaration.id_number || '______')}
+        </div>
+
+        <div>
+          <p className="text-lg font-medium mb-2">חתימה דיגיטלית:</p>
+          <div className="border-2 border-input rounded-xl overflow-hidden bg-white">
+            <canvas
+              ref={canvasRef}
+              width={350}
+              height={150}
+              className="w-full touch-none"
+              onMouseDown={startDraw}
+              onMouseMove={draw}
+              onMouseUp={endDraw}
+              onMouseLeave={endDraw}
+              onTouchStart={startDraw}
+              onTouchMove={draw}
+              onTouchEnd={endDraw}
+            />
+          </div>
+          <button onClick={clearCanvas} className="text-sm text-muted-foreground mt-1 underline">נקה חתימה</button>
+        </div>
+
+        <button onClick={signDeclaration} className="w-full py-4 rounded-xl bg-primary text-primary-foreground text-lg font-bold flex items-center justify-center gap-2">
+          <Pencil size={20} /> חתום ואשר
+        </button>
+      </div>
+    );
+  }
+
+  if (loading) return <div className="text-center py-4 text-muted-foreground">טוען...</div>;
+
+  const latest = declarations[0];
+  const needsRenewal = latest?.status === 'signed' && latest.expires_at && new Date(latest.expires_at) < new Date();
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-bold flex items-center gap-2"><FileText size={20} /> תצהיר נהג</h3>
+        {(mode === 'manager' || !latest) && (
+          <button onClick={createDeclaration} disabled={creating || (latest?.status === 'pending')}
+            className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50">
+            {creating ? 'יוצר...' : needsRenewal ? 'חדש תצהיר' : latest ? 'תצהיר חדש' : 'צור תצהיר'}
+          </button>
+        )}
+      </div>
+
+      {declarations.length === 0 ? (
+        <p className="text-muted-foreground text-center py-6">אין תצהירים – לחץ ״צור תצהיר״</p>
+      ) : (
+        <div className="space-y-3">
+          {declarations.map(d => (
+            <div key={d.id} className="p-4 rounded-xl border border-border bg-card space-y-2">
+              <div className="flex items-center justify-between">
+                {getStatusBadge(d)}
+                <span className="text-sm text-muted-foreground">{new Date(d.created_at).toLocaleDateString('he-IL')}</span>
+              </div>
+              
+              {d.signed_at && (
+                <p className="text-sm text-muted-foreground">נחתם: {new Date(d.signed_at).toLocaleDateString('he-IL')}</p>
+              )}
+              {d.expires_at && (
+                <p className="text-sm text-muted-foreground">תוקף עד: {new Date(d.expires_at).toLocaleDateString('he-IL')}</p>
+              )}
+              {d.signature_url && (
+                <div>
+                  <img src={d.signature_url} alt="חתימה" className="h-12 rounded border border-border" />
+                </div>
+              )}
+
+              <div className="flex gap-2 flex-wrap">
+                {d.status === 'pending' && mode === 'driver' && (
+                  <button onClick={() => { setActiveDeclaration(d); setSigning(true); }}
+                    className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold flex items-center gap-1">
+                    <Pencil size={14} /> חתום עכשיו
+                  </button>
+                )}
+                {d.status === 'pending' && mode === 'manager' && (
+                  <>
+                    <button onClick={() => sendDeclaration(d, 'whatsapp')}
+                      className="px-3 py-2 rounded-xl bg-success/10 text-success text-sm font-bold flex items-center gap-1">
+                      <Send size={14} /> שלח בוואטסאפ
+                    </button>
+                    <button onClick={() => sendDeclaration(d, 'email')}
+                      className="px-3 py-2 rounded-xl bg-info/10 text-info text-sm font-bold flex items-center gap-1">
+                      <Send size={14} /> העתק קישור
+                    </button>
+                    <button onClick={() => { setActiveDeclaration(d); setSigning(true); }}
+                      className="px-3 py-2 rounded-xl bg-muted text-foreground text-sm font-bold flex items-center gap-1">
+                      <Pencil size={14} /> חתום כעת
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {d.sent_via && (
+                <p className="text-xs text-muted-foreground">נשלח דרך {d.sent_via === 'whatsapp' ? 'וואטסאפ' : 'אימייל'} ב-{d.sent_at ? new Date(d.sent_at).toLocaleDateString('he-IL') : ''}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

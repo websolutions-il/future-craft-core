@@ -576,6 +576,69 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_declarations: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          created_by: string | null
+          declaration_text: string
+          driver_id: string
+          driver_name: string
+          expires_at: string | null
+          id: string
+          id_number: string | null
+          license_number: string | null
+          pdf_url: string | null
+          sent_at: string | null
+          sent_via: string | null
+          signature_url: string | null
+          signed_at: string | null
+          status: string
+          token: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          declaration_text: string
+          driver_id: string
+          driver_name?: string
+          expires_at?: string | null
+          id?: string
+          id_number?: string | null
+          license_number?: string | null
+          pdf_url?: string | null
+          sent_at?: string | null
+          sent_via?: string | null
+          signature_url?: string | null
+          signed_at?: string | null
+          status?: string
+          token?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          declaration_text?: string
+          driver_id?: string
+          driver_name?: string
+          expires_at?: string | null
+          id?: string
+          id_number?: string | null
+          license_number?: string | null
+          pdf_url?: string | null
+          sent_at?: string | null
+          sent_via?: string | null
+          signature_url?: string | null
+          signed_at?: string | null
+          status?: string
+          token?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       driver_health_declarations: {
         Row: {
           company_name: string | null

@@ -59,6 +59,8 @@ import InternalChat from "@/pages/InternalChat";
 import Subscriptions from "@/pages/Subscriptions";
 import EmergencySettings from "@/pages/EmergencySettings";
 import CustomerDocs from "@/pages/CustomerDocs";
+import DriverDeclarations from "@/pages/DriverDeclarations";
+import SignDeclaration from "@/pages/SignDeclaration";
 
 import ServiceOrderHistory from "@/pages/ServiceOrderHistory";
 
@@ -85,6 +87,7 @@ function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/sign-declaration" element={<SignDeclaration />} />
         <Route path="*" element={<About />} />
       </Routes>
     );
@@ -143,6 +146,8 @@ function AppRoutes() {
         <Route path="/private-vehicle-inspection" element={<PrivateVehicleInspection />} />
         <Route path="/vehicle-lookup" element={<VehicleLookup />} />
         <Route path="/vehicle-exchange" element={<VehicleExchange />} />
+        <Route path="/driver-declarations" element={<DriverDeclarations />} />
+        <Route path="/sign-declaration" element={<SignDeclaration />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
