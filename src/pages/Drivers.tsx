@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Users, Search, ArrowRight, Phone, Mail, Plus, Save, Edit2, X, Download, Upload, FileImage, Eye } from 'lucide-react';
+import DriverDeclaration from '@/components/DriverDeclaration';
 import { exportToCsv } from '@/utils/exportCsv';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -107,6 +108,18 @@ export default function Drivers() {
             )}
           </div>
           {d.notes && <p className="mt-4 p-3 bg-muted rounded-xl text-muted-foreground">{d.notes}</p>}
+          
+          {/* Driver Declaration */}
+          <div className="mt-6 pt-6 border-t border-border">
+            <DriverDeclaration
+              driverId={d.id}
+              driverName={d.full_name}
+              idNumber={d.id_number}
+              licenseNumber={d.license_number}
+              companyName={d.company_name}
+              mode={user?.role === 'driver' ? 'driver' : 'manager'}
+            />
+          </div>
           <div className="flex gap-3 mt-6">
             {d.phone && (
               <a href={`tel:${d.phone}`} className="flex-1 bg-primary text-primary-foreground rounded-2xl p-4 flex items-center justify-center gap-2 text-lg font-bold">
