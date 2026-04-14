@@ -46,6 +46,7 @@ const managerCategories = [
       { path: '/vehicle-import', label: 'יבוא רכבים', icon: Upload },
       { path: '/vehicle-lookup', label: 'בדיקת רכב ממשלתי', icon: SearchIcon },
       { path: '/health-declaration', label: 'הצהרת בריאות', icon: HeartPulse },
+      { path: '/driver-declarations', label: 'תצהירי נהגים', icon: FileText },
       { path: '/history', label: 'היסטוריית שינויים', icon: History },
     ],
   },
