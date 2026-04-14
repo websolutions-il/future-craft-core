@@ -59,6 +59,8 @@ import InternalChat from "@/pages/InternalChat";
 import Subscriptions from "@/pages/Subscriptions";
 import EmergencySettings from "@/pages/EmergencySettings";
 import CustomerDocs from "@/pages/CustomerDocs";
+import DriverDeclarations from "@/pages/DriverDeclarations";
+import SignDeclaration from "@/pages/SignDeclaration";
 
 import ServiceOrderHistory from "@/pages/ServiceOrderHistory";
 
