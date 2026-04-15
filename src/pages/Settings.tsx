@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, User, Building2, Phone, Mail, Moon, Sun, LogOut, Shield, Save, ChevronLeft, Download, Database, FolderDown } from 'lucide-react';
+import { Settings as SettingsIcon, User, Building2, Phone, Mail, Moon, Sun, LogOut, Shield, Save, ChevronLeft, Download, Database, FolderDown, BookOpen } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -183,6 +183,10 @@ export default function SettingsPage() {
           </div>
           <BackupButton type="data" label="גיבוי נתונים (DATA)" icon={<Database size={20} />} description="כל הטבלאות בפורמט JSON" />
           <BackupButton type="files" label="גיבוי קבצים (FILES)" icon={<FolderDown size={20} />} description="רשימת קבצים + קישורי הורדה" />
+          
+          <div className="border-t border-border pt-3 mt-2">
+            <RestoreGuideButton />
+          </div>
         </div>
       )}
 
@@ -199,6 +203,150 @@ export default function SettingsPage() {
       {/* App info */}
       <p className="text-center text-sm text-muted-foreground mt-8">דליה v1.0 • פתרונות מימון ותפעול לרכב</p>
     </div>
+  );
+}
+
+function RestoreGuideButton() {
+  const [open, setOpen] = useState(false);
+
+  const guideContent = `
+# 📘 מדריך שחזור גיבוי — דליה מערכת ניהול צי
+
+## שלב 1: הקמת פרויקט Supabase חדש
+1. היכנסו ל-supabase.com וצרו חשבון + פרויקט חדש
+2. ב-SQL Editor, צרו את כל הטבלאות (ניתן לייצא Schema מהפרויקט הישן)
+3. הגדירו את הפונקציות (handle_new_user, has_role, get_user_company)
+4. צרו Storage Bucket בשם "documents" (Public)
+
+## שלב 2: שחזור נתונים (DATA)
+1. התקינו Node.js על המחשב
+2. צרו קובץ restore-data.js:
+
+\`\`\`javascript
+const { createClient } = require('@supabase/supabase-js');
+const fs = require('fs');
+const supabase = createClient('https://YOUR_PROJECT.supabase.co', 'SERVICE_ROLE_KEY');
+
+const TABLE_ORDER = [
+  'profiles','user_roles','vehicles','drivers','customers','suppliers',
+  'companions','company_settings','company_subscriptions','faults',
+  'fault_messages','fault_status_log','fault_referrals','expenses',
+  'accidents','service_orders','service_order_messages','vehicle_handovers',
+  'vehicle_exchanges','vehicle_inspections','inspection_items','routes',
+  'trip_logs','customer_deals','customer_agreements','vehicle_companions',
+  'custom_alerts','document_metadata','driver_health_declarations',
+  'driver_declarations','driver_notifications','internal_messages',
+  'emergency_categories','emergency_logs','promotions','system_logs',
+  'temporary_drivers','dev_tasks','approval_requests','work_assignments',
+  'work_assignment_messages','work_assignment_status_log','supplier_work_orders'
+];
+
+async function restore() {
+  const backup = JSON.parse(fs.readFileSync('backup_data_YYYY-MM-DD.json','utf8'));
+  for (const table of TABLE_ORDER) {
+    const rows = backup.tables[table];
+    if (!rows?.length) continue;
+    for (let i = 0; i < rows.length; i += 500) {
+      const { error } = await supabase.from(table).upsert(rows.slice(i,i+500),{onConflict:'id'});
+      if (error) console.error(table, error.message);
+    }
+    console.log(table + ': ' + rows.length + ' rows');
+  }
+}
+restore();
+\`\`\`
+
+3. הריצו: npm install @supabase/supabase-js && node restore-data.js
+
+## שלב 3: שחזור קבצים (FILES)
+⚠️ קישורי ההורדה תקפים לשעה בלבד! הורידו מיד.
+
+1. צרו קובץ restore-files.js בדומה לנ"ל
+2. הסקריפט מוריד כל קובץ ומעלה ל-Storage החדש
+
+## שלב 4: הגדרת שרת (VPS)
+1. שרת VPS (Hostinger / DigitalOcean)
+2. התקנת Nginx + Node.js + Certbot
+3. שכפול הקוד מ-GitHub
+4. עדכון .env עם פרטי Supabase החדש
+5. npm install && npm run build
+6. העתקת dist/ ל-/var/www/dalia/
+7. הגדרת Nginx + SSL
+
+## שלב 5: חיבור
+1. ב-Supabase: הגדרת Site URL + Redirect URLs
+2. פריסת Edge Functions: supabase functions deploy
+3. הגדרת Secrets (RESEND_API_KEY וכו')
+
+## שלב 6: בדיקות
+✅ התחברות עם super_admin
+✅ נתונים מופיעים (נהגים, רכבים, לקוחות)
+✅ קבצים ותמונות נטענים
+✅ התראות ואימיילים עובדים
+
+⚠️ סיסמאות משתמשים: לא ניתנות לייצוא. שלחו "שכחתי סיסמה" או הגדירו חדשות.
+`;
+
+  const handleDownloadGuide = () => {
+    const blob = new Blob([guideContent], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `restore_guide_${new Date().toISOString().slice(0, 10)}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-3 p-3 rounded-xl border border-dashed border-primary/30 hover:bg-primary/5 transition-colors"
+      >
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+          <BookOpen size={20} className="text-primary" />
+        </div>
+        <div className="text-right flex-1">
+          <p className="font-bold text-sm">📘 מדריך שחזור גיבוי</p>
+          <p className="text-xs text-muted-foreground">איך להעביר את הגיבוי לשרת + Supabase פרטי</p>
+        </div>
+        <ChevronLeft size={18} className={`text-muted-foreground transition-transform ${open ? 'rotate-90' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="mt-3 p-4 rounded-xl bg-muted/50 border border-border space-y-3 text-sm leading-relaxed">
+          <div className="space-y-2">
+            <h4 className="font-bold text-base">🔄 תהליך שחזור מלא:</h4>
+            <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground">
+              <li><strong>הקמת Supabase חדש</strong> — צרו פרויקט ב-supabase.com, צרו את הטבלאות והפונקציות</li>
+              <li><strong>שחזור DATA</strong> — הריצו סקריפט Node.js שמכניס את כל הנתונים מקובץ הגיבוי</li>
+              <li><strong>שחזור FILES</strong> — הורדת כל הקבצים והעלאתם ל-Storage החדש</li>
+              <li><strong>הגדרת שרת</strong> — VPS עם Nginx, בנייה מ-GitHub, חיבור ל-Supabase החדש</li>
+              <li><strong>Edge Functions</strong> — פריסה עם Supabase CLI + הגדרת Secrets</li>
+              <li><strong>בדיקות</strong> — התחברות, נתונים, קבצים, התראות</li>
+            </ol>
+          </div>
+
+          <div className="p-3 rounded-lg bg-warning/10 border border-warning/20">
+            <p className="text-warning font-medium text-xs">⚠️ קישורי הורדת קבצים תקפים לשעה בלבד! הורידו מיד אחרי יצירת הגיבוי.</p>
+          </div>
+          
+          <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+            <p className="text-xs text-muted-foreground">💡 סיסמאות משתמשים לא ניתנות לייצוא. אחרי שחזור, שלחו "שכחתי סיסמה" לכל המשתמשים או הגדירו סיסמאות חדשות.</p>
+          </div>
+
+          <button
+            onClick={handleDownloadGuide}
+            className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2"
+          >
+            <Download size={16} />
+            הורד מדריך מלא (עם סקריפטים)
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 
