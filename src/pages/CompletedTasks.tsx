@@ -1,7 +1,7 @@
 
 import { CheckCircle, Calendar, Rocket, Plus, Clock, ArrowLeftRight, Pencil } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
@@ -76,8 +76,12 @@ const CompletedTasks = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const pendingTasks = tasks.filter(t => t.status === 'pending');
-  const completedTasks = tasks.filter(t => t.status === 'completed');
+  const pendingTasks = tasks
+    .filter(t => t.status === 'pending')
+    .sort((a, b) => b.task_number - a.task_number);
+  const completedTasks = tasks
+    .filter(t => t.status === 'completed')
+    .sort((a, b) => b.task_number - a.task_number);
 
   const handleAddTask = async () => {
     if (!newSummary.trim()) {
@@ -172,6 +176,40 @@ const CompletedTasks = () => {
     return <span className={`inline-flex items-center justify-center w-5 h-5 rounded text-[10px] leading-none font-bold border ${cfg.color}`}>{cfg.label}</span>;
   };
 
+  const extractRoutes = (text: string) => {
+    const matches = text.match(/\/[a-zA-Z0-9\-_/?:=&]*/g) || [];
+    return [...new Set(matches.filter(Boolean))];
+  };
+
+  const renderClarification = (clarification: string) => {
+    const lines = clarification.split('\n').map(line => line.trim()).filter(Boolean);
+    const routes = extractRoutes(clarification);
+
+    return (
+      <div className="mt-2 space-y-2 rounded-lg border border-border/60 bg-muted/30 p-3">
+        {lines.map((line, index) => (
+          <p key={`${line}-${index}`} className="text-xs text-muted-foreground leading-5 whitespace-pre-wrap">
+            {line}
+          </p>
+        ))}
+
+        {routes.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {routes.map((route) => (
+              <Link
+                key={route}
+                to={route}
+                className="inline-flex items-center rounded-md border border-border bg-background px-2.5 py-1 text-[11px] font-medium text-primary hover:bg-accent"
+              >
+                פתח {route}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const TaskTable = ({ items, showComplete }: { items: DevTask[]; showComplete: boolean }) => (
     <div className="border border-border rounded-lg overflow-hidden overflow-x-auto">
       <table className="w-full text-sm">
@@ -190,7 +228,7 @@ const CompletedTasks = () => {
         </thead>
         <tbody>
           {items.length === 0 && (
-            <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">אין משימות</td></tr>
+            <tr><td colSpan={isSuperAdmin ? 7 : 6} className="p-8 text-center text-muted-foreground">אין משימות</td></tr>
           )}
           {items.map((task, i) => (
             <tr key={task.id} className={i % 2 === 0 ? 'bg-background' : 'bg-muted/30'}>
@@ -207,9 +245,7 @@ const CompletedTasks = () => {
                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-accent text-accent-foreground text-[10px] font-medium whitespace-nowrap">✏️ נערך</span>
                   )}
                 </div>
-                {task.clarification && (
-                  <p className="text-xs text-muted-foreground mt-1">הבהרה: {task.clarification}</p>
-                )}
+                {task.clarification && renderClarification(task.clarification)}
               </td>
               <td className="p-3 text-center">
                 {task.status === 'completed'
@@ -263,7 +299,7 @@ const CompletedTasks = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="pending" className="w-full">
+      <Tabs defaultValue="completed" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="pending" className="gap-1.5">
             <Clock size={14} />
