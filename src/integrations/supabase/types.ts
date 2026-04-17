@@ -774,6 +774,96 @@ export type Database = {
         }
         Relationships: []
       }
+      driving_exams: {
+        Row: {
+          answers: Json | null
+          category_breakdown: Json | null
+          company_name: string | null
+          completed_at: string | null
+          correct_count: number | null
+          created_at: string
+          created_by: string | null
+          driver_id: string
+          driver_name: string
+          driver_phone: string | null
+          expires_at: string | null
+          id: string
+          manager_note: string | null
+          passed: boolean | null
+          passing_score: number
+          questions: Json
+          score: number | null
+          sent_at: string | null
+          sent_to: string | null
+          sent_via: string | null
+          signature_url: string | null
+          started_at: string | null
+          status: string
+          token: string | null
+          total_questions: number | null
+          updated_at: string
+          vehicle_plate: string | null
+        }
+        Insert: {
+          answers?: Json | null
+          category_breakdown?: Json | null
+          company_name?: string | null
+          completed_at?: string | null
+          correct_count?: number | null
+          created_at?: string
+          created_by?: string | null
+          driver_id: string
+          driver_name?: string
+          driver_phone?: string | null
+          expires_at?: string | null
+          id?: string
+          manager_note?: string | null
+          passed?: boolean | null
+          passing_score?: number
+          questions?: Json
+          score?: number | null
+          sent_at?: string | null
+          sent_to?: string | null
+          sent_via?: string | null
+          signature_url?: string | null
+          started_at?: string | null
+          status?: string
+          token?: string | null
+          total_questions?: number | null
+          updated_at?: string
+          vehicle_plate?: string | null
+        }
+        Update: {
+          answers?: Json | null
+          category_breakdown?: Json | null
+          company_name?: string | null
+          completed_at?: string | null
+          correct_count?: number | null
+          created_at?: string
+          created_by?: string | null
+          driver_id?: string
+          driver_name?: string
+          driver_phone?: string | null
+          expires_at?: string | null
+          id?: string
+          manager_note?: string | null
+          passed?: boolean | null
+          passing_score?: number
+          questions?: Json
+          score?: number | null
+          sent_at?: string | null
+          sent_to?: string | null
+          sent_via?: string | null
+          signature_url?: string | null
+          started_at?: string | null
+          status?: string
+          token?: string | null
+          total_questions?: number | null
+          updated_at?: string
+          vehicle_plate?: string | null
+        }
+        Relationships: []
+      }
       emergency_categories: {
         Row: {
           auto_message_template: string
