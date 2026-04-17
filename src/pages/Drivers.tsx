@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Users, Search, ArrowRight, Phone, Mail, Plus, Save, Edit2, X, Download, Upload, FileImage, Eye } from 'lucide-react';
 import DriverDeclaration from '@/components/DriverDeclaration';
+import DriverExamsTab from '@/components/driving-exam/DriverExamsTab';
 import { exportToCsv } from '@/utils/exportCsv';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
