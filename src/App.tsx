@@ -63,6 +63,7 @@ import DriverDeclarations from "@/pages/DriverDeclarations";
 import SignDeclaration from "@/pages/SignDeclaration";
 
 import ServiceOrderHistory from "@/pages/ServiceOrderHistory";
+import TakeDrivingExam from "@/pages/TakeDrivingExam";
 
 const queryClient = new QueryClient();
 

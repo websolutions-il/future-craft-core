@@ -121,6 +121,17 @@ export default function Drivers() {
               mode={user?.role === 'driver' ? 'driver' : 'manager'}
             />
           </div>
+
+          {/* Driving Competency Exams */}
+          <div className="mt-6 pt-6 border-t border-border">
+            <h2 className="text-xl font-bold mb-3">📝 מבחני כשירות נהיגה</h2>
+            <DriverExamsTab
+              driverId={d.id}
+              driverName={d.full_name}
+              driverPhone={d.phone}
+              companyName={d.company_name}
+            />
+          </div>
           <div className="flex gap-3 mt-6">
             {d.phone && (
               <a href={`tel:${d.phone}`} className="flex-1 bg-primary text-primary-foreground rounded-2xl p-4 flex items-center justify-center gap-2 text-lg font-bold">
