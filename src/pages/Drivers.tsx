@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Users, Search, ArrowRight, Phone, Mail, Plus, Save, Edit2, X, Download, Upload, FileImage, Eye } from 'lucide-react';
 import DriverDeclaration from '@/components/DriverDeclaration';
+import DriverExamsTab from '@/components/driving-exam/DriverExamsTab';
 import { exportToCsv } from '@/utils/exportCsv';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -118,6 +119,17 @@ export default function Drivers() {
               licenseNumber={d.license_number}
               companyName={d.company_name}
               mode={user?.role === 'driver' ? 'driver' : 'manager'}
+            />
+          </div>
+
+          {/* Driving Competency Exams */}
+          <div className="mt-6 pt-6 border-t border-border">
+            <h2 className="text-xl font-bold mb-3">📝 מבחני כשירות נהיגה</h2>
+            <DriverExamsTab
+              driverId={d.id}
+              driverName={d.full_name}
+              driverPhone={d.phone}
+              companyName={d.company_name}
             />
           </div>
           <div className="flex gap-3 mt-6">
