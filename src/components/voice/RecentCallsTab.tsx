@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PhoneIncoming, PhoneOutgoing, PhoneMissed, PhoneCall, X } from 'lucide-react';
+import { PhoneIncoming, PhoneOutgoing, PhoneCall, X } from 'lucide-react';
 import type { CallLog } from '@/hooks/useCallLogs';
 
 const flowLabels: Record<string, string> = {

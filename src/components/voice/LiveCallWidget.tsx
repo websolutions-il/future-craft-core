@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Radio, X, Minimize2, Maximize2 } from 'lucide-react';
+import { Radio, Minimize2, Maximize2 } from 'lucide-react';
 import type { CallLog } from '@/hooks/useCallLogs';
 
 export default function LiveCallWidget({ call }: { call: CallLog | null }) {

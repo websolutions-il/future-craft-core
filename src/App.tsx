@@ -64,6 +64,7 @@ import SignDeclaration from "@/pages/SignDeclaration";
 
 import ServiceOrderHistory from "@/pages/ServiceOrderHistory";
 import TakeDrivingExam from "@/pages/TakeDrivingExam";
+import Voice from "@/pages/Voice";
 
 const queryClient = new QueryClient();
 
@@ -152,6 +153,7 @@ function AppRoutes() {
         <Route path="/sign-declaration" element={<SignDeclaration />} />
         <Route path="/take-exam" element={<TakeDrivingExam />} />
         <Route path="/driving-exam/:id" element={<TakeDrivingExam />} />
+        <Route path="/voice" element={<Voice />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
