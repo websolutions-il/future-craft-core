@@ -134,6 +134,95 @@ export type Database = {
         }
         Relationships: []
       }
+      call_logs: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          customer_name: string | null
+          direction: string
+          duration_sec: number | null
+          flow_type: string
+          id: string
+          outcome: string | null
+          phone: string | null
+          recording_url: string | null
+          status: string
+          transcript: string | null
+          twilio_call_sid: string | null
+          updated_at: string
+          vehicle_id: string | null
+          vehicle_plate: string | null
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          direction?: string
+          duration_sec?: number | null
+          flow_type?: string
+          id?: string
+          outcome?: string | null
+          phone?: string | null
+          recording_url?: string | null
+          status?: string
+          transcript?: string | null
+          twilio_call_sid?: string | null
+          updated_at?: string
+          vehicle_id?: string | null
+          vehicle_plate?: string | null
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          direction?: string
+          duration_sec?: number | null
+          flow_type?: string
+          id?: string
+          outcome?: string | null
+          phone?: string | null
+          recording_url?: string | null
+          status?: string
+          transcript?: string | null
+          twilio_call_sid?: string | null
+          updated_at?: string
+          vehicle_id?: string | null
+          vehicle_plate?: string | null
+        }
+        Relationships: []
+      }
+      campaign_customers: {
+        Row: {
+          call_status: string | null
+          campaign_id: string
+          customer_id: string
+        }
+        Insert: {
+          call_status?: string | null
+          campaign_id: string
+          customer_id: string
+        }
+        Update: {
+          call_status?: string | null
+          campaign_id?: string
+          customer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_customers_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "voice_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companions: {
         Row: {
           company_name: string | null
@@ -2473,6 +2562,84 @@ export type Database = {
           vehicle_return_date?: string | null
           vehicle_type?: string | null
           year?: number | null
+        }
+        Relationships: []
+      }
+      voice_campaigns: {
+        Row: {
+          booked_count: number | null
+          company_name: string | null
+          completed_calls: number | null
+          created_at: string
+          created_by: string | null
+          flow_type: string
+          id: string
+          name: string
+          scheduled_at: string | null
+          status: string
+          total_calls: number | null
+          updated_at: string
+        }
+        Insert: {
+          booked_count?: number | null
+          company_name?: string | null
+          completed_calls?: number | null
+          created_at?: string
+          created_by?: string | null
+          flow_type?: string
+          id?: string
+          name?: string
+          scheduled_at?: string | null
+          status?: string
+          total_calls?: number | null
+          updated_at?: string
+        }
+        Update: {
+          booked_count?: number | null
+          company_name?: string | null
+          completed_calls?: number | null
+          created_at?: string
+          created_by?: string | null
+          flow_type?: string
+          id?: string
+          name?: string
+          scheduled_at?: string | null
+          status?: string
+          total_calls?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      voice_prompts: {
+        Row: {
+          display_name: string
+          fallback_sms: boolean | null
+          flow_type: string
+          id: string
+          max_turns: number | null
+          opener_text: string
+          system_prompt: string
+          updated_at: string
+        }
+        Insert: {
+          display_name: string
+          fallback_sms?: boolean | null
+          flow_type: string
+          id?: string
+          max_turns?: number | null
+          opener_text: string
+          system_prompt: string
+          updated_at?: string
+        }
+        Update: {
+          display_name?: string
+          fallback_sms?: boolean | null
+          flow_type?: string
+          id?: string
+          max_turns?: number | null
+          opener_text?: string
+          system_prompt?: string
+          updated_at?: string
         }
         Relationships: []
       }
