@@ -89,6 +89,7 @@ function AppRoutes() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/sign-declaration" element={<SignDeclaration />} />
+        <Route path="/take-exam" element={<TakeDrivingExam />} />
         <Route path="*" element={<About />} />
       </Routes>
     );
@@ -149,6 +150,8 @@ function AppRoutes() {
         <Route path="/vehicle-exchange" element={<VehicleExchange />} />
         <Route path="/driver-declarations" element={<DriverDeclarations />} />
         <Route path="/sign-declaration" element={<SignDeclaration />} />
+        <Route path="/take-exam" element={<TakeDrivingExam />} />
+        <Route path="/driving-exam/:id" element={<TakeDrivingExam />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
