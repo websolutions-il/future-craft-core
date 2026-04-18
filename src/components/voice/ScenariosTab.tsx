@@ -175,10 +175,16 @@ export default function ScenariosTab() {
 
       {tab === 'scenarios' && (
         <>
-          <button onClick={() => { resetForm(); setShowForm(true); }}
-            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-bold w-full justify-center">
-            <Plus size={18} /> צור תסריט חדש
-          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={() => { resetForm(); setShowForm(true); }}
+              className="flex items-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground font-bold justify-center text-sm">
+              <Plus size={16} /> תסריט חדש
+            </button>
+            <button onClick={() => setShowSchedule(true)}
+              className="flex items-center gap-2 px-4 py-3 rounded-xl bg-accent text-accent-foreground font-bold justify-center text-sm border-2 border-primary/30">
+              <CalendarClock size={16} /> תזמן שיחה
+            </button>
+          </div>
 
           <div className="card-elevated bg-primary/5 border-primary/20 text-xs">
             <div className="flex items-start gap-2">
