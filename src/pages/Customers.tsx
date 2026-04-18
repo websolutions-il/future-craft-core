@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import CallCustomerButton from '@/components/voice/CallCustomerButton';
 
 interface CustomerRow {
   id: string;
@@ -181,19 +182,31 @@ export default function Customers() {
       ) : (
         <div className="space-y-3">
           {filtered.map(c => (
-            <button key={c.id} onClick={() => { setSelected(c); setViewMode('detail'); }} className="card-elevated w-full text-right hover:shadow-lg transition-shadow">
+            <div key={c.id} className="card-elevated w-full hover:shadow-lg transition-shadow">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  {c.customer_type === 'company' ? <Building2 size={28} className="text-primary" /> : <User size={28} className="text-primary" />}
+                <button onClick={() => { setSelected(c); setViewMode('detail'); }} className="flex items-center gap-4 flex-1 text-right min-w-0">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    {c.customer_type === 'company' ? <Building2 size={28} className="text-primary" /> : <User size={28} className="text-primary" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xl font-bold truncate">{c.name}</p>
+                    <p className="text-muted-foreground truncate">{c.contact_person} • {c.phone}</p>
+                    {c.customer_number && <p className="text-xs text-muted-foreground">מס׳ {c.customer_number}</p>}
+                  </div>
+                </button>
+                <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                  <span className={`status-badge ${c.status === 'active' ? 'status-active' : 'status-inactive'}`}>{c.status === 'active' ? 'פעיל' : 'לא פעיל'}</span>
+                  {c.phone && (
+                    <CallCustomerButton
+                      customerId={c.id}
+                      customerName={c.name}
+                      customerPhone={c.phone}
+                      variant="icon"
+                    />
+                  )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xl font-bold">{c.name}</p>
-                  <p className="text-muted-foreground">{c.contact_person} • {c.phone}</p>
-                  {c.customer_number && <p className="text-xs text-muted-foreground">מס׳ {c.customer_number}</p>}
-                </div>
-                <span className={`status-badge ${c.status === 'active' ? 'status-active' : 'status-inactive'}`}>{c.status === 'active' ? 'פעיל' : 'לא פעיל'}</span>
               </div>
-            </button>
+            </div>
           ))}
         </div>
       )}
