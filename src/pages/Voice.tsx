@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Phone, Megaphone, FileText, Settings as SettingsIcon, Mic } from 'lucide-react';
+import { Phone, Megaphone, FileText, Settings as SettingsIcon, Mic, Zap } from 'lucide-react';
 import { useCallLogs } from '@/hooks/useCallLogs';
 import RecentCallsTab from '@/components/voice/RecentCallsTab';
 import CampaignsTab from '@/components/voice/CampaignsTab';
 import PromptsTab from '@/components/voice/PromptsTab';
+import ScenariosTab from '@/components/voice/ScenariosTab';
 import SettingsTab from '@/components/voice/SettingsTab';
 import LiveCallWidget from '@/components/voice/LiveCallWidget';
 import VoiceAgentDialer from '@/components/voice/VoiceAgentDialer';
@@ -11,6 +12,7 @@ import VoiceAgentDialer from '@/components/voice/VoiceAgentDialer';
 const tabs = [
   { key: 'live', label: 'שיחה חיה', icon: Mic },
   { key: 'calls', label: 'שיחות אחרונות', icon: Phone },
+  { key: 'scenarios', label: 'תסריטים', icon: Zap },
   { key: 'campaigns', label: 'קמפיינים', icon: Megaphone },
   { key: 'prompts', label: 'תבניות שיחה', icon: FileText },
   { key: 'settings', label: 'הגדרות', icon: SettingsIcon },
@@ -41,6 +43,7 @@ export default function Voice() {
 
       {tab === 'live' && <VoiceAgentDialer />}
       {tab === 'calls' && <RecentCallsTab calls={calls} />}
+      {tab === 'scenarios' && <ScenariosTab />}
       {tab === 'campaigns' && <CampaignsTab />}
       {tab === 'prompts' && <PromptsTab />}
       {tab === 'settings' && <SettingsTab />}

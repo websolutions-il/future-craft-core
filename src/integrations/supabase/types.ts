@@ -2643,6 +2643,125 @@ export type Database = {
         }
         Relationships: []
       }
+      voice_scenario_runs: {
+        Row: {
+          call_log_id: string | null
+          company_name: string | null
+          context: Json | null
+          created_at: string | null
+          error_message: string | null
+          executed_at: string | null
+          id: string
+          scenario_id: string | null
+          scheduled_at: string | null
+          status: string
+          target_name: string | null
+          target_phone: string | null
+          trigger_entity_id: string | null
+          trigger_entity_type: string | null
+        }
+        Insert: {
+          call_log_id?: string | null
+          company_name?: string | null
+          context?: Json | null
+          created_at?: string | null
+          error_message?: string | null
+          executed_at?: string | null
+          id?: string
+          scenario_id?: string | null
+          scheduled_at?: string | null
+          status?: string
+          target_name?: string | null
+          target_phone?: string | null
+          trigger_entity_id?: string | null
+          trigger_entity_type?: string | null
+        }
+        Update: {
+          call_log_id?: string | null
+          company_name?: string | null
+          context?: Json | null
+          created_at?: string | null
+          error_message?: string | null
+          executed_at?: string | null
+          id?: string
+          scenario_id?: string | null
+          scheduled_at?: string | null
+          status?: string
+          target_name?: string | null
+          target_phone?: string | null
+          trigger_entity_id?: string | null
+          trigger_entity_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_scenario_runs_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "voice_scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voice_scenarios: {
+        Row: {
+          company_name: string | null
+          created_at: string | null
+          created_by: string | null
+          custom_message: string | null
+          custom_phone: string | null
+          delay_minutes: number | null
+          description: string | null
+          flow_type: string
+          id: string
+          is_active: boolean | null
+          last_triggered_at: string | null
+          name: string
+          target_audience: string
+          trigger_config: Json | null
+          trigger_count: number | null
+          trigger_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          custom_message?: string | null
+          custom_phone?: string | null
+          delay_minutes?: number | null
+          description?: string | null
+          flow_type?: string
+          id?: string
+          is_active?: boolean | null
+          last_triggered_at?: string | null
+          name: string
+          target_audience?: string
+          trigger_config?: Json | null
+          trigger_count?: number | null
+          trigger_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          custom_message?: string | null
+          custom_phone?: string | null
+          delay_minutes?: number | null
+          description?: string | null
+          flow_type?: string
+          id?: string
+          is_active?: boolean | null
+          last_triggered_at?: string | null
+          name?: string
+          target_audience?: string
+          trigger_config?: Json | null
+          trigger_count?: number | null
+          trigger_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       work_assignment_messages: {
         Row: {
           assignment_id: string
