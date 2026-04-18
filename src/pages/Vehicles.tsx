@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import ImageUpload from '@/components/ImageUpload';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import CallCustomerButton from '@/components/voice/CallCustomerButton';
 
 interface GovVehicleData {
   mispar_rechev: number;
