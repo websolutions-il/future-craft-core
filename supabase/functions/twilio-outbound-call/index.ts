@@ -38,21 +38,25 @@ Deno.serve(async (req) => {
       normalizedTo = '+' + normalizedTo;
     }
 
-    // Build TwiML: simple message + connect to ElevenLabs agent if provided
+    // Escape XML special characters to prevent TwiML parse failures
+    const escapeXml = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+
+    // Build TwiML. Use Google's Hebrew voice (Polly.Carmit was deprecated by Twilio).
     let twiml: string;
     if (agentId) {
-      // Connect call to ElevenLabs agent via SIP/Stream (requires ElevenLabs phone integration)
-      // For now, we play a message and hold; full SIP integration requires ElevenLabs Twilio setup
+      const safeMsg = escapeXml(message || 'שלום, מתקשר אליך סוכן AI לתיאום פגישה');
       twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say language="he-IL" voice="Polly.Carmit">${message || 'שלום, מתקשר אליך סוכן AI לתיאום פגישה'}</Say>
+  <Say language="he-IL" voice="Google.he-IL-Standard-A">${safeMsg}</Say>
   <Pause length="2"/>
-  <Say language="he-IL" voice="Polly.Carmit">לחיבור מלא לסוכן הקולי, יש להגדיר מספר טוויליו בתוך ElevenLabs.</Say>
+  <Say language="he-IL" voice="Google.he-IL-Standard-A">לחיבור מלא לסוכן הקולי, יש להגדיר מספר טוויליו בתוך ElevenLabs.</Say>
 </Response>`;
     } else {
+      const safeMsg = escapeXml(message || 'שלום, זוהי שיחת בדיקה ממערכת ניהול הצי');
       twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say language="he-IL" voice="Polly.Carmit">${message || 'שלום, זוהי שיחת בדיקה ממערכת ניהול הצי'}</Say>
+  <Say language="he-IL" voice="Google.he-IL-Standard-A">${safeMsg}</Say>
 </Response>`;
     }
 
