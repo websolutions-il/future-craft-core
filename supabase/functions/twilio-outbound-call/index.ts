@@ -12,6 +12,9 @@ Deno.serve(async (req) => {
     const ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID');
     const AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
     const FROM_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER');
+    const ELEVENLABS_AGENT_ID = Deno.env.get('ELEVENLABS_AGENT_ID');
+    const ELEVENLABS_AGENT_PHONE_NUMBER_ID = Deno.env.get('ELEVENLABS_AGENT_PHONE_NUMBER_ID');
+    const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
 
     if (!ACCOUNT_SID || !AUTH_TOKEN || !FROM_NUMBER) {
       return new Response(
@@ -21,7 +24,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { to, agentId, message } = body;
+    const { to, agentId, message, useAgent, dynamicVariables } = body;
 
     if (!to || typeof to !== 'string') {
       return new Response(
@@ -30,7 +33,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Normalize Israeli phone (05X-XXXXXXX → +9725X-XXXXXXX)
     let normalizedTo = to.replace(/[\s-]/g, '');
     if (normalizedTo.startsWith('0')) {
       normalizedTo = '+972' + normalizedTo.slice(1);
@@ -38,27 +40,46 @@ Deno.serve(async (req) => {
       normalizedTo = '+' + normalizedTo;
     }
 
-    // Escape XML special characters to prevent TwiML parse failures
+    // ===== Path A: Use ElevenLabs native Twilio integration =====
+    if (useAgent && ELEVENLABS_AGENT_ID && ELEVENLABS_AGENT_PHONE_NUMBER_ID && ELEVENLABS_API_KEY) {
+      const elevenRes = await fetch('https://api.elevenlabs.io/v1/convai/twilio/outbound-call', {
+        method: 'POST',
+        headers: {
+          'xi-api-key': ELEVENLABS_API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          agent_id: agentId || ELEVENLABS_AGENT_ID,
+          agent_phone_number_id: ELEVENLABS_AGENT_PHONE_NUMBER_ID,
+          to_number: normalizedTo,
+          conversation_initiation_client_data: dynamicVariables ? {
+            dynamic_variables: dynamicVariables,
+          } : undefined,
+        }),
+      });
+      const elevenData = await elevenRes.json();
+      if (!elevenRes.ok) {
+        console.error('ElevenLabs outbound call error:', elevenData);
+        return new Response(
+          JSON.stringify({ error: 'ElevenLabs call failed', details: elevenData }),
+          { status: elevenRes.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      return new Response(
+        JSON.stringify({ success: true, mode: 'elevenlabs_agent', ...elevenData }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ===== Path B: Fallback - simple TwiML message via Twilio =====
     const escapeXml = (s: string) =>
       s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 
-    // Build TwiML. Use Google's Hebrew voice (Polly.Carmit was deprecated by Twilio).
-    let twiml: string;
-    if (agentId) {
-      const safeMsg = escapeXml(message || 'שלום, מתקשר אליך סוכן AI לתיאום פגישה');
-      twiml = `<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say language="he-IL" voice="Google.he-IL-Standard-A">${safeMsg}</Say>
-  <Pause length="2"/>
-  <Say language="he-IL" voice="Google.he-IL-Standard-A">לחיבור מלא לסוכן הקולי, יש להגדיר מספר טוויליו בתוך ElevenLabs.</Say>
-</Response>`;
-    } else {
-      const safeMsg = escapeXml(message || 'שלום, זוהי שיחת בדיקה ממערכת ניהול הצי');
-      twiml = `<?xml version="1.0" encoding="UTF-8"?>
+    const safeMsg = escapeXml(message || 'שלום, זוהי שיחת בדיקה ממערכת ניהול הצי');
+    const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say language="he-IL" voice="Google.he-IL-Standard-A">${safeMsg}</Say>
 </Response>`;
-    }
 
     const auth = btoa(`${ACCOUNT_SID}:${AUTH_TOKEN}`);
     const formData = new URLSearchParams({
@@ -92,6 +113,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
+        mode: 'twiml_say',
         callSid: data.sid,
         status: data.status,
         to: normalizedTo,
