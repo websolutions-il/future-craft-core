@@ -267,8 +267,15 @@ export default function ScenariosTab() {
                 <div>📞 {r.target_phone || 'אין טלפון'}</div>
                 <div>🕐 {new Date(r.scheduled_at).toLocaleString('he-IL')}</div>
                 {r.context?.vehicle_plate && <div>🚗 {r.context.vehicle_plate}</div>}
+                {r.context?.custom_message && <div>💬 {r.context.custom_message}</div>}
                 {r.error_message && <div className="text-destructive">⚠ {r.error_message}</div>}
               </div>
+              {r.status === 'pending' && (
+                <button onClick={() => cancelRun(r.id)}
+                  className="mt-2 px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive text-xs font-medium">
+                  בטל תזמון
+                </button>
+              )}
             </div>
           ))}
         </>
@@ -346,6 +353,62 @@ export default function ScenariosTab() {
                   {editing ? 'עדכן' : 'צור תסריט'}
                 </button>
                 <button onClick={() => { setShowForm(false); resetForm(); }} className="flex-1 py-3 rounded-xl border border-border">ביטול</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSchedule && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowSchedule(false)}>
+          <div className="bg-card rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-2 mb-4">
+              <CalendarClock className="text-primary" size={22} />
+              <h3 className="text-xl font-bold">תזמן שיחה עתידית</h3>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">השיחה תופעל אוטומטית בתאריך והשעה שתבחר.</p>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium">שם הנמען *</label>
+                <input value={schName} onChange={e => setSchName(e.target.value)} placeholder="למשל: יוסי כהן"
+                  className="w-full mt-1 p-3 rounded-xl border-2 border-input bg-background" />
+              </div>
+              <div>
+                <label className="text-sm font-medium">מספר טלפון *</label>
+                <input value={schPhone} onChange={e => setSchPhone(e.target.value)} placeholder="050-1234567" type="tel"
+                  className="w-full mt-1 p-3 rounded-xl border-2 border-input bg-background" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium">תאריך *</label>
+                  <input type="date" value={schDate} onChange={e => setSchDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full mt-1 p-3 rounded-xl border-2 border-input bg-background" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">שעה *</label>
+                  <input type="time" value={schTime} onChange={e => setSchTime(e.target.value)}
+                    className="w-full mt-1 p-3 rounded-xl border-2 border-input bg-background" />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium">תבנית שיחה</label>
+                <select value={schFlow} onChange={e => setSchFlow(e.target.value)}
+                  className="w-full mt-1 p-3 rounded-xl border-2 border-input bg-background">
+                  {FLOWS.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">הודעה / נושא השיחה (לא חובה)</label>
+                <textarea value={schMessage} onChange={e => setSchMessage(e.target.value)} rows={3}
+                  placeholder="למשל: תזכורת לטיפול 10,000 ק״מ ביום ראשון"
+                  className="w-full mt-1 p-3 rounded-xl border-2 border-input bg-background text-sm" />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button onClick={scheduleCall} className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-bold flex items-center justify-center gap-2">
+                  <CalendarClock size={16} /> תזמן
+                </button>
+                <button onClick={() => setShowSchedule(false)} className="flex-1 py-3 rounded-xl border border-border">ביטול</button>
               </div>
             </div>
           </div>
