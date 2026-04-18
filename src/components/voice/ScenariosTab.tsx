@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Zap, Trash2, Edit2, Power, Clock, AlertTriangle, Wrench, CheckCircle2, Calendar, FileText } from 'lucide-react';
+import { Plus, Zap, Trash2, Edit2, Power, Clock, AlertTriangle, Wrench, CheckCircle2, Calendar, FileText, CalendarClock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -60,6 +60,7 @@ export default function ScenariosTab() {
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [runs, setRuns] = useState<Run[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [showSchedule, setShowSchedule] = useState(false);
   const [editing, setEditing] = useState<Scenario | null>(null);
   const [tab, setTab] = useState<'scenarios' | 'runs'>('scenarios');
 
@@ -71,6 +72,14 @@ export default function ScenariosTab() {
   const [customPhone, setCustomPhone] = useState('');
   const [customMessage, setCustomMessage] = useState('');
   const [delayMinutes, setDelayMinutes] = useState(0);
+
+  // One-off scheduled call
+  const [schName, setSchName] = useState('');
+  const [schPhone, setSchPhone] = useState('');
+  const [schDate, setSchDate] = useState('');
+  const [schTime, setSchTime] = useState('');
+  const [schFlow, setSchFlow] = useState('inbound_general');
+  const [schMessage, setSchMessage] = useState('');
 
   const load = async () => {
     const [sc, rn] = await Promise.all([
@@ -123,6 +132,34 @@ export default function ScenariosTab() {
     toast.success('נמחק'); load();
   };
 
+  const scheduleCall = async () => {
+    if (!schName.trim() || !schPhone.trim()) return toast.error('הזן שם וטלפון');
+    if (!schDate || !schTime) return toast.error('בחר תאריך ושעה');
+    const scheduledAt = new Date(`${schDate}T${schTime}`);
+    if (scheduledAt < new Date()) return toast.error('המועד חייב להיות בעתיד');
+
+    const { error } = await supabase.from('voice_scenario_runs').insert({
+      scenario_id: null,
+      trigger_entity_type: 'manual_schedule',
+      target_phone: schPhone,
+      target_name: schName,
+      context: { flow_type: schFlow, custom_message: schMessage } as any,
+      scheduled_at: scheduledAt.toISOString(),
+      status: 'pending',
+    });
+    if (error) return toast.error('שגיאה - ' + error.message);
+    toast.success(`שיחה תוזמנה ל-${scheduledAt.toLocaleString('he-IL')}`);
+    setShowSchedule(false);
+    setSchName(''); setSchPhone(''); setSchDate(''); setSchTime(''); setSchMessage(''); setSchFlow('inbound_general');
+    setTab('runs'); load();
+  };
+
+  const cancelRun = async (id: string) => {
+    if (!confirm('לבטל את התזמון?')) return;
+    await supabase.from('voice_scenario_runs').update({ status: 'cancelled' }).eq('id', id);
+    toast.success('בוטל'); load();
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex gap-2">
@@ -138,10 +175,16 @@ export default function ScenariosTab() {
 
       {tab === 'scenarios' && (
         <>
-          <button onClick={() => { resetForm(); setShowForm(true); }}
-            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-bold w-full justify-center">
-            <Plus size={18} /> צור תסריט חדש
-          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={() => { resetForm(); setShowForm(true); }}
+              className="flex items-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground font-bold justify-center text-sm">
+              <Plus size={16} /> תסריט חדש
+            </button>
+            <button onClick={() => setShowSchedule(true)}
+              className="flex items-center gap-2 px-4 py-3 rounded-xl bg-accent text-accent-foreground font-bold justify-center text-sm border-2 border-primary/30">
+              <CalendarClock size={16} /> תזמן שיחה
+            </button>
+          </div>
 
           <div className="card-elevated bg-primary/5 border-primary/20 text-xs">
             <div className="flex items-start gap-2">
@@ -224,8 +267,15 @@ export default function ScenariosTab() {
                 <div>📞 {r.target_phone || 'אין טלפון'}</div>
                 <div>🕐 {new Date(r.scheduled_at).toLocaleString('he-IL')}</div>
                 {r.context?.vehicle_plate && <div>🚗 {r.context.vehicle_plate}</div>}
+                {r.context?.custom_message && <div>💬 {r.context.custom_message}</div>}
                 {r.error_message && <div className="text-destructive">⚠ {r.error_message}</div>}
               </div>
+              {r.status === 'pending' && (
+                <button onClick={() => cancelRun(r.id)}
+                  className="mt-2 px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive text-xs font-medium">
+                  בטל תזמון
+                </button>
+              )}
             </div>
           ))}
         </>
@@ -303,6 +353,62 @@ export default function ScenariosTab() {
                   {editing ? 'עדכן' : 'צור תסריט'}
                 </button>
                 <button onClick={() => { setShowForm(false); resetForm(); }} className="flex-1 py-3 rounded-xl border border-border">ביטול</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSchedule && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowSchedule(false)}>
+          <div className="bg-card rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-2 mb-4">
+              <CalendarClock className="text-primary" size={22} />
+              <h3 className="text-xl font-bold">תזמן שיחה עתידית</h3>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">השיחה תופעל אוטומטית בתאריך והשעה שתבחר.</p>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium">שם הנמען *</label>
+                <input value={schName} onChange={e => setSchName(e.target.value)} placeholder="למשל: יוסי כהן"
+                  className="w-full mt-1 p-3 rounded-xl border-2 border-input bg-background" />
+              </div>
+              <div>
+                <label className="text-sm font-medium">מספר טלפון *</label>
+                <input value={schPhone} onChange={e => setSchPhone(e.target.value)} placeholder="050-1234567" type="tel"
+                  className="w-full mt-1 p-3 rounded-xl border-2 border-input bg-background" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium">תאריך *</label>
+                  <input type="date" value={schDate} onChange={e => setSchDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full mt-1 p-3 rounded-xl border-2 border-input bg-background" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">שעה *</label>
+                  <input type="time" value={schTime} onChange={e => setSchTime(e.target.value)}
+                    className="w-full mt-1 p-3 rounded-xl border-2 border-input bg-background" />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium">תבנית שיחה</label>
+                <select value={schFlow} onChange={e => setSchFlow(e.target.value)}
+                  className="w-full mt-1 p-3 rounded-xl border-2 border-input bg-background">
+                  {FLOWS.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">הודעה / נושא השיחה (לא חובה)</label>
+                <textarea value={schMessage} onChange={e => setSchMessage(e.target.value)} rows={3}
+                  placeholder="למשל: תזכורת לטיפול 10,000 ק״מ ביום ראשון"
+                  className="w-full mt-1 p-3 rounded-xl border-2 border-input bg-background text-sm" />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button onClick={scheduleCall} className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-bold flex items-center justify-center gap-2">
+                  <CalendarClock size={16} /> תזמן
+                </button>
+                <button onClick={() => setShowSchedule(false)} className="flex-1 py-3 rounded-xl border border-border">ביטול</button>
               </div>
             </div>
           </div>
