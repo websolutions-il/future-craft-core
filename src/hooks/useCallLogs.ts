@@ -9,7 +9,7 @@ export interface CallLog {
   vehicle_plate: string;
   phone: string;
   direction: 'outbound' | 'inbound';
-  flow_type: 'pickup_ready' | 'service_reminder' | 'price_offer' | 'inbound_general';
+  flow_type: 'pickup_ready' | 'service_reminder' | 'price_offer' | 'inbound_general' | 'customer_call' | 'general' | string;
   status: 'pending' | 'in_progress' | 'completed' | 'no_answer' | 'failed';
   outcome: 'booked' | 'declined' | 'callback' | 'unknown' | null;
   transcript: string;

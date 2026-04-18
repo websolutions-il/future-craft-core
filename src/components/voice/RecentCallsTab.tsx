@@ -5,6 +5,7 @@ import type { CallLog } from '@/hooks/useCallLogs';
 const flowLabels: Record<string, string> = {
   pickup_ready: 'איסוף רכב', service_reminder: 'תזכורת טיפול',
   price_offer: 'הצעת מחיר', inbound_general: 'שיחה נכנסת',
+  customer_call: 'שיחת לקוח', general: 'כללי',
 };
 const statusBadge: Record<string, string> = {
   completed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
@@ -59,7 +60,7 @@ export default function RecentCallsTab({ calls }: { calls: CallLog[] }) {
                 <td className="p-3 font-medium">{c.customer_name || '—'}</td>
                 <td className="p-3">{c.vehicle_plate || '—'}</td>
                 <td className="p-3">{c.direction === 'inbound' ? <PhoneIncoming size={16} className="text-blue-500" /> : <PhoneOutgoing size={16} className="text-green-600" />}</td>
-                <td className="p-3 text-xs">{flowLabels[c.flow_type]}</td>
+                <td className="p-3 text-xs">{flowLabels[c.flow_type] || c.flow_type}</td>
                 <td className="p-3"><span className={`px-2 py-1 rounded-full text-xs font-bold ${statusBadge[c.status]}`}>{statusLabels[c.status]}</span></td>
                 <td className="p-3 text-xs">{c.outcome ? outcomeLabels[c.outcome] : '—'}</td>
                 <td className="p-3 tabular-nums text-xs">{c.duration_sec ? `${Math.floor(c.duration_sec/60)}:${String(c.duration_sec%60).padStart(2,'0')}` : '—'}</td>
@@ -84,7 +85,7 @@ export default function RecentCallsTab({ calls }: { calls: CallLog[] }) {
               <div><span className="text-muted-foreground">לקוח:</span> <strong>{selected.customer_name || '—'}</strong></div>
               <div><span className="text-muted-foreground">טלפון:</span> {selected.phone || '—'}</div>
               <div><span className="text-muted-foreground">רכב:</span> {selected.vehicle_plate || '—'}</div>
-              <div><span className="text-muted-foreground">סוג:</span> {flowLabels[selected.flow_type]}</div>
+              <div><span className="text-muted-foreground">סוג:</span> {flowLabels[selected.flow_type] || selected.flow_type}</div>
               <div><span className="text-muted-foreground">תוצאה:</span> {selected.outcome ? outcomeLabels[selected.outcome] : '—'}</div>
               <div className="pt-3 border-t border-border">
                 <div className="text-muted-foreground mb-2">📝 תמליל:</div>

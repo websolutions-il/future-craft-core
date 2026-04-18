@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import ImageUpload from '@/components/ImageUpload';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import CallCustomerButton from '@/components/voice/CallCustomerButton';
 
 interface GovVehicleData {
   mispar_rechev: number;
@@ -288,23 +289,35 @@ export default function Vehicles() {
         <div className="space-y-3">
           {filtered.map(v => {
             const sl = statusLabel(v.status);
+            const driver = drivers.find(d => d.id === v.assigned_driver_id);
             return (
-              <button key={v.id} onClick={() => handleViewDetail(v)} className="card-elevated w-full text-right hover:shadow-lg transition-shadow">
+              <div key={v.id} className="card-elevated w-full hover:shadow-lg transition-shadow">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Car size={28} className="text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xl font-bold">{v.manufacturer} {v.model}</p>
-                    <p className="text-muted-foreground text-lg">{v.license_plate}{v.internal_number ? ` | ${v.internal_number}` : ''} • {v.year}</p>
-                    <p className="text-sm text-muted-foreground">נהג: {getDriverName(v.assigned_driver_id)}</p>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
+                  <button onClick={() => handleViewDetail(v)} className="flex items-center gap-4 flex-1 text-right min-w-0">
+                    <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Car size={28} className="text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xl font-bold truncate">{v.manufacturer} {v.model}</p>
+                      <p className="text-muted-foreground text-lg truncate">{v.license_plate}{v.internal_number ? ` | ${v.internal_number}` : ''} • {v.year}</p>
+                      <p className="text-sm text-muted-foreground truncate">נהג: {getDriverName(v.assigned_driver_id)}</p>
+                    </div>
+                  </button>
+                  <div className="flex flex-col items-end gap-2 flex-shrink-0">
                     <span className={`status-badge ${sl.cls}`}>{sl.text}</span>
                     <span className="text-sm text-muted-foreground">{(v.odometer || 0).toLocaleString()} ק"מ</span>
+                    {driver?.phone && (
+                      <CallCustomerButton
+                        customerName={driver.full_name}
+                        customerPhone={driver.phone}
+                        vehiclePlate={v.license_plate}
+                        flowType="driver_call"
+                        variant="icon"
+                      />
+                    )}
                   </div>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
