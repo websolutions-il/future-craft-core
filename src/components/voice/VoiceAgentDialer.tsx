@@ -76,7 +76,7 @@ export default function VoiceAgentDialer({
           const { data, error } = await supabase.from('faults').insert({
             company_name: user?.company_name || '',
             created_by: user?.id,
-            customer_name: customerName || '',
+            driver_name: customerName || '',
             vehicle_plate: vehiclePlate || '',
             description: params.description || 'נפתחה מתוך שיחת Voice AI',
             urgency: params.urgency || 'normal',
