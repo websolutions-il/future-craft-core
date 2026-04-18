@@ -49,6 +49,7 @@ const AUDIENCES = [
 const FLOWS = [
   { key: 'inbound_general', label: 'שיחה כללית' },
   { key: 'pickup_ready', label: 'איסוף רכב' },
+  { key: 'pickup_scheduling', label: 'תיאום איסוף רכב מהלקוח' },
   { key: 'service_reminder', label: 'תזכורת טיפול' },
   { key: 'price_offer', label: 'הצעת מחיר' },
 ];
