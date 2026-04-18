@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Zap, Trash2, Edit2, Power, Clock, AlertTriangle, Wrench, CheckCircle2, Calendar, FileText } from 'lucide-react';
+import { Plus, Zap, Trash2, Edit2, Power, Clock, AlertTriangle, Wrench, CheckCircle2, Calendar, FileText, CalendarClock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
