@@ -60,6 +60,7 @@ export default function ScenariosTab() {
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [runs, setRuns] = useState<Run[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [showSchedule, setShowSchedule] = useState(false);
   const [editing, setEditing] = useState<Scenario | null>(null);
   const [tab, setTab] = useState<'scenarios' | 'runs'>('scenarios');
 
@@ -71,6 +72,14 @@ export default function ScenariosTab() {
   const [customPhone, setCustomPhone] = useState('');
   const [customMessage, setCustomMessage] = useState('');
   const [delayMinutes, setDelayMinutes] = useState(0);
+
+  // One-off scheduled call
+  const [schName, setSchName] = useState('');
+  const [schPhone, setSchPhone] = useState('');
+  const [schDate, setSchDate] = useState('');
+  const [schTime, setSchTime] = useState('');
+  const [schFlow, setSchFlow] = useState('inbound_general');
+  const [schMessage, setSchMessage] = useState('');
 
   const load = async () => {
     const [sc, rn] = await Promise.all([
@@ -121,6 +130,34 @@ export default function ScenariosTab() {
     if (!confirm('למחוק תסריט?')) return;
     await supabase.from('voice_scenarios').delete().eq('id', id);
     toast.success('נמחק'); load();
+  };
+
+  const scheduleCall = async () => {
+    if (!schName.trim() || !schPhone.trim()) return toast.error('הזן שם וטלפון');
+    if (!schDate || !schTime) return toast.error('בחר תאריך ושעה');
+    const scheduledAt = new Date(`${schDate}T${schTime}`);
+    if (scheduledAt < new Date()) return toast.error('המועד חייב להיות בעתיד');
+
+    const { error } = await supabase.from('voice_scenario_runs').insert({
+      scenario_id: null,
+      trigger_entity_type: 'manual_schedule',
+      target_phone: schPhone,
+      target_name: schName,
+      context: { flow_type: schFlow, custom_message: schMessage } as any,
+      scheduled_at: scheduledAt.toISOString(),
+      status: 'pending',
+    });
+    if (error) return toast.error('שגיאה - ' + error.message);
+    toast.success(`שיחה תוזמנה ל-${scheduledAt.toLocaleString('he-IL')}`);
+    setShowSchedule(false);
+    setSchName(''); setSchPhone(''); setSchDate(''); setSchTime(''); setSchMessage(''); setSchFlow('inbound_general');
+    setTab('runs'); load();
+  };
+
+  const cancelRun = async (id: string) => {
+    if (!confirm('לבטל את התזמון?')) return;
+    await supabase.from('voice_scenario_runs').update({ status: 'cancelled' }).eq('id', id);
+    toast.success('בוטל'); load();
   };
 
   return (
