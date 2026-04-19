@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HelpCircle, X, Car, AlertTriangle, RefreshCw, FileText, Phone, Shield, Users, BarChart3, Truck, ClipboardList, MapPin, Settings, Bell, UserCheck, Building2, UserPlus, Wrench, Scale, Upload, Search, HeartPulse, CheckSquare, MessageCircle, CalendarDays, Receipt, Megaphone, ShieldAlert, History, BookOpen, Briefcase, ExternalLink } from 'lucide-react';
+import { HelpCircle, X, Car, AlertTriangle, RefreshCw, FileText, Phone, Shield, Users, BarChart3, Truck, ClipboardList, MapPin, Settings, Bell, UserCheck, Building2, UserPlus, Wrench, Scale, Upload, Search, HeartPulse, CheckSquare, MessageCircle, CalendarDays, Receipt, Megaphone, ShieldAlert, History, BookOpen, Briefcase, ExternalLink, PhoneCall, Bot, Key, ListChecks } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
