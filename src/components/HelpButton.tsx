@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HelpCircle, X, Car, AlertTriangle, RefreshCw, FileText, Phone, Shield, Users, BarChart3, Truck, ClipboardList, MapPin, Settings, Bell, UserCheck, Building2, UserPlus, Wrench, Scale, Upload, Search, HeartPulse, CheckSquare, MessageCircle, CalendarDays, Receipt, Megaphone, ShieldAlert, History, BookOpen, Briefcase, ExternalLink } from 'lucide-react';
+import { HelpCircle, X, Car, AlertTriangle, RefreshCw, FileText, Phone, Shield, Users, BarChart3, Truck, ClipboardList, MapPin, Settings, Bell, UserCheck, Building2, UserPlus, Wrench, Scale, Upload, Search, HeartPulse, CheckSquare, MessageCircle, CalendarDays, Receipt, Megaphone, ShieldAlert, History, BookOpen, Briefcase, ExternalLink, PhoneCall, Bot, Key, ListChecks } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -715,6 +715,114 @@ function getSuperAdminHelp(): HelpCategory[] {
             'נהל מנויי חברות מ"מנויים וחיוב"',
             'הגדר תוכנית, מחיר חודשי ואמצעי תשלום',
             'עקוב אחרי תאריכי חיוב ותשלומים',
+          ],
+        },
+      ],
+    },
+    {
+      label: 'סוכן קולי (Flow Maker)',
+      sections: [
+        {
+          icon: <Bot className="h-5 w-5 text-primary" />,
+          title: 'מה זה Flow Maker?',
+          link: '/voice',
+          content: [
+            'מרכז ניהול שיחות אוטומטיות עם סוכן קולי בעברית (ElevenLabs + Twilio)',
+            'מאפשר לסוכן AI להתקשר ללקוחות, נהגים וספקים בשם המערכת',
+            'משמש לתיאום טיפולים, אישור שיבוצים, אימות נתונים ושיחות יוצאות יזומות',
+            'כל שיחה נשמרת ביומן השיחות עם תמליל והקלטה',
+          ],
+        },
+        {
+          icon: <ListChecks className="h-5 w-5 text-success" />,
+          title: '✅ מה כבר מוגדר במערכת',
+          content: [
+            '✓ חשבון Twilio עם מספר ישראלי פעיל (+972)',
+            '✓ סוכן ElevenLabs Conversational AI מוגדר עם קול עברי',
+            '✓ Phone Number ID מקושר בין Twilio ל-ElevenLabs',
+            '✓ Edge Function: twilio-outbound-call (יציאת שיחות)',
+            '✓ Edge Function: elevenlabs-conversation-token (שיחה מהדפדפן)',
+            '✓ Edge Function: book-pickup-slot (כלי לסוכן לקבוע פגישות)',
+            '✓ טבלאות DB: call_logs, voice_campaigns, campaign_customers',
+            '✓ סודות מוגדרים: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, ELEVENLABS_PHONE_NUMBER_ID',
+          ],
+        },
+        {
+          icon: <Key className="h-5 w-5 text-warning" />,
+          title: 'הגדרות חיצוניות נדרשות (חד-פעמי)',
+          content: [
+            '1️⃣ Twilio: רכוש מספר ישראלי בקונסולה והפעל SMS Geo Permissions',
+            '2️⃣ ElevenLabs: צור Conversational Agent (https://elevenlabs.io/app/conversational-ai)',
+            '3️⃣ ב-ElevenLabs: הגדר Voice בעברית, System Prompt בסיסי ו-First Message',
+            '4️⃣ ב-ElevenLabs: שייך את מספר ה-Twilio תחת Phone Numbers וקבל Phone Number ID',
+            '5️⃣ הפעל Overrides: agent.prompt, agent.firstMessage, agent.language, dynamic_variables',
+            '6️⃣ הוסף Client Tools במידת הצורך (book_pickup_slot, transfer_to_human)',
+            '7️⃣ ודא שכל הסודות מוגדרים בענן (Settings → Secrets)',
+          ],
+        },
+        {
+          icon: <PhoneCall className="h-5 w-5 text-info" />,
+          title: 'הגדרת תסריט (Scenario)',
+          link: '/voice',
+          content: [
+            'לך ל"סוכן קולי" → לשונית "תסריטים"',
+            'לחץ "תסריט חדש" והגדר שם, מטרה וקהל יעד (לקוח/נהג/ספק)',
+            'כתוב System Prompt בעברית: "אתה {agent_name}, סוכן של {company_name}..."',
+            'הגדר משתנים דינמיים: customer_name, driver_name, vehicle_plate, service_type',
+            'הגדר First Message: "שלום {customer_name}, מדבר {agent_name} מ-{company_name}..."',
+            'בחר את הכלים שהסוכן יכול להשתמש בהם (קביעת פגישה, העברה לאדם)',
+            'שמור והפעל בדיקה דרך כפתור "התקשר עכשיו"',
+          ],
+        },
+        {
+          icon: <Settings className="h-5 w-5 text-muted-foreground" />,
+          title: 'הגדרת תפקיד הסוכן (System Prompt)',
+          link: '/voice',
+          content: [
+            'הגדר זהות ברורה: שם, תפקיד, חברה',
+            'תן הוראות כיוון: "תמיד דבר עברית", "תהיה מנומס וקצר"',
+            'הגדר מטרה ספציפית לכל שיחה: לתאם / לאשר / לעדכן',
+            'תן רשימת אופציות (לדוגמה: סוגי טיפולים 10K/20K/30K/40K/60K)',
+            'הגדר תנאי סיום: "סיים שיחה לאחר שקיבלת אישור" / "העבר לאדם אם הלקוח מסרב"',
+            'הוסף הוראות על איך לטפל בהתנגדויות ובחזרות',
+          ],
+        },
+        {
+          icon: <PhoneCall className="h-5 w-5 text-success" />,
+          title: 'ביצוע שיחה יוצאת',
+          link: '/voice',
+          content: [
+            'אופציה 1: מכרטיס לקוח/נהג – לחץ על אייקון הטלפון ובחר תסריט',
+            'אופציה 2: מ"סוכן קולי" → "התקשר עכשיו" – הזן מספר ובחר תסריט',
+            'המערכת תשלח את כל המשתנים הדינמיים אוטומטית לסוכן',
+            'תוכל להאזין לשיחה בזמן אמת דרך LiveCallWidget',
+            'בסיום, השיחה תופיע ב"שיחות אחרונות" עם תמליל מלא',
+          ],
+        },
+        {
+          icon: <History className="h-5 w-5 text-info" />,
+          title: 'מעקב ויומן שיחות',
+          link: '/voice',
+          content: [
+            'לשונית "שיחות אחרונות" – כל השיחות עם סטטוס, משך, תוצאה',
+            'לחץ על שיחה לצפייה בתמליל מלא והקלטה',
+            'סנן לפי תסריט, לקוח, תאריך וסטטוס (בוצעה/נכשלה/ללא מענה)',
+            'תוצאות אפשריות: הוסכם, נדחה, חזרה, הועבר לאדם',
+          ],
+        },
+        {
+          icon: <ListChecks className="h-5 w-5 text-warning" />,
+          title: '⚠️ צ\'קליסט לפני התחלת עבודה',
+          link: '/voice',
+          content: [
+            '☑ בדוק שהסוכן ב-ElevenLabs פעיל ומחובר למספר Twilio',
+            '☑ בצע שיחת בדיקה לעצמך לוודא איכות שמע ושפה',
+            '☑ ודא שכל המשתנים הדינמיים בתסריט תואמים לשמות בקוד',
+            '☑ הגדר הודעה ראשונה (First Message) ברורה ומזהה',
+            '☑ הפעל SMS Pumping Protection ב-Twilio למניעת הונאות',
+            '☑ ודא יתרת קרדיט ב-Twilio וב-ElevenLabs',
+            '☑ הגדר Webhook לתיעוד שיחות אם נדרש',
+            '☑ בדוק הרשאות RLS על call_logs',
           ],
         },
       ],
