@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useConversation } from '@elevenlabs/react';
+import { useConversation, ConversationProvider } from '@elevenlabs/react';
 import { Mic, PhoneOff, Loader2, Wrench, Calendar, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,7 +20,15 @@ interface ToolEvent {
   detail: string;
 }
 
-export default function VoiceAgentDialer({
+export default function VoiceAgentDialer(props: VoiceAgentDialerProps) {
+  return (
+    <ConversationProvider>
+      <VoiceAgentDialerInner {...props} />
+    </ConversationProvider>
+  );
+}
+
+function VoiceAgentDialerInner({
   customerId,
   customerName,
   customerPhone,
