@@ -219,6 +219,18 @@ export default function DriverDashboard() {
         });
       }
 
+      // Pending driving exams
+      const pendingExams = pendingExamsRes.data || [];
+      if (pendingExams.length > 0) {
+        newAlerts.push({
+          key: 'pending_exam',
+          title: 'מבחן כשירות נהיגה ממתין למילוי',
+          count: pendingExams.length,
+          severity: 'critical',
+          link: `/driving-exam/${pendingExams[0].id}`,
+        });
+      }
+
       setAlerts(newAlerts);
       setLoading(false);
     };
