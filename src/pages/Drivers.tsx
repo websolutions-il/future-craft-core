@@ -96,6 +96,14 @@ export default function Drivers() {
             <div className="col-span-2"><span className="text-muted-foreground">סוגי רישיון:</span><p className="font-bold">{d.license_types?.join(', ') || '—'}</p></div>
             <div><span className="text-muted-foreground">עיר:</span><p className="font-bold">{d.city || '—'}</p></div>
             <div><span className="text-muted-foreground">רחוב:</span><p className="font-bold">{d.street || '—'}</p></div>
+            <div><span className="text-muted-foreground">מבחן אחרון:</span><p className="font-bold">{(d as any).last_exam_date ? new Date((d as any).last_exam_date).toLocaleDateString('he-IL') : '—'}</p></div>
+            <div>
+              <span className="text-muted-foreground">תוקף מבחן:</span>
+              <p className={`font-bold ${(d as any).exam_expiry && new Date((d as any).exam_expiry) < new Date() ? 'text-destructive' : ''}`}>
+                {(d as any).exam_expiry ? new Date((d as any).exam_expiry).toLocaleDateString('he-IL') : '—'}
+                {(d as any).exam_expiry && new Date((d as any).exam_expiry) < new Date() && ' ⚠️ פג תוקף'}
+              </p>
+            </div>
             {d.license_image_url && (
               <div className="col-span-2">
                 <span className="text-muted-foreground">צילום רישיון נהיגה:</span>
