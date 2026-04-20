@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, Search, CheckCircle2, Clock, Wrench, Car, CalendarDays, Shield, FileText } from 'lucide-react';
+import { AlertTriangle, Search, CheckCircle2, Clock, Wrench, Car, CalendarDays, Shield, FileText, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
