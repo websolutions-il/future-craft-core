@@ -11,6 +11,16 @@ export interface ExamQuestion {
 
 export interface FrozenQuestion extends ExamQuestion {}
 
+// Exam type definitions
+export const EXAM_TYPES = [
+  { value: 'general', label: 'כללי' },
+  { value: 'theory', label: 'תיאוריה' },
+  { value: 'safety', label: 'בטיחות' },
+  { value: 'periodic', label: 'תקופתי' },
+] as const;
+
+export type ExamType = typeof EXAM_TYPES[number]['value'];
+
 export const QUESTION_BANK: ExamQuestion[] = [
   { id: 1, category: "תנאי דרך ומזג אוויר", question: "אתה נוסע בגשם חזק והראות מוגבלת. מה הפעולה הנכונה ביותר?", answers: ["להמשיך באותה מהירות", "להאט, להדליק אורות ולשמור מרחק", "לעצור בנתיב הנסיעה", "להדליק אורות גבוהים ולנסוע רגיל"], correct: 1, explanation: "בתנאי ראות לקויים ובכביש חלק יש להאט, להדליק אורות מתאימים ולשמור מרחק." },
   { id: 2, category: "תנאי דרך ומזג אוויר", question: "בעת נהיגה בערפל כבד, מה נכון לעשות?", answers: ["להאיץ כדי לצאת מהערפל מהר", "להאט ולהדליק אורות מתאימים", "לנסוע צמוד לרכב מלפנים", "להפעיל אורות גבוהים"], correct: 1, explanation: "בערפל יש להאט ולהשתמש באורות מתאימים. אורות גבוהים עלולים להחמיר את הראות." },
@@ -59,6 +69,14 @@ export const CATEGORY_CONFIG: Record<string, number> = {
   "נהלי חברה ודיווח": 4,
 };
 
+// Category filter configs per exam type
+export const EXAM_TYPE_CATEGORIES: Record<ExamType, string[] | null> = {
+  general: null, // all categories
+  theory: ["תנאי דרך ומזג אוויר", "בטיחות ושליטה ברכב"],
+  safety: ["בטיחות ושליטה ברכב", "מצבי חירום", "תחזוקת רכב ואחריות נהג"],
+  periodic: null, // all categories
+};
+
 export const PASSING_SCORE = 70;
 
 function shuffle<T>(arr: T[]): T[] {
@@ -70,13 +88,14 @@ function shuffle<T>(arr: T[]): T[] {
   return c;
 }
 
-export function generateExam(): ExamQuestion[] {
+export function generateExam(examType: ExamType = 'general'): ExamQuestion[] {
+  const allowedCategories = EXAM_TYPE_CATEGORIES[examType];
   const selected: ExamQuestion[] = [];
   Object.entries(CATEGORY_CONFIG).forEach(([cat, count]) => {
+    if (allowedCategories && !allowedCategories.includes(cat)) return;
     const pool = QUESTION_BANK.filter((q) => q.category === cat);
     const picked = shuffle(pool).slice(0, count);
     picked.forEach((q) => {
-      // Shuffle answers and remap correct index
       const withMeta = q.answers.map((text, i) => ({ text, isCorrect: i === q.correct }));
       const shuffled = shuffle(withMeta);
       selected.push({
