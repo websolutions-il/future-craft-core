@@ -1005,46 +1005,65 @@ export default function HelpButton() {
           </DialogHeader>
 
           <div className="flex-1 overflow-hidden rounded-b-lg min-h-0">
-          <ScrollArea className="h-full p-4" dir="rtl">
-            <div className="space-y-6">
-              {categories.map((category, catIdx) => (
-                <div key={catIdx}>
-                  <h3 className="text-sm font-black text-primary mb-2 px-1">{category.label}</h3>
-                  <Accordion type="multiple" className="space-y-2">
-                    {category.sections.map((section, idx) => (
-                      <AccordionItem key={idx} value={`cat-${catIdx}-section-${idx}`} className="border rounded-xl px-4 bg-card">
-                        <AccordionTrigger className="hover:no-underline gap-3">
-                          <div className="flex items-center gap-3">
-                            {section.icon}
-                            <span className="font-semibold text-sm">{section.title}</span>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <ul className="space-y-2 pr-8">
-                            {section.content.map((item, i) => (
-                              <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                                {item}
-                              </li>
-                            ))}
-                          </ul>
-                          {section.link && (
-                            <button
-                              onClick={() => handleNavigate(section.link!)}
-                              className="mt-3 mr-8 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 hover:underline transition-colors"
-                            >
-                              <ExternalLink className="h-3.5 w-3.5" />
-                              עבור לדף
-                            </button>
-                          )}
-                        </AccordionContent>
-                      </AccordionItem>
+            <Tabs defaultValue="ai" className="h-full flex flex-col" dir="rtl">
+              <TabsList className="grid grid-cols-2 mx-4 mt-3 shrink-0">
+                <TabsTrigger value="ai" className="gap-1.5">
+                  <Bot className="w-4 h-4" />
+                  עוזר AI
+                </TabsTrigger>
+                <TabsTrigger value="guide" className="gap-1.5">
+                  <BookOpen className="w-4 h-4" />
+                  מדריך
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="ai" className="flex-1 overflow-hidden mt-2 px-2">
+                <AIChatAssistant />
+              </TabsContent>
+
+              <TabsContent value="guide" className="flex-1 overflow-hidden mt-2">
+                <ScrollArea className="h-full p-4" dir="rtl">
+                  <div className="space-y-6">
+                    {categories.map((category, catIdx) => (
+                      <div key={catIdx}>
+                        <h3 className="text-sm font-black text-primary mb-2 px-1">{category.label}</h3>
+                        <Accordion type="multiple" className="space-y-2">
+                          {category.sections.map((section, idx) => (
+                            <AccordionItem key={idx} value={`cat-${catIdx}-section-${idx}`} className="border rounded-xl px-4 bg-card">
+                              <AccordionTrigger className="hover:no-underline gap-3">
+                                <div className="flex items-center gap-3">
+                                  {section.icon}
+                                  <span className="font-semibold text-sm">{section.title}</span>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <ul className="space-y-2 pr-8">
+                                  {section.content.map((item, i) => (
+                                    <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                                      {item}
+                                    </li>
+                                  ))}
+                                </ul>
+                                {section.link && (
+                                  <button
+                                    onClick={() => handleNavigate(section.link!)}
+                                    className="mt-3 mr-8 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 hover:underline transition-colors"
+                                  >
+                                    <ExternalLink className="h-3.5 w-3.5" />
+                                    עבור לדף
+                                  </button>
+                                )}
+                              </AccordionContent>
+                            </AccordionItem>
+                          ))}
+                        </Accordion>
+                      </div>
                     ))}
-                  </Accordion>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
           </div>
         </DialogContent>
       </Dialog>
