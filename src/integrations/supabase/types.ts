@@ -2404,8 +2404,11 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           description: string | null
+          follow_up_date: string | null
           id: string
           inspection_id: string | null
+          requires_follow_up: boolean
+          resolution_notes: string | null
           resolved_at: string | null
           resolved_by: string | null
           resolved_by_name: string | null
@@ -2420,8 +2423,11 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          follow_up_date?: string | null
           id?: string
           inspection_id?: string | null
+          requires_follow_up?: boolean
+          resolution_notes?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
           resolved_by_name?: string | null
@@ -2436,8 +2442,11 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          follow_up_date?: string | null
           id?: string
           inspection_id?: string | null
+          requires_follow_up?: boolean
+          resolution_notes?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
           resolved_by_name?: string | null
