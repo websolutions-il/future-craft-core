@@ -51,6 +51,8 @@ export default function VehicleTasks() {
   const [resolveDialog, setResolveDialog] = useState<TaskRow | null>(null);
   const [resolutionNotes, setResolutionNotes] = useState('');
 
+  const [deleteTask, setDeleteTask] = useState<TaskRow | null>(null);
+
   const loadTasks = async () => {
     setLoading(true);
     const { data } = await applyCompanyScope(
