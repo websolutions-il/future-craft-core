@@ -11,43 +11,52 @@ interface ExamRunnerProps {
   driverName: string;
   companyName?: string;
   vehiclePlate?: string;
+  showManagerSignature?: boolean;
   onComplete?: () => void;
 }
 
-export default function ExamRunner({ examId, questions, driverName, companyName, vehiclePlate, onComplete }: ExamRunnerProps) {
+export default function ExamRunner({ examId, questions, driverName, companyName, vehiclePlate, showManagerSignature, onComplete }: ExamRunnerProps) {
   const [answers, setAnswers] = useState<Record<number, number | null>>({});
   const [showSig, setShowSig] = useState(false);
+  const [showManagerSig, setShowManagerSig] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ReturnType<typeof gradeExam> | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const managerCanvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
+  const managerDrawing = useRef(false);
 
   const allAnswered = useMemo(() => questions.every(q => answers[q.id] !== undefined && answers[q.id] !== null), [answers, questions]);
 
-  const startDraw = (e: React.PointerEvent) => {
-    drawing.current = true;
-    const c = canvasRef.current!;
-    const rect = c.getBoundingClientRect();
-    const ctx = c.getContext('2d')!;
-    ctx.beginPath();
-    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-  };
-  const draw = (e: React.PointerEvent) => {
-    if (!drawing.current) return;
-    const c = canvasRef.current!;
-    const rect = c.getBoundingClientRect();
-    const ctx = c.getContext('2d')!;
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = '#000';
-    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-    ctx.stroke();
-  };
-  const endDraw = () => { drawing.current = false; };
-  const clearSig = () => {
-    const c = canvasRef.current;
-    if (c) c.getContext('2d')!.clearRect(0, 0, c.width, c.height);
-  };
+  const createDrawHandlers = (ref: React.RefObject<HTMLCanvasElement>, drawingRef: React.MutableRefObject<boolean>) => ({
+    start: (e: React.PointerEvent) => {
+      drawingRef.current = true;
+      const c = ref.current!;
+      const rect = c.getBoundingClientRect();
+      const ctx = c.getContext('2d')!;
+      ctx.beginPath();
+      ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    },
+    move: (e: React.PointerEvent) => {
+      if (!drawingRef.current) return;
+      const c = ref.current!;
+      const rect = c.getBoundingClientRect();
+      const ctx = c.getContext('2d')!;
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#000';
+      ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+      ctx.stroke();
+    },
+    end: () => { drawingRef.current = false; },
+    clear: () => {
+      const c = ref.current;
+      if (c) c.getContext('2d')!.clearRect(0, 0, c.width, c.height);
+    },
+  });
+
+  const driverDraw = createDrawHandlers(canvasRef, drawing);
+  const managerDraw = createDrawHandlers(managerCanvasRef, managerDrawing);
 
   const handleSubmit = async () => {
     if (!allAnswered) {
@@ -57,23 +66,39 @@ export default function ExamRunner({ examId, questions, driverName, companyName,
     setShowSig(true);
   };
 
+  const handleDriverSigned = () => {
+    if (showManagerSignature) {
+      setShowManagerSig(true);
+    } else {
+      finalSubmit();
+    }
+  };
+
   const finalSubmit = async () => {
     const sig = canvasRef.current?.toDataURL('image/png') || '';
+    const managerSig = managerCanvasRef.current?.toDataURL('image/png') || '';
     setSubmitting(true);
     const graded = gradeExam(questions, answers);
+    
+    const updateData: any = {
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+      answers: graded.answers as any,
+      score: graded.score,
+      correct_count: graded.correct_count,
+      total_questions: graded.total,
+      passed: graded.passed,
+      category_breakdown: graded.category_breakdown as any,
+      signature_url: sig,
+    };
+    
+    if (managerSig && showManagerSignature) {
+      updateData.manager_signature_url = managerSig;
+    }
+
     const { error } = await supabase
       .from('driving_exams')
-      .update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        answers: graded.answers as any,
-        score: graded.score,
-        correct_count: graded.correct_count,
-        total_questions: graded.total,
-        passed: graded.passed,
-        category_breakdown: graded.category_breakdown as any,
-        signature_url: sig,
-      })
+      .update(updateData)
       .eq('id', examId);
     setSubmitting(false);
     if (error) { toast.error('שגיאה בשליחה'); return; }
@@ -159,21 +184,41 @@ export default function ExamRunner({ examId, questions, driverName, companyName,
         <Button onClick={handleSubmit} className="w-full h-14 text-lg" disabled={!allAnswered}>
           סיום והמשך לחתימה
         </Button>
-      ) : (
+      ) : !showManagerSig ? (
         <Card className="p-4">
-          <h3 className="font-bold mb-2">חתימה דיגיטלית</h3>
+          <h3 className="font-bold mb-2">חתימת נהג</h3>
           <canvas
             ref={canvasRef}
             width={500}
             height={200}
             className="border border-border rounded w-full bg-white touch-none"
-            onPointerDown={startDraw}
-            onPointerMove={draw}
-            onPointerUp={endDraw}
-            onPointerLeave={endDraw}
+            onPointerDown={driverDraw.start}
+            onPointerMove={driverDraw.move}
+            onPointerUp={driverDraw.end}
+            onPointerLeave={driverDraw.end}
           />
           <div className="flex gap-2 mt-3">
-            <Button variant="outline" onClick={clearSig}>נקה</Button>
+            <Button variant="outline" onClick={driverDraw.clear}>נקה</Button>
+            <Button onClick={handleDriverSigned} className="flex-1">
+              {showManagerSignature ? 'המשך לחתימת מנהל' : submitting ? 'שולח...' : 'אשר ושלח'}
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        <Card className="p-4">
+          <h3 className="font-bold mb-2">חתימת מנהל צי</h3>
+          <canvas
+            ref={managerCanvasRef}
+            width={500}
+            height={200}
+            className="border border-border rounded w-full bg-white touch-none"
+            onPointerDown={managerDraw.start}
+            onPointerMove={managerDraw.move}
+            onPointerUp={managerDraw.end}
+            onPointerLeave={managerDraw.end}
+          />
+          <div className="flex gap-2 mt-3">
+            <Button variant="outline" onClick={managerDraw.clear}>נקה</Button>
             <Button onClick={finalSubmit} disabled={submitting} className="flex-1">
               {submitting ? 'שולח...' : 'אשר ושלח'}
             </Button>
