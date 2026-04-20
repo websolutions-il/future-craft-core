@@ -169,7 +169,20 @@ export default function Alerts() {
       }
     }
 
-    // 3. Urgent faults
+    // 2b. Driver exam expiry
+    if (drivers) {
+      for (const d of drivers) {
+        const examExpiry = (d as any).exam_expiry;
+        if (examExpiry) {
+          const examDays = getDaysLeft(examExpiry);
+          if (examDays !== null && examDays <= 30) {
+            allAlerts.push({ id: `exam-${d.id}`, category: 'license', severity: getSeverity(examDays), title: examDays <= 0 ? 'תוקף מבחן נהיגה פג!' : 'מבחן נהיגה עומד לפוג', subtitle: d.full_name, daysLeft: examDays, date: examExpiry, meta: d.phone || undefined, link: '/drivers' });
+          }
+        }
+      }
+    }
+
+
     const { data: faults } = await applyCompanyScope(
       supabase.from('faults').select('*').in('urgency', ['urgent', 'high', 'critical', 'דחוף', 'גבוהה']).in('status', ['new', 'open', 'חדש', 'פתוח', 'בטיפול', 'in_progress']),
       companyFilter
