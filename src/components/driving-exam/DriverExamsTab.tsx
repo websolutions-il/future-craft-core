@@ -9,7 +9,7 @@ import { Plus, Send, MessageCircle, Link as LinkIcon, FileText, Trash2, Monitor,
 import { generateExam, EXAM_TYPES, type ExamType, type ExamQuestion } from '@/data/drivingExamQuestions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
 import ExamRunner from './ExamRunner';
 
 interface Props {
