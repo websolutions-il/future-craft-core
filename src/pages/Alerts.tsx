@@ -193,6 +193,30 @@ export default function Alerts() {
       }
     }
 
+    // 3b. Open vehicle defects (inspection findings)
+    const { data: vehicleTasks } = await applyCompanyScope(
+      supabase.from('vehicle_tasks').select('*').in('status', ['open', 'in_progress']),
+      companyFilter
+    );
+    if (vehicleTasks) {
+      for (const vt of vehicleTasks as any[]) {
+        const daysSince = Math.floor((Date.now() - new Date(vt.created_at).getTime()) / (1000 * 60 * 60 * 24));
+        const isOverdue = vt.follow_up_date && new Date(vt.follow_up_date) < new Date();
+        const severity: AlertSeverity = isOverdue ? 'critical' : daysSince > 7 ? 'warning' : 'info';
+        allAlerts.push({
+          id: `defect-${vt.id}`,
+          category: 'fault',
+          severity,
+          title: isOverdue ? `ליקוי באיחור: ${vt.title}` : `ליקוי פתוח: ${vt.title}`,
+          subtitle: `רכב ${vt.vehicle_plate || '—'} • ${daysSince} ימים`,
+          daysLeft: vt.follow_up_date ? Math.floor((new Date(vt.follow_up_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null,
+          date: vt.created_at?.split('T')[0] || null,
+          meta: vt.description || undefined,
+          link: '/vehicle-tasks',
+        });
+      }
+    }
+
     // 4. Service orders - pending / urgent
     const { data: serviceOrders } = await applyCompanyScope(
       supabase.from('service_orders').select('*').in('treatment_status', ['new', 'pending_approval', 'in_progress']),
