@@ -94,7 +94,7 @@ export default function DriverDashboard() {
     const loadDriverDashboard = async () => {
       setLoading(true);
 
-      const [vehicleRes, serviceOrdersRes, assignmentsRes] = await Promise.all([
+      const [vehicleRes, serviceOrdersRes, assignmentsRes, pendingExamsRes] = await Promise.all([
         supabase
           .from('vehicles')
           .select('id, manufacturer, model, year, license_plate, vehicle_type, odometer, test_expiry, insurance_expiry, comprehensive_insurance_expiry')
@@ -109,6 +109,12 @@ export default function DriverDashboard() {
           .select('id, title, scheduled_date, scheduled_time, status')
           .eq('driver_id', user.id)
           .in('status', ['pending_driver_approval', 'sent_to_driver', 'driver_approved', 'in_progress']),
+        supabase
+          .from('driving_exams')
+          .select('id, status, exam_type, created_at')
+          .eq('driver_id', user.id)
+          .in('status', ['sent', 'in_progress'])
+          .order('created_at', { ascending: false }),
       ]);
 
       if (vehicleRes.error || serviceOrdersRes.error) {
