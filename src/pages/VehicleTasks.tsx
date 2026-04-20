@@ -132,6 +132,18 @@ export default function VehicleTasks() {
     }
   };
 
+  const confirmDelete = async () => {
+    if (!deleteTask) return;
+    const { error } = await supabase.from('vehicle_tasks').delete().eq('id', deleteTask.id);
+    if (error) {
+      toast.error('שגיאה במחיקת הליקוי');
+    } else {
+      toast.success('הליקוי נמחק');
+      setDeleteTask(null);
+      loadTasks();
+    }
+  };
+
   const toggleFollowUp = async (task: TaskRow) => {
     const { error } = await supabase.from('vehicle_tasks').update({
       requires_follow_up: !task.requires_follow_up,
@@ -359,12 +371,18 @@ export default function VehicleTasks() {
                       </button>
                     )}
                     {t.status !== 'resolved' && (
-                      <button onClick={() => toggleFollowUp(t)}
-                        className={`py-2 px-3 rounded-xl text-sm font-bold transition-colors flex items-center gap-1.5 ${
-                          t.requires_follow_up ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-                        }`}>
-                        <Shield size={14} /> {t.requires_follow_up ? 'הסר מעקב' : 'חייב מעקב'}
-                      </button>
+                      <>
+                        <button onClick={() => toggleFollowUp(t)}
+                          className={`py-2 px-3 rounded-xl text-sm font-bold transition-colors flex items-center gap-1.5 ${
+                            t.requires_follow_up ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                          }`}>
+                          <Shield size={14} /> {t.requires_follow_up ? 'הסר מעקב' : 'חייב מעקב'}
+                        </button>
+                        <button onClick={() => setDeleteTask(t)}
+                          className="py-2 px-3 rounded-xl text-sm font-bold bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors flex items-center gap-1.5">
+                          <Trash2 size={14} /> מחק
+                        </button>
+                      </>
                     )}
                   </div>
                 )}
@@ -403,6 +421,24 @@ export default function VehicleTasks() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteTask} onOpenChange={(open) => { if (!open) setDeleteTask(null); }}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>מחיקת ליקוי</AlertDialogTitle>
+            <AlertDialogDescription>
+              האם למחוק את הליקוי "{deleteTask?.title}" ברכב {deleteTask?.vehicle_plate}? פעולה זו לא ניתנת לביטול.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex gap-2">
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              מחק
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
