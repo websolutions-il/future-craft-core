@@ -810,9 +810,11 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           email: string | null
+          exam_expiry: string | null
           full_name: string
           id: string
           id_number: string | null
+          last_exam_date: string | null
           license_expiry: string | null
           license_image_url: string | null
           license_number: string | null
@@ -829,9 +831,11 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           email?: string | null
+          exam_expiry?: string | null
           full_name?: string
           id?: string
           id_number?: string | null
+          last_exam_date?: string | null
           license_expiry?: string | null
           license_image_url?: string | null
           license_number?: string | null
@@ -848,9 +852,11 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           email?: string | null
+          exam_expiry?: string | null
           full_name?: string
           id?: string
           id_number?: string | null
+          last_exam_date?: string | null
           license_expiry?: string | null
           license_image_url?: string | null
           license_number?: string | null
@@ -875,9 +881,12 @@ export type Database = {
           driver_id: string
           driver_name: string
           driver_phone: string | null
+          exam_type: string
+          exam_validity_months: number | null
           expires_at: string | null
           id: string
           manager_note: string | null
+          manager_signature_url: string | null
           passed: boolean | null
           passing_score: number
           questions: Json
@@ -904,9 +913,12 @@ export type Database = {
           driver_id: string
           driver_name?: string
           driver_phone?: string | null
+          exam_type?: string
+          exam_validity_months?: number | null
           expires_at?: string | null
           id?: string
           manager_note?: string | null
+          manager_signature_url?: string | null
           passed?: boolean | null
           passing_score?: number
           questions?: Json
@@ -933,9 +945,12 @@ export type Database = {
           driver_id?: string
           driver_name?: string
           driver_phone?: string | null
+          exam_type?: string
+          exam_validity_months?: number | null
           expires_at?: string | null
           id?: string
           manager_note?: string | null
+          manager_signature_url?: string | null
           passed?: boolean | null
           passing_score?: number
           questions?: Json
