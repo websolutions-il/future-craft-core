@@ -251,12 +251,10 @@ export default function DriverDeclaration({ driverId, driverName, idNumber, lice
 
         <div>
           <p className="text-lg font-medium mb-2">חתימה דיגיטלית:</p>
-          <div className="border-2 border-input rounded-xl overflow-hidden bg-white">
+          <div className="border-2 border-input rounded-xl overflow-hidden bg-white" style={{ height: 180 }}>
             <canvas
               ref={canvasRef}
-              width={350}
-              height={150}
-              className="w-full touch-none"
+              className="w-full h-full touch-none block"
               onMouseDown={startDraw}
               onMouseMove={draw}
               onMouseUp={endDraw}
