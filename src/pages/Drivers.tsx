@@ -136,6 +136,7 @@ export default function Drivers() {
             <DriverExamsTab
               driverId={d.id}
               driverName={d.full_name}
+              driverIdNumber={d.id_number}
               driverPhone={d.phone}
               companyName={d.company_name}
             />

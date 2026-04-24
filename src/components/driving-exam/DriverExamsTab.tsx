@@ -5,16 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Plus, Send, MessageCircle, Link as LinkIcon, FileText, Trash2, Monitor, Download, AlertTriangle } from 'lucide-react';
+import { Plus, Send, MessageCircle, Link as LinkIcon, FileText, Trash2, Monitor, Download, AlertTriangle, ClipboardList } from 'lucide-react';
 import { generateExam, EXAM_TYPES, type ExamType, type ExamQuestion } from '@/data/drivingExamQuestions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 import ExamRunner from './ExamRunner';
+
+import PracticalExamsList from './PracticalExamsList';
 
 interface Props {
   driverId: string;
   driverName: string;
+  driverIdNumber?: string;
   driverPhone?: string;
   companyName?: string;
   vehiclePlate?: string;
@@ -27,7 +31,7 @@ const EXAM_TYPE_LABELS: Record<string, string> = {
   periodic: 'תקופתי',
 };
 
-export default function DriverExamsTab({ driverId, driverName, driverPhone, companyName, vehiclePlate }: Props) {
+export default function DriverExamsTab({ driverId, driverName, driverIdNumber, driverPhone, companyName, vehiclePlate }: Props) {
   const { user } = useAuth();
   const [exams, setExams] = useState<any[]>([]);
   const [creating, setCreating] = useState(false);
@@ -285,95 +289,115 @@ export default function DriverExamsTab({ driverId, driverName, driverPhone, comp
   }
 
   return (
-    <div className="space-y-3">
-      {/* Exam expiry warning */}
-      {examExpired && (
-        <Card className="p-3 border-destructive bg-destructive/10">
-          <div className="flex items-center gap-2 text-destructive">
-            <AlertTriangle size={18} />
-            <span className="font-bold text-sm">תוקף המבחן האחרון פג! יש לבצע מבחן חדש.</span>
-          </div>
-        </Card>
-      )}
+    <Tabs defaultValue="theory" className="space-y-3">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="theory">
+          <FileText size={14} className="ml-1" /> מבחן תיאוריה
+        </TabsTrigger>
+        <TabsTrigger value="practical">
+          <ClipboardList size={14} className="ml-1" /> מבחן מעשי
+        </TabsTrigger>
+      </TabsList>
 
-      {isManager && (
+      <TabsContent value="theory" className="space-y-3">
+        {/* Exam expiry warning */}
+        {examExpired && (
+          <Card className="p-3 border-destructive bg-destructive/10">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertTriangle size={18} />
+              <span className="font-bold text-sm">תוקף המבחן האחרון פג! יש לבצע מבחן חדש.</span>
+            </div>
+          </Card>
+        )}
+
+        {isManager && (
+          <Card className="p-4">
+            <h3 className="font-bold mb-3">שליחת מבחן חדש</h3>
+            <div className="mb-3">
+              <label className="text-sm font-medium mb-1 block">סוג מבחן</label>
+              <Select value={examType} onValueChange={(v) => setExamType(v as ExamType)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {EXAM_TYPES.map(t => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={() => createExam('in_person')} disabled={creating} size="sm" variant="default" className="col-span-2">
+                <Monitor size={14} /> פתח מבחן במחשב
+              </Button>
+              <Button onClick={() => createExam('app')} disabled={creating} size="sm" variant="outline">
+                <Plus size={14} /> שלח באפליקציה
+              </Button>
+              <Button onClick={() => createExam('sms')} disabled={creating || !driverPhone} variant="outline" size="sm">
+                <Send size={14} /> SMS
+              </Button>
+              <Button onClick={() => createExam('whatsapp')} disabled={creating || !driverPhone} variant="outline" size="sm">
+                <MessageCircle size={14} /> WhatsApp
+              </Button>
+              <Button onClick={() => createExam('link')} disabled={creating} variant="outline" size="sm">
+                <LinkIcon size={14} /> קישור
+              </Button>
+            </div>
+          </Card>
+        )}
+
         <Card className="p-4">
-          <h3 className="font-bold mb-3">שליחת מבחן חדש</h3>
-          
-          {/* Exam type selection */}
-          <div className="mb-3">
-            <label className="text-sm font-medium mb-1 block">סוג מבחן</label>
-            <Select value={examType} onValueChange={(v) => setExamType(v as ExamType)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {EXAM_TYPES.map(t => (
-                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <Button onClick={() => createExam('in_person')} disabled={creating} size="sm" variant="default" className="col-span-2">
-              <Monitor size={14} /> פתח מבחן במחשב
-            </Button>
-            <Button onClick={() => createExam('app')} disabled={creating} size="sm" variant="outline">
-              <Plus size={14} /> שלח באפליקציה
-            </Button>
-            <Button onClick={() => createExam('sms')} disabled={creating || !driverPhone} variant="outline" size="sm">
-              <Send size={14} /> SMS
-            </Button>
-            <Button onClick={() => createExam('whatsapp')} disabled={creating || !driverPhone} variant="outline" size="sm">
-              <MessageCircle size={14} /> WhatsApp
-            </Button>
-            <Button onClick={() => createExam('link')} disabled={creating} variant="outline" size="sm">
-              <LinkIcon size={14} /> קישור
-            </Button>
-          </div>
-        </Card>
-      )}
-
-      <Card className="p-4">
-        <h3 className="font-bold mb-3">היסטוריית מבחנים ({exams.length})</h3>
-        {exams.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">אין מבחנים</p>
-        ) : (
-          <div className="space-y-2">
-            {exams.map(ex => (
-              <div key={ex.id} className="border rounded p-3 flex items-center justify-between gap-2">
-                <div className="flex-1 cursor-pointer" onClick={() => { setSelected(ex); setNote(ex.manager_note || ''); }}>
-                  <div className="flex items-center gap-2 text-sm flex-wrap">
-                    <FileText size={14} />
-                    <span>{new Date(ex.created_at).toLocaleDateString('he-IL')}</span>
-                    <Badge variant="outline" className="text-xs">{EXAM_TYPE_LABELS[ex.exam_type] || 'כללי'}</Badge>
-                    <span className="text-xs px-2 py-0.5 rounded bg-muted">{ex.sent_via}</span>
-                    <span className="text-xs px-2 py-0.5 rounded bg-muted">{ex.status}</span>
-                    {ex.score !== null && (
-                      <span className={`text-xs px-2 py-0.5 rounded font-bold ${ex.passed ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
-                        {ex.score} - {ex.passed ? 'עבר' : 'נכשל'}
-                      </span>
+          <h3 className="font-bold mb-3">היסטוריית מבחנים ({exams.length})</h3>
+          {exams.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">אין מבחנים</p>
+          ) : (
+            <div className="space-y-2">
+              {exams.map(ex => (
+                <div key={ex.id} className="border rounded p-3 flex items-center justify-between gap-2">
+                  <div className="flex-1 cursor-pointer" onClick={() => { setSelected(ex); setNote(ex.manager_note || ''); }}>
+                    <div className="flex items-center gap-2 text-sm flex-wrap">
+                      <FileText size={14} />
+                      <span>{new Date(ex.created_at).toLocaleDateString('he-IL')}</span>
+                      <Badge variant="outline" className="text-xs">{EXAM_TYPE_LABELS[ex.exam_type] || 'כללי'}</Badge>
+                      <span className="text-xs px-2 py-0.5 rounded bg-muted">{ex.sent_via}</span>
+                      <span className="text-xs px-2 py-0.5 rounded bg-muted">{ex.status}</span>
+                      {ex.score !== null && (
+                        <span className={`text-xs px-2 py-0.5 rounded font-bold ${ex.passed ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                          {ex.score} - {ex.passed ? 'עבר' : 'נכשל'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    {ex.status === 'completed' && (
+                      <Button size="sm" variant="ghost" onClick={() => exportExamPdf(ex)} title="הורד תוצאות">
+                        <Download size={14} />
+                      </Button>
+                    )}
+                    {isManager && (
+                      <Button size="sm" variant="ghost" onClick={() => deleteExam(ex.id)}>
+                        <Trash2 size={14} className="text-destructive" />
+                      </Button>
                     )}
                   </div>
                 </div>
-                <div className="flex gap-1">
-                  {ex.status === 'completed' && (
-                    <Button size="sm" variant="ghost" onClick={() => exportExamPdf(ex)} title="הורד תוצאות">
-                      <Download size={14} />
-                    </Button>
-                  )}
-                  {isManager && (
-                    <Button size="sm" variant="ghost" onClick={() => deleteExam(ex.id)}>
-                      <Trash2 size={14} className="text-destructive" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-    </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="practical">
+        <PracticalExamsList
+          driverId={driverId}
+          driverName={driverName}
+          driverIdNumber={driverIdNumber}
+          driverPhone={driverPhone}
+          vehiclePlate={vehiclePlate}
+          companyName={companyName}
+        />
+      </TabsContent>
+    </Tabs>
   );
 }
