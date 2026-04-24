@@ -310,7 +310,7 @@ export default function DriverDeclaration({ driverId, driverName, idNumber, lice
               )}
               {d.signature_url && (
                 <div>
-                  <img src={d.signature_url} alt="חתימה" className="h-12 rounded border border-border" />
+                  <img src={d.signature_url} alt="חתימה" className="h-16 rounded border border-border bg-white p-1" />
                 </div>
               )}
 
@@ -336,6 +336,12 @@ export default function DriverDeclaration({ driverId, driverName, idNumber, lice
                       <Pencil size={14} /> חתום כעת
                     </button>
                   </>
+                )}
+                {d.status === 'signed' && (
+                  <button onClick={() => printDeclaration({ ...d, declaration_text: DECLARATION_TEXT })}
+                    className="px-3 py-2 rounded-xl bg-primary/10 text-primary text-sm font-bold flex items-center gap-1">
+                    <Printer size={14} /> הדפס / שמור PDF
+                  </button>
                 )}
               </div>
 
