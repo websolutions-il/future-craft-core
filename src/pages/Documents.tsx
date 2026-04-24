@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter } from '@/hooks/useCompanyFilter';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { buildStoragePath } from '@/lib/storage';
 
 interface DocCategory {
   key: string;
