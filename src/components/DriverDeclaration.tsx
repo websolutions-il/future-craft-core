@@ -114,21 +114,34 @@ export default function DriverDeclaration({ driverId, driverName, idNumber, lice
     loadDeclarations();
   };
 
-  // Canvas signature handling
+  // Canvas signature handling — DPR-aware so signatures render crisply on
+  // mobile / Retina screens (otherwise strokes can look invisible).
   const initCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const ratio = window.devicePixelRatio || 1;
+    const cssWidth = canvas.clientWidth;
+    const cssHeight = canvas.clientHeight;
+    canvas.width = Math.floor(cssWidth * ratio);
+    canvas.height = Math.floor(cssHeight * ratio);
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 2;
+    ctx.scale(ratio, ratio);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, cssWidth, cssHeight);
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2.4;
     ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
   };
 
   useEffect(() => {
-    if (signing) setTimeout(initCanvas, 100);
+    if (signing) {
+      const t = setTimeout(initCanvas, 80);
+      const onResize = () => initCanvas();
+      window.addEventListener('resize', onResize);
+      return () => { clearTimeout(t); window.removeEventListener('resize', onResize); };
+    }
   }, [signing]);
 
   const getPos = (e: React.TouchEvent | React.MouseEvent) => {
