@@ -714,7 +714,7 @@ function AssignmentForm({ onDone, user }: { onDone: () => void; user: any }) {
         </div>
         <div>
           <label className="block text-lg font-medium mb-2">לקוח</label>
-          <select value={customerName} onChange={e => setCustomerName(e.target.value)} className={inputClass}>
+          <select value={customerName} onChange={e => handleCustomerChange(e.target.value)} className={inputClass}>
             <option value="">בחר לקוח...</option>
             {dbCustomers.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
           </select>
