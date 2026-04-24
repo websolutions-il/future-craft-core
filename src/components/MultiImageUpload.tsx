@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Camera, X, Loader2, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { buildStoragePath } from '@/lib/storage';
 
 interface MultiImageUploadProps {
   label: string;
@@ -19,16 +20,20 @@ export default function MultiImageUpload({ label, required, imageUrls, onImagesC
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file || !user?.id) return;
     e.target.value = '';
 
     setUploading(true);
-    const ext = file.name.split('.').pop();
-    const path = `${user.id}/${folder}/${crypto.randomUUID()}.${ext}`;
+    const path = buildStoragePath(user.id, folder, file.name);
 
-    const { error } = await supabase.storage.from('documents').upload(path, file);
+    const { error } = await supabase.storage.from('documents').upload(path, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type || undefined,
+    });
     if (error) {
       console.error('Upload error:', error);
+      alert('שגיאה בהעלאת התמונה: ' + error.message);
       setUploading(false);
       return;
     }
