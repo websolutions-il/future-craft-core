@@ -121,12 +121,22 @@ export default function DriverDeclarations() {
                 </div>
                 {getStatusBadge(d)}
               </div>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                 <span>נוצר: {new Date(d.created_at).toLocaleDateString('he-IL')}</span>
                 {d.signed_at && <span>נחתם: {new Date(d.signed_at).toLocaleDateString('he-IL')}</span>}
                 {d.expires_at && <span>תוקף עד: {new Date(d.expires_at).toLocaleDateString('he-IL')}</span>}
               </div>
-              {d.signature_url && <img src={d.signature_url} alt="חתימה" className="h-10 mt-2 rounded border border-border" />}
+              {d.signature_url && (
+                <img src={d.signature_url} alt="חתימה" className="h-12 mt-2 rounded border border-border bg-white p-1" />
+              )}
+              {d.status === 'signed' && (
+                <button
+                  onClick={() => printDeclaration(d as any)}
+                  className="mt-3 inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/10 text-primary text-sm font-bold"
+                >
+                  <Printer size={16} /> הדפס / שמור PDF
+                </button>
+              )}
             </div>
           ))}
         </div>
