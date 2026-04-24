@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { FileText, Send, Check, Clock, AlertTriangle, ArrowRight, Pencil } from 'lucide-react';
+import { FileText, Send, Check, Clock, AlertTriangle, ArrowRight, Pencil, Printer } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { printDeclaration } from '@/utils/printDeclaration';
 
 const DECLARATION_TEXT = `אני החתום מטה, בעל תעודת זהות מספר ______,
 מצהיר בזה כי לא נתגלו אצלי, לפי מיטב ידיעתי, מגבלות במערכת העצבים, העצמות,
@@ -113,21 +114,34 @@ export default function DriverDeclaration({ driverId, driverName, idNumber, lice
     loadDeclarations();
   };
 
-  // Canvas signature handling
+  // Canvas signature handling — DPR-aware so signatures render crisply on
+  // mobile / Retina screens (otherwise strokes can look invisible).
   const initCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const ratio = window.devicePixelRatio || 1;
+    const cssWidth = canvas.clientWidth;
+    const cssHeight = canvas.clientHeight;
+    canvas.width = Math.floor(cssWidth * ratio);
+    canvas.height = Math.floor(cssHeight * ratio);
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 2;
+    ctx.scale(ratio, ratio);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, cssWidth, cssHeight);
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2.4;
     ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
   };
 
   useEffect(() => {
-    if (signing) setTimeout(initCanvas, 100);
+    if (signing) {
+      const t = setTimeout(initCanvas, 80);
+      const onResize = () => initCanvas();
+      window.addEventListener('resize', onResize);
+      return () => { clearTimeout(t); window.removeEventListener('resize', onResize); };
+    }
   }, [signing]);
 
   const getPos = (e: React.TouchEvent | React.MouseEvent) => {
@@ -177,20 +191,32 @@ export default function DriverDeclaration({ driverId, driverName, idNumber, lice
     // Upload signature image
     const blob = await (await fetch(dataUrl)).blob();
     const path = `declarations/sig_${activeDeclaration.id}_${Date.now()}.png`;
-    const { error: uploadErr } = await supabase.storage.from('documents').upload(path, blob);
-    if (uploadErr) { toast.error('שגיאה בשמירת החתימה'); return; }
+    const { error: uploadErr } = await supabase.storage
+      .from('documents')
+      .upload(path, blob, { contentType: 'image/png', upsert: false, cacheControl: '3600' });
+    if (uploadErr) {
+      console.error('Signature upload error:', uploadErr);
+      toast.error('שגיאה בשמירת החתימה: ' + uploadErr.message);
+      return;
+    }
     const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path);
 
     const signedAt = new Date().toISOString();
     const expiresAt = new Date();
     expiresAt.setFullYear(expiresAt.getFullYear() + 5);
 
-    await supabase.from('driver_declarations').update({
+    const { error: updateErr } = await supabase.from('driver_declarations').update({
       status: 'signed',
       signed_at: signedAt,
       signature_url: urlData.publicUrl,
       expires_at: expiresAt.toISOString(),
     } as any).eq('id', activeDeclaration.id);
+
+    if (updateErr) {
+      console.error('Update error:', updateErr);
+      toast.error('שגיאה בעדכון התצהיר: ' + updateErr.message);
+      return;
+    }
 
     toast.success('התצהיר נחתם בהצלחה!');
     setSigning(false);
@@ -209,6 +235,7 @@ export default function DriverDeclaration({ driverId, driverName, idNumber, lice
     return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-warning/10 text-warning text-sm font-bold"><Clock size={14} /> ממתין לחתימה</span>;
   };
 
+
   if (signing && activeDeclaration) {
     return (
       <div className="space-y-4">
@@ -224,12 +251,10 @@ export default function DriverDeclaration({ driverId, driverName, idNumber, lice
 
         <div>
           <p className="text-lg font-medium mb-2">חתימה דיגיטלית:</p>
-          <div className="border-2 border-input rounded-xl overflow-hidden bg-white">
+          <div className="border-2 border-input rounded-xl overflow-hidden bg-white" style={{ height: 180 }}>
             <canvas
               ref={canvasRef}
-              width={350}
-              height={150}
-              className="w-full touch-none"
+              className="w-full h-full touch-none block"
               onMouseDown={startDraw}
               onMouseMove={draw}
               onMouseUp={endDraw}
@@ -285,7 +310,7 @@ export default function DriverDeclaration({ driverId, driverName, idNumber, lice
               )}
               {d.signature_url && (
                 <div>
-                  <img src={d.signature_url} alt="חתימה" className="h-12 rounded border border-border" />
+                  <img src={d.signature_url} alt="חתימה" className="h-16 rounded border border-border bg-white p-1" />
                 </div>
               )}
 
@@ -311,6 +336,12 @@ export default function DriverDeclaration({ driverId, driverName, idNumber, lice
                       <Pencil size={14} /> חתום כעת
                     </button>
                   </>
+                )}
+                {d.status === 'signed' && (
+                  <button onClick={() => printDeclaration({ ...d, declaration_text: DECLARATION_TEXT })}
+                    className="px-3 py-2 rounded-xl bg-primary/10 text-primary text-sm font-bold flex items-center gap-1">
+                    <Printer size={14} /> הדפס / שמור PDF
+                  </button>
                 )}
               </div>
 
