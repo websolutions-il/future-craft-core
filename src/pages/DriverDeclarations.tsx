@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { FileText, Search, ArrowRight, Check, Clock, AlertTriangle, Download } from 'lucide-react';
+import { FileText, Search, Check, Clock, AlertTriangle, Download, Printer } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { exportToCsv } from '@/utils/exportCsv';
+import { printDeclaration } from '@/utils/printDeclaration';
 
 interface DeclarationRow {
   id: string;
