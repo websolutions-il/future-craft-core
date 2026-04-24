@@ -1405,6 +1405,66 @@ export type Database = {
         }
         Relationships: []
       }
+      practical_driving_exams: {
+        Row: {
+          checklist: Json
+          company_name: string | null
+          created_at: string
+          created_by: string | null
+          driver_id: string
+          driver_id_number: string | null
+          driver_name: string
+          driver_signature_url: string | null
+          exam_date: string
+          examiner_name: string
+          examiner_signature_url: string | null
+          id: string
+          notes: string | null
+          passed: boolean | null
+          status: string
+          updated_at: string
+          vehicle_plate: string | null
+        }
+        Insert: {
+          checklist?: Json
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          driver_id: string
+          driver_id_number?: string | null
+          driver_name?: string
+          driver_signature_url?: string | null
+          exam_date?: string
+          examiner_name?: string
+          examiner_signature_url?: string | null
+          id?: string
+          notes?: string | null
+          passed?: boolean | null
+          status?: string
+          updated_at?: string
+          vehicle_plate?: string | null
+        }
+        Update: {
+          checklist?: Json
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          driver_id?: string
+          driver_id_number?: string | null
+          driver_name?: string
+          driver_signature_url?: string | null
+          exam_date?: string
+          examiner_name?: string
+          examiner_signature_url?: string | null
+          id?: string
+          notes?: string | null
+          passed?: boolean | null
+          status?: string
+          updated_at?: string
+          vehicle_plate?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           company_name: string | null
