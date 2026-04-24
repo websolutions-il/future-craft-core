@@ -235,16 +235,6 @@ export default function DriverDeclaration({ driverId, driverName, idNumber, lice
     return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-warning/10 text-warning text-sm font-bold"><Clock size={14} /> ממתין לחתימה</span>;
   };
 
-  const getStatusBadge = (d: Declaration) => {
-    if (d.status === 'signed') {
-      const isExpired = d.expires_at && new Date(d.expires_at) < new Date();
-      const isExpiringSoon = d.expires_at && new Date(d.expires_at) < new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
-      if (isExpired) return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-destructive/10 text-destructive text-sm font-bold"><AlertTriangle size={14} /> פג תוקף</span>;
-      if (isExpiringSoon) return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-warning/10 text-warning text-sm font-bold"><Clock size={14} /> תוקף עומד לפוג</span>;
-      return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-success/10 text-success text-sm font-bold"><Check size={14} /> נחתם</span>;
-    }
-    return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-warning/10 text-warning text-sm font-bold"><Clock size={14} /> ממתין לחתימה</span>;
-  };
 
   if (signing && activeDeclaration) {
     return (
