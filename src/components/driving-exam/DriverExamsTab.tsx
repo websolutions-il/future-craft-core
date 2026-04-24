@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 import ExamRunner from './ExamRunner';
-import PracticalExamRunner from './PracticalExamRunner';
+
 import PracticalExamsList from './PracticalExamsList';
 
 interface Props {
@@ -31,7 +31,7 @@ const EXAM_TYPE_LABELS: Record<string, string> = {
   periodic: 'תקופתי',
 };
 
-export default function DriverExamsTab({ driverId, driverName, driverPhone, companyName, vehiclePlate }: Props) {
+export default function DriverExamsTab({ driverId, driverName, driverIdNumber, driverPhone, companyName, vehiclePlate }: Props) {
   const { user } = useAuth();
   const [exams, setExams] = useState<any[]>([]);
   const [creating, setCreating] = useState(false);
