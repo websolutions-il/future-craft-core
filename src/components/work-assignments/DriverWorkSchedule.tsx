@@ -94,6 +94,18 @@ export default function DriverWorkSchedule() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // Realtime: refresh whenever this driver's assignments change
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel(`work_assignments_driver_${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'work_assignments' }, () => {
+        loadData();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id, loadData]);
+
   // Group assignments by day of week within the current week
   const assignmentsByDay = useMemo(() => {
     const map: Record<number, Assignment[]> = {};
