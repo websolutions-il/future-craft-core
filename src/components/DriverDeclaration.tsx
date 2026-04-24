@@ -191,25 +191,48 @@ export default function DriverDeclaration({ driverId, driverName, idNumber, lice
     // Upload signature image
     const blob = await (await fetch(dataUrl)).blob();
     const path = `declarations/sig_${activeDeclaration.id}_${Date.now()}.png`;
-    const { error: uploadErr } = await supabase.storage.from('documents').upload(path, blob);
-    if (uploadErr) { toast.error('שגיאה בשמירת החתימה'); return; }
+    const { error: uploadErr } = await supabase.storage
+      .from('documents')
+      .upload(path, blob, { contentType: 'image/png', upsert: false, cacheControl: '3600' });
+    if (uploadErr) {
+      console.error('Signature upload error:', uploadErr);
+      toast.error('שגיאה בשמירת החתימה: ' + uploadErr.message);
+      return;
+    }
     const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path);
 
     const signedAt = new Date().toISOString();
     const expiresAt = new Date();
     expiresAt.setFullYear(expiresAt.getFullYear() + 5);
 
-    await supabase.from('driver_declarations').update({
+    const { error: updateErr } = await supabase.from('driver_declarations').update({
       status: 'signed',
       signed_at: signedAt,
       signature_url: urlData.publicUrl,
       expires_at: expiresAt.toISOString(),
     } as any).eq('id', activeDeclaration.id);
 
+    if (updateErr) {
+      console.error('Update error:', updateErr);
+      toast.error('שגיאה בעדכון התצהיר: ' + updateErr.message);
+      return;
+    }
+
     toast.success('התצהיר נחתם בהצלחה!');
     setSigning(false);
     setActiveDeclaration(null);
     loadDeclarations();
+  };
+
+  const getStatusBadge = (d: Declaration) => {
+    if (d.status === 'signed') {
+      const isExpired = d.expires_at && new Date(d.expires_at) < new Date();
+      const isExpiringSoon = d.expires_at && new Date(d.expires_at) < new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+      if (isExpired) return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-destructive/10 text-destructive text-sm font-bold"><AlertTriangle size={14} /> פג תוקף</span>;
+      if (isExpiringSoon) return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-warning/10 text-warning text-sm font-bold"><Clock size={14} /> תוקף עומד לפוג</span>;
+      return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-success/10 text-success text-sm font-bold"><Check size={14} /> נחתם</span>;
+    }
+    return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-warning/10 text-warning text-sm font-bold"><Clock size={14} /> ממתין לחתימה</span>;
   };
 
   const getStatusBadge = (d: Declaration) => {
