@@ -6,6 +6,7 @@ import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { buildStoragePath } from '@/lib/storage';
 
 interface DocMetadata {
   id: string;
