@@ -123,7 +123,7 @@ export default function DriverWorkSchedule() {
   );
 
   const pendingCount = assignments.filter(a =>
-    ['sent_for_approval', 'pending_driver_approval'].includes(a.status) && !a.driver_approved_at
+    ['created', 'sent_for_approval', 'pending_driver_approval'].includes(a.status) && !a.driver_approved_at
   ).length;
 
   const logStatusChange = async (assignmentId: string, oldStatus: string, newStatus: string, notes?: string) => {
@@ -231,7 +231,7 @@ export default function DriverWorkSchedule() {
           className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${!filterStatus ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
           הכל
         </button>
-        {['sent_for_approval', 'pending_driver_approval', 'approved', 'active', 'in_progress', 'completed'].map(s => {
+        {['created', 'sent_for_approval', 'pending_driver_approval', 'approved', 'active', 'in_progress', 'completed'].map(s => {
           const count = assignments.filter(a => a.status === s).length;
           if (count === 0) return null;
           return (
@@ -270,7 +270,7 @@ export default function DriverWorkSchedule() {
           const isSelected = selectedDay === i;
           const count = assignmentsByDay[i].length;
           const hasPending = assignmentsByDay[i].some(a =>
-            ['sent_for_approval', 'pending_driver_approval'].includes(a.status) && !a.driver_approved_at
+            ['created', 'sent_for_approval', 'pending_driver_approval'].includes(a.status) && !a.driver_approved_at
           );
           return (
             <button
@@ -317,7 +317,7 @@ export default function DriverWorkSchedule() {
 
             {assignmentsByDay[selectedDay].map((a, idx) => {
               const colorClass = TIMELINE_COLORS[idx % TIMELINE_COLORS.length];
-              const needsApproval = ['sent_for_approval', 'pending_driver_approval'].includes(a.status) && !a.driver_approved_at;
+              const needsApproval = ['created', 'sent_for_approval', 'pending_driver_approval'].includes(a.status) && !a.driver_approved_at;
               const isRejected = a.status === 'rejected';
 
               return (
