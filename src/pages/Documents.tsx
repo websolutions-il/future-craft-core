@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter } from '@/hooks/useCompanyFilter';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { buildStoragePath } from '@/lib/storage';
 
 interface DocCategory {
   key: string;
@@ -175,13 +176,16 @@ export default function Documents() {
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.length || !selectedCategory || !companyName) return;
+    if (!e.target.files?.length || !selectedCategory || !companyName || !user?.id) return;
     setUploading(true);
     const file = e.target.files[0];
-    const safeName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._\u0590-\u05FF-]/g, '_')}`;
-    const path = `${companyName}/${selectedCategory.folder}/${safeName}`;
+    const path = buildStoragePath(user.id, selectedCategory.folder, file.name);
 
-    const { error } = await supabase.storage.from('documents').upload(path, file);
+    const { error } = await supabase.storage.from('documents').upload(path, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type || undefined,
+    });
     if (error) {
       toast.error('שגיאה בהעלאת הקובץ: ' + error.message);
       setUploading(false);

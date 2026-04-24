@@ -6,6 +6,7 @@ import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { buildStoragePath } from '@/lib/storage';
 
 interface DocMetadata {
   id: string;
@@ -65,18 +66,22 @@ export default function CustomerDocs() {
     setLoading(false);
   };
 
-  const handleUpload = async () => {
-    if (!uploadFile || !user) return;
+  const handleUpload = async (e?: React.MouseEvent) => {
+    if (!uploadFile || !user?.id) return;
     setUploading(true);
 
-    const filePath = `${user.company_name}/${Date.now()}_${uploadFile.name}`;
+    const filePath = buildStoragePath(user.id, uploadCategory || 'other', uploadFile.name);
 
     const { error: storageError } = await supabase.storage
       .from('documents')
-      .upload(filePath, uploadFile);
+      .upload(filePath, uploadFile, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: uploadFile.type || undefined,
+      });
 
     if (storageError) {
-      toast.error('שגיאה בהעלאת הקובץ');
+      toast.error('שגיאה בהעלאת הקובץ: ' + storageError.message);
       setUploading(false);
       return;
     }
