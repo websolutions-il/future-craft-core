@@ -635,12 +635,15 @@ function AssignmentForm({ onDone, user }: { onDone: () => void; user: any }) {
   const handleSubmit = async () => {
     if (!isValid) return;
     setLoading(true);
+    // Status starts at 'pending_driver_approval' so the driver app surfaces it as actionable.
+    const initialStatus = 'pending_driver_approval';
     const { error, data: inserted } = await supabase.from('work_assignments').insert({
       title, description,
       vehicle_plate: vehiclePlate,
       driver_name: driverName,
       driver_id: driverId,
       customer_name: customerName,
+      customer_id: customerId,
       companion_id: companionId || null,
       companion_name: companionName,
       companion_requested: companionRequested,
@@ -648,7 +651,7 @@ function AssignmentForm({ onDone, user }: { onDone: () => void; user: any }) {
       scheduled_time: scheduledTime,
       end_time: endTime,
       location, priority,
-      status: 'created',
+      status: initialStatus,
       notes,
       company_name: user?.company_name || '',
       created_by: user?.id,
@@ -657,28 +660,41 @@ function AssignmentForm({ onDone, user }: { onDone: () => void; user: any }) {
     if (!error && inserted) {
       await supabase.from('work_assignment_status_log').insert({
         assignment_id: inserted.id,
-        old_status: '', new_status: 'created',
+        old_status: '', new_status: initialStatus,
         changed_by: user?.id,
         changed_by_name: user?.full_name || '',
         company_name: user?.company_name || '',
-        notes: 'סידור עבודה חדש נוצר',
+        notes: 'סידור עבודה חדש נוצר וממתין לאישור הנהג',
       });
 
-      // Notify driver
-      if (driverId) {
+      // Notify driver — try resolved id first, then fall back to looking up by name
+      let notifyUserId = driverId;
+      if (!notifyUserId && driverName) {
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('full_name', driverName)
+          .eq('company_name', user?.company_name || '')
+          .maybeSingle();
+        notifyUserId = prof?.id || null;
+      }
+      if (notifyUserId) {
         await supabase.from('driver_notifications').insert({
-          user_id: driverId, type: 'work_assignment',
+          user_id: notifyUserId, type: 'work_assignment',
           title: '📋 סידור עבודה חדש ממתין לאישורך',
           message: `${title} - ${customerName ? customerName + ' | ' : ''}${scheduledDate ? new Date(scheduledDate).toLocaleDateString('he-IL') : ''} ${scheduledTime || ''}`,
           link: '/work-orders',
         });
+      } else {
+        console.warn('No matching user profile for driver name; notification not sent', driverName);
       }
     }
 
     setLoading(false);
     if (error) { toast.error('שגיאה ביצירת סידור העבודה'); console.error(error); }
-    else { toast.success('סידור עבודה חדש נוצר – ממתין לאישור'); onDone(); }
+    else { toast.success('סידור עבודה חדש נוצר – ממתין לאישור הנהג'); onDone(); }
   };
+
 
   const taskTypes = ['הסעה', 'משלוח', 'איסוף', 'העברת רכב', 'טיפול', 'בדיקה', 'רחיצה', 'סיור', 'ליווי', 'אחר'];
 
