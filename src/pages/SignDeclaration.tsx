@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { FileText, Pencil, Check, ArrowRight } from 'lucide-react';
+import { FileText, Pencil, Check, Printer } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast, Toaster } from 'sonner';
 import { useSearchParams } from 'react-router-dom';
+import { printDeclaration } from '@/utils/printDeclaration';
 
 const DECLARATION_TEXT = `אני החתום מטה, בעל תעודת זהות מספר ______,
 מצהיר בזה כי לא נתגלו אצלי, לפי מיטב ידיעתי, מגבלות במערכת העצבים, העצמות,
@@ -29,9 +30,12 @@ interface Declaration {
   driver_name: string;
   id_number: string | null;
   license_number: string | null;
+  company_name: string | null;
   status: string;
   signed_at: string | null;
   signature_url: string | null;
+  expires_at: string | null;
+  created_at: string;
 }
 
 export default function SignDeclaration() {
@@ -39,73 +43,139 @@ export default function SignDeclaration() {
   const token = searchParams.get('token');
   const [declaration, setDeclaration] = useState<Declaration | null>(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [signed, setSigned] = useState(false);
-  const [isDrawing, setIsDrawing] = useState(false);
+  const [hasStrokes, setHasStrokes] = useState(false);
+  const isDrawingRef = useRef(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (!token) { setError('קישור לא תקין'); setLoading(false); return; }
-    supabase.from('driver_declarations').select('*').eq('token', token).single()
+    supabase.from('driver_declarations').select('*').eq('token', token).maybeSingle()
       .then(({ data, error: err }) => {
         if (err || !data) { setError('תצהיר לא נמצא'); }
-        else if (data.status === 'signed') { setDeclaration(data as Declaration); setSigned(true); }
-        else { setDeclaration(data as Declaration); }
+        else {
+          setDeclaration(data as Declaration);
+          if (data.status === 'signed') setSigned(true);
+        }
         setLoading(false);
       });
   }, [token]);
 
+  // Initialize canvas with proper device-pixel-ratio scaling — fixes
+  // hairline / invisible signatures on mobile and Retina screens.
+  const initCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ratio = window.devicePixelRatio || 1;
+    const cssWidth = canvas.clientWidth;
+    const cssHeight = canvas.clientHeight;
+    canvas.width = Math.floor(cssWidth * ratio);
+    canvas.height = Math.floor(cssHeight * ratio);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.scale(ratio, ratio);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, cssWidth, cssHeight);
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2.4;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    setHasStrokes(false);
+  };
+
   useEffect(() => {
     if (declaration && !signed) {
-      setTimeout(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-      }, 100);
+      // Wait for layout so clientWidth is correct
+      const t = setTimeout(initCanvas, 80);
+      const onResize = () => initCanvas();
+      window.addEventListener('resize', onResize);
+      return () => { clearTimeout(t); window.removeEventListener('resize', onResize); };
     }
   }, [declaration, signed]);
 
   const getPos = (e: React.TouchEvent | React.MouseEvent) => {
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
-    if ('touches' in e) return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+    if ('touches' in e) {
+      return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+    }
     return { x: (e as React.MouseEvent).clientX - rect.left, y: (e as React.MouseEvent).clientY - rect.top };
   };
 
-  const startDraw = (e: React.TouchEvent | React.MouseEvent) => { e.preventDefault(); setIsDrawing(true); const ctx = canvasRef.current?.getContext('2d'); if (!ctx) return; const pos = getPos(e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); };
-  const draw = (e: React.TouchEvent | React.MouseEvent) => { if (!isDrawing) return; e.preventDefault(); const ctx = canvasRef.current?.getContext('2d'); if (!ctx) return; const pos = getPos(e); ctx.lineTo(pos.x, pos.y); ctx.stroke(); };
-  const endDraw = () => setIsDrawing(false);
-  const clearCanvas = () => { const ctx = canvasRef.current?.getContext('2d'); if (!ctx) return; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvasRef.current!.width, canvasRef.current!.height); };
+  const startDraw = (e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault();
+    isDrawingRef.current = true;
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
+    const pos = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  };
+  const draw = (e: React.TouchEvent | React.MouseEvent) => {
+    if (!isDrawingRef.current) return;
+    e.preventDefault();
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
+    const pos = getPos(e);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    if (!hasStrokes) setHasStrokes(true);
+  };
+  const endDraw = () => { isDrawingRef.current = false; };
+  const clearCanvas = () => initCanvas();
 
   const handleSign = async () => {
     if (!declaration || !canvasRef.current) return;
-    const dataUrl = canvasRef.current.toDataURL('image/png');
-    const blob = await (await fetch(dataUrl)).blob();
-    const path = `declarations/sig_${declaration.id}_${Date.now()}.png`;
-    const { error: uploadErr } = await supabase.storage.from('documents').upload(path, blob);
-    if (uploadErr) { toast.error('שגיאה בשמירת החתימה'); return; }
-    const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path);
+    if (!hasStrokes) { toast.error('יש לחתום בתוך המסגרת לפני אישור'); return; }
+    setSubmitting(true);
+    try {
+      const dataUrl = canvasRef.current.toDataURL('image/png');
+      const blob = await (await fetch(dataUrl)).blob();
+      const path = `declarations/sig_${declaration.id}_${Date.now()}.png`;
+      const { error: uploadErr } = await supabase.storage
+        .from('documents')
+        .upload(path, blob, { contentType: 'image/png', upsert: false, cacheControl: '3600' });
+      if (uploadErr) {
+        console.error('Signature upload error:', uploadErr);
+        toast.error('שגיאה בשמירת החתימה: ' + uploadErr.message);
+        setSubmitting(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path);
 
-    const signedAt = new Date().toISOString();
-    const expiresAt = new Date();
-    expiresAt.setFullYear(expiresAt.getFullYear() + 5);
+      const signedAt = new Date().toISOString();
+      const expiresAt = new Date();
+      expiresAt.setFullYear(expiresAt.getFullYear() + 5);
 
-    const { error: updateErr } = await supabase.from('driver_declarations').update({
-      status: 'signed',
-      signed_at: signedAt,
-      signature_url: urlData.publicUrl,
-      expires_at: expiresAt.toISOString(),
-    } as any).eq('token', token);
+      const { error: updateErr, data: updated } = await supabase
+        .from('driver_declarations')
+        .update({
+          status: 'signed',
+          signed_at: signedAt,
+          signature_url: urlData.publicUrl,
+          expires_at: expiresAt.toISOString(),
+        })
+        .eq('token', token)
+        .select()
+        .maybeSingle();
 
-    if (updateErr) { toast.error('שגיאה בעדכון התצהיר'); return; }
-    setSigned(true);
-    toast.success('התצהיר נחתם בהצלחה!');
+      if (updateErr) {
+        console.error('Update error:', updateErr);
+        toast.error('שגיאה בעדכון התצהיר: ' + updateErr.message);
+        setSubmitting(false);
+        return;
+      }
+      if (updated) setDeclaration(updated as Declaration);
+      setSigned(true);
+      toast.success('התצהיר נחתם בהצלחה!');
+    } catch (e: any) {
+      console.error(e);
+      toast.error('שגיאה בלתי צפויה');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><p className="text-lg text-muted-foreground">טוען...</p></div>;
@@ -127,7 +197,15 @@ export default function SignDeclaration() {
           </div>
           <h2 className="text-xl font-bold">התצהיר נחתם בהצלחה!</h2>
           <p className="text-muted-foreground">תודה, {declaration.driver_name}. התצהיר נשמר במערכת.</p>
-          {declaration.signature_url && <img src={declaration.signature_url} alt="חתימה" className="h-16 mx-auto rounded border" />}
+          {declaration.signature_url && (
+            <img src={declaration.signature_url} alt="חתימה" className="h-20 mx-auto rounded border bg-white p-2" />
+          )}
+          <button
+            onClick={() => printDeclaration({ ...declaration, declaration_text: DECLARATION_TEXT })}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground text-base font-bold mt-4"
+          >
+            <Printer size={18} /> הדפס / שמור כ-PDF
+          </button>
         </div>
       ) : (
         <div className="space-y-4">
@@ -142,16 +220,23 @@ export default function SignDeclaration() {
 
           <div>
             <p className="text-lg font-medium mb-2">חתימה דיגיטלית:</p>
-            <div className="border-2 border-input rounded-xl overflow-hidden bg-white">
-              <canvas ref={canvasRef} width={350} height={150} className="w-full touch-none"
+            <div className="border-2 border-input rounded-xl overflow-hidden bg-white" style={{ height: 180 }}>
+              <canvas
+                ref={canvasRef}
+                className="w-full h-full touch-none block"
                 onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
-                onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw} />
+                onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw}
+              />
             </div>
             <button onClick={clearCanvas} className="text-sm text-muted-foreground mt-1 underline">נקה חתימה</button>
           </div>
 
-          <button onClick={handleSign} className="w-full py-4 rounded-xl bg-primary text-primary-foreground text-lg font-bold flex items-center justify-center gap-2">
-            <Pencil size={20} /> חתום ואשר
+          <button
+            onClick={handleSign}
+            disabled={submitting}
+            className="w-full py-4 rounded-xl bg-primary text-primary-foreground text-lg font-bold flex items-center justify-center gap-2 disabled:opacity-60"
+          >
+            <Pencil size={20} /> {submitting ? 'שומר...' : 'חתום ואשר'}
           </button>
         </div>
       )}
