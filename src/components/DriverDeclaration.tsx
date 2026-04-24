@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { FileText, Send, Check, Clock, AlertTriangle, ArrowRight, Pencil } from 'lucide-react';
+import { FileText, Send, Check, Clock, AlertTriangle, ArrowRight, Pencil, Printer } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { printDeclaration } from '@/utils/printDeclaration';
 
 const DECLARATION_TEXT = `אני החתום מטה, בעל תעודת זהות מספר ______,
 מצהיר בזה כי לא נתגלו אצלי, לפי מיטב ידיעתי, מגבלות במערכת העצבים, העצמות,
