@@ -562,6 +562,7 @@ function AssignmentForm({ onDone, user }: { onDone: () => void; user: any }) {
   const [driverName, setDriverName] = useState('');
   const [driverId, setDriverId] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState('');
+  const [customerId, setCustomerId] = useState<string | null>(null);
   const [companionId, setCompanionId] = useState('');
   const [companionName, setCompanionName] = useState('');
   const [companionRequested, setCompanionRequested] = useState(false);
@@ -575,7 +576,7 @@ function AssignmentForm({ onDone, user }: { onDone: () => void; user: any }) {
   const [showNewCompanion, setShowNewCompanion] = useState(false);
 
   const [dbVehicles, setDbVehicles] = useState<{ license_plate: string; manufacturer: string; model: string }[]>([]);
-  const [dbDrivers, setDbDrivers] = useState<{ full_name: string; phone: string }[]>([]);
+  const [dbDrivers, setDbDrivers] = useState<{ id: string; full_name: string; phone: string }[]>([]);
   const [dbProfiles, setDbProfiles] = useState<{ id: string; full_name: string }[]>([]);
   const [dbCompanions, setDbCompanions] = useState<{ id: string; full_name: string }[]>([]);
   const [dbCustomers, setDbCustomers] = useState<{ id: string; name: string }[]>([]);
@@ -583,7 +584,7 @@ function AssignmentForm({ onDone, user }: { onDone: () => void; user: any }) {
   useEffect(() => {
     Promise.all([
       supabase.from('vehicles').select('license_plate, manufacturer, model'),
-      supabase.from('drivers').select('full_name, phone'),
+      supabase.from('drivers').select('id, full_name, phone'),
       supabase.from('profiles').select('id, full_name'),
       supabase.from('companions').select('id, full_name').eq('status', 'active'),
       supabase.from('customers').select('id, name'),
@@ -598,9 +599,19 @@ function AssignmentForm({ onDone, user }: { onDone: () => void; user: any }) {
 
   const handleDriverChange = (name: string) => {
     setDriverName(name);
+    // Resolve driver user id: prefer matching profile (auth user), fallback to drivers row id
+    // (driver records are usually created with id = auth user id by handle_new_user trigger)
     const profile = dbProfiles.find(p => p.full_name === name);
-    setDriverId(profile?.id || null);
+    const driverRow = dbDrivers.find(d => d.full_name === name);
+    setDriverId(profile?.id || driverRow?.id || null);
   };
+
+  const handleCustomerChange = (name: string) => {
+    setCustomerName(name);
+    const cust = dbCustomers.find(c => c.name === name);
+    setCustomerId(cust?.id || null);
+  };
+
 
   const handleCompanionChange = (id: string) => {
     setCompanionId(id);
