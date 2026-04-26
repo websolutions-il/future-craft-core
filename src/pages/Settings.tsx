@@ -183,6 +183,7 @@ export default function SettingsPage() {
           </div>
           <BackupButton type="data" label="גיבוי נתונים (DATA)" icon={<Database size={20} />} description="כל הטבלאות בפורמט JSON" />
           <BackupButton type="files" label="גיבוי קבצים (FILES)" icon={<FolderDown size={20} />} description="רשימת קבצים + קישורי הורדה" />
+          <EnglishExportGuideButton />
           <FullExportButton />
 
           <div className="border-t border-border pt-3 mt-2">
