@@ -3049,6 +3049,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      export_schema_ddl: { Args: never; Returns: string }
       get_user_company: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
