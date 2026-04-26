@@ -475,3 +475,222 @@ function FullExportButton() {
     </button>
   );
 }
+
+function EnglishExportGuideButton() {
+  const [open, setOpen] = useState(false);
+
+  const guide = `# Full Supabase Export — Recovery & Migration Guide (English)
+
+This guide explains how to use the **Full Supabase Export (ZIP)** archive to fully recreate the project on a fresh Supabase instance.
+
+---
+
+## 1. What's inside the ZIP
+
+| Path | Purpose |
+|------|---------|
+| \`README.md\` | Quick overview |
+| \`schema/schema.sql\` | Complete DDL: tables, columns, indexes, constraints, FKs, sequences, extensions, functions, triggers, RLS toggles |
+| \`schema/schema_meta.json\` | Raw pg-meta snapshot (machine-readable) |
+| \`supabase/migrations/*_full_schema.sql\` | Drop-in migration with the full schema |
+| \`supabase/migrations/*_rls_policies.sql\` | Row-Level Security policies as a separate migration |
+| \`auth/users.json\` | All Auth users (id, email, phone, metadata, identities, confirmation timestamps) |
+| \`security/policies.{sql,json}\` | RLS policies in SQL + JSON form |
+| \`security/roles.json\` | Database roles snapshot |
+| \`storage/buckets.sql\` | SQL to recreate every bucket with public/private flags + MIME limits |
+| \`storage/buckets_metadata.json\` | All objects per bucket (path, size, mimetype, etag) — file *contents* are not in the ZIP |
+| \`config/project.json\` | Project URL, ref, anon key, **service-role key**, **DB connection string**, list of edge functions, list of configured secrets |
+| \`config/edge_function_secrets.env.example\` | Names of every secret used (PayPal, Resend, Twilio, ElevenLabs, Lovable, Supabase). Values are intentionally omitted. |
+| \`config/supabase_config.toml\` | Stub for \`supabase/config.toml\` |
+| \`data/<table>.json\` | Per-table JSON dump of every public table |
+| \`EXPORT_ERRORS.log\` | Only present if anything failed during export |
+
+---
+
+## 2. Recreate the project — step by step
+
+### 2.1 Create a new Supabase project
+1. Sign in to [supabase.com](https://supabase.com) and create a new project (or run \`supabase init\` locally for self-hosted).
+2. Note the new \`project ref\`, \`SUPABASE_URL\`, \`anon key\`, and \`service_role key\`.
+
+### 2.2 Apply the schema
+\`\`\`bash
+# Option A — via Supabase CLI (recommended)
+cp -r ./supabase/migrations <your-new-project>/supabase/migrations
+cd <your-new-project>
+supabase link --project-ref <NEW_REF>
+supabase db push
+
+# Option B — direct psql
+psql "$NEW_DATABASE_URL" -f schema/schema.sql
+psql "$NEW_DATABASE_URL" -f security/policies.sql
+\`\`\`
+
+### 2.3 Restore Auth users
+Two strategies:
+
+**A. Metadata-only restore (fastest, no password hashes):**
+\`\`\`js
+import { createClient } from '@supabase/supabase-js';
+import users from './auth/users.json' assert { type: 'json' };
+const admin = createClient(NEW_SUPABASE_URL, NEW_SERVICE_ROLE_KEY);
+for (const u of users.users) {
+  await admin.auth.admin.createUser({
+    email: u.email, phone: u.phone,
+    email_confirm: !!u.email_confirmed_at,
+    phone_confirm: !!u.phone_confirmed_at,
+    user_metadata: u.user_metadata,
+    app_metadata: u.app_metadata,
+  });
+}
+// Then trigger password-reset emails for everyone.
+\`\`\`
+
+**B. Full restore including password hashes:** run \`pg_dump --schema=auth\` against the source DB and \`psql\` it into the new one. This preserves bcrypt hashes so users keep their existing passwords.
+
+### 2.4 Recreate storage buckets
+\`\`\`bash
+psql "$NEW_DATABASE_URL" -f storage/buckets.sql
+\`\`\`
+Then re-upload each file. Generate signed URLs from the **source** project for every entry in \`storage/buckets_metadata.json\` and pipe them to the new bucket. Example loop:
+\`\`\`js
+for (const f of buckets_metadata.objects.documents) {
+  const { data } = await sourceAdmin.storage.from('documents').createSignedUrl(f.path, 3600);
+  const blob = await fetch(data.signedUrl).then(r => r.blob());
+  await targetAdmin.storage.from('documents').upload(f.path, blob, { contentType: f.mimetype, upsert: true });
+}
+\`\`\`
+
+### 2.5 Configure edge function secrets
+In **Project Settings → Edge Functions → Secrets**, add every key listed in \`config/edge_function_secrets.env.example\`. Values must be supplied from your own vault — they are not exported for security reasons. Required keys typically include:
+- \`RESEND_API_KEY\`
+- \`PAYPAL_CLIENT_ID\`, \`PAYPAL_SECRET\`
+- \`TWILIO_ACCOUNT_SID\`, \`TWILIO_AUTH_TOKEN\`, \`TWILIO_PHONE_NUMBER\`
+- \`ELEVENLABS_API_KEY\`, \`ELEVENLABS_AGENT_ID\`, \`ELEVENLABS_AGENT_PHONE_NUMBER_ID\`
+- \`LOVABLE_API_KEY\`
+- \`SUPABASE_URL\`, \`SUPABASE_ANON_KEY\`, \`SUPABASE_SERVICE_ROLE_KEY\` (auto-provisioned)
+
+### 2.6 Deploy edge functions
+The function names are listed in \`config/project.json.edge_functions\`. After cloning the source code:
+\`\`\`bash
+supabase functions deploy <function-name> --project-ref <NEW_REF>
+\`\`\`
+
+### 2.7 Import data
+Foreign-key order matters. Recommended order: \`profiles → user_roles → drivers → customers → vehicles → suppliers → companions → company_settings → company_subscriptions → faults → fault_messages → ...\` (depend-on first).
+
+\`\`\`js
+import { createClient } from '@supabase/supabase-js';
+import fs from 'node:fs';
+const admin = createClient(NEW_SUPABASE_URL, NEW_SERVICE_ROLE_KEY);
+const order = ['profiles','user_roles','drivers','customers','vehicles', /* … */];
+for (const t of order) {
+  const rows = JSON.parse(fs.readFileSync(\`./data/\${t}.json\`, 'utf8'));
+  for (let i = 0; i < rows.length; i += 500) {
+    const slice = rows.slice(i, i + 500);
+    const { error } = await admin.from(t).upsert(slice, { onConflict: 'id' });
+    if (error) console.error(t, error.message);
+  }
+}
+\`\`\`
+
+### 2.8 Update the front-end
+Point the front-end to the new project:
+- \`VITE_SUPABASE_URL\`
+- \`VITE_SUPABASE_PUBLISHABLE_KEY\` (anon key)
+- \`VITE_SUPABASE_PROJECT_ID\`
+
+Rebuild and redeploy.
+
+---
+
+## 3. Verification checklist
+- [ ] Super-admin can log in
+- [ ] All tables show expected row counts (compare with \`data/_summary.json\`)
+- [ ] Storage files load (open a couple of documents)
+- [ ] Email notifications send (Resend secret correct)
+- [ ] PayPal billing cron runs
+- [ ] Twilio outbound voice works
+- [ ] Edge functions return 200 from a smoke test
+
+---
+
+## 4. Security warnings
+- \`config/project.json\` contains the **service-role key** and the **database connection string**. Anyone with these has full admin access. **Store the archive in encrypted storage and rotate keys after migration.**
+- Storage signed URLs in \`backup_files\` exports expire after 1 hour. Download files immediately or regenerate.
+- Auth password hashes are only restored via the \`pg_dump --schema=auth\` path; otherwise users must reset their passwords.
+
+---
+
+## 5. Troubleshooting
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| \`relation "x" does not exist\` during data import | Schema migration not applied | Re-run \`supabase db push\` |
+| FK violation during import | Wrong table order | Insert parents (profiles, drivers, vehicles) before children (faults, accidents) |
+| Edge function returns 500 | Missing secret | Compare deployed secrets with \`edge_function_secrets.env.example\` |
+| Users cannot log in | Password hashes not restored | Trigger password-reset email or use pg_dump approach |
+| Files 404 | Bucket not created or files not re-uploaded | Run \`storage/buckets.sql\` then re-upload |
+`;
+
+  const handleDownload = () => {
+    const blob = new Blob([guide], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `full_supabase_export_guide_${new Date().toISOString().slice(0, 10)}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-3 p-3 rounded-xl border border-dashed border-primary/40 hover:bg-primary/5 transition-colors"
+      >
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+          <BookOpen size={20} className="text-primary" />
+        </div>
+        <div className="text-right flex-1" dir="ltr">
+          <p className="font-bold text-sm">📗 Full Export Guide (English)</p>
+          <p className="text-xs text-muted-foreground">Step-by-step recovery instructions for the ZIP archive</p>
+        </div>
+        <ChevronLeft size={18} className={`text-muted-foreground transition-transform ${open ? 'rotate-90' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="mt-3 p-4 rounded-xl bg-muted/50 border border-border space-y-3 text-sm leading-relaxed" dir="ltr">
+          <h4 className="font-bold text-base">🛠 Recovery Workflow</h4>
+          <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground">
+            <li><strong>Create a new Supabase project</strong> and note URL, anon & service-role keys.</li>
+            <li><strong>Apply schema:</strong> copy <code>supabase/migrations/*</code> and run <code>supabase db push</code> (or <code>psql -f schema/schema.sql</code>).</li>
+            <li><strong>Restore Auth users</strong> via <code>auth.admin.createUser</code>, or use <code>pg_dump --schema=auth</code> for full password-hash restore.</li>
+            <li><strong>Recreate buckets</strong> with <code>storage/buckets.sql</code> and re-upload files using signed URLs from the source project.</li>
+            <li><strong>Set every secret</strong> listed in <code>config/edge_function_secrets.env.example</code> in the new project's Edge Functions settings.</li>
+            <li><strong>Deploy edge functions</strong> from <code>config/project.json.edge_functions</code>.</li>
+            <li><strong>Import data</strong> from <code>data/*.json</code> respecting foreign-key order (profiles → drivers → vehicles → children).</li>
+            <li><strong>Re-point the front-end</strong> to the new <code>VITE_SUPABASE_URL</code> and rebuild.</li>
+          </ol>
+
+          <div className="p-3 rounded-lg bg-warning/10 border border-warning/20">
+            <p className="text-warning font-medium text-xs">⚠ The ZIP contains the service-role key and DB connection string. Store it encrypted and rotate keys after migration.</p>
+          </div>
+
+          <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+            <p className="text-xs text-muted-foreground">💡 Storage file contents are not in the ZIP — use signed URLs from the source project to copy each object listed in <code>storage/buckets_metadata.json</code>.</p>
+          </div>
+
+          <button
+            onClick={handleDownload}
+            className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2"
+          >
+            <Download size={16} />
+            Download full English guide (.md)
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
