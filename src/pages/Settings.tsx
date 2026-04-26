@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, User, Building2, Phone, Mail, Moon, Sun, LogOut, Shield, Save, ChevronLeft, Download, Database, FolderDown, BookOpen } from 'lucide-react';
+import { Settings as SettingsIcon, User, Building2, Phone, Mail, Moon, Sun, LogOut, Shield, Save, ChevronLeft, Download, Database, FolderDown, BookOpen, Package } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -183,7 +183,8 @@ export default function SettingsPage() {
           </div>
           <BackupButton type="data" label="גיבוי נתונים (DATA)" icon={<Database size={20} />} description="כל הטבלאות בפורמט JSON" />
           <BackupButton type="files" label="גיבוי קבצים (FILES)" icon={<FolderDown size={20} />} description="רשימת קבצים + קישורי הורדה" />
-          
+          <FullExportButton />
+
           <div className="border-t border-border pt-3 mt-2">
             <RestoreGuideButton />
           </div>
@@ -405,6 +406,69 @@ function BackupButton({ type, label, icon, description }: { type: 'data' | 'file
       <div className="text-right flex-1">
         <p className="font-bold text-sm">{label}</p>
         <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+      {loading && <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />}
+    </button>
+  );
+}
+
+function FullExportButton() {
+  const [loading, setLoading] = useState(false);
+
+  const handleExport = async () => {
+    if (!confirm('ייצוא Supabase מלא כולל מפתחות שירות (Service Role) ו-Database URL. שמור את הקובץ במקום מאובטח. להמשיך?')) return;
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error('יש להתחבר מחדש'); return; }
+
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/full-supabase-export`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        toast.error('שגיאה בייצוא: ' + err);
+        return;
+      }
+
+      const blob = await res.blob();
+      const dlUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = dlUrl;
+      a.download = `full_supabase_export_${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(dlUrl);
+      toast.success('ייצוא Supabase מלא הושלם!');
+    } catch (e) {
+      toast.error('שגיאה בלתי צפויה');
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleExport}
+      disabled={loading}
+      className="w-full flex items-center gap-3 p-3 rounded-xl border-2 border-primary bg-primary/5 hover:bg-primary/10 transition-colors disabled:opacity-50"
+    >
+      <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0">
+        <Package size={20} className="text-primary" />
+      </div>
+      <div className="text-right flex-1">
+        <p className="font-bold text-sm">Full Supabase Export (ZIP)</p>
+        <p className="text-xs text-muted-foreground">Schema DDL + Migrations + Auth + RLS + Storage + Secrets keys + Config</p>
       </div>
       {loading && <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />}
     </button>
