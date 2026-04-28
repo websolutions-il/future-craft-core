@@ -1405,6 +1405,78 @@ export type Database = {
         }
         Relationships: []
       }
+      pickup_appointments: {
+        Row: {
+          call_log_id: string | null
+          company_name: string | null
+          conversation_id: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          driver_id: string | null
+          driver_name: string | null
+          driver_phone: string | null
+          id: string
+          location: string | null
+          notes: string | null
+          scheduled_date: string | null
+          scheduled_time: string | null
+          source: string
+          status: string
+          updated_at: string
+          vehicle_id: string | null
+          vehicle_plate: string | null
+        }
+        Insert: {
+          call_log_id?: string | null
+          company_name?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          driver_id?: string | null
+          driver_name?: string | null
+          driver_phone?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+          vehicle_id?: string | null
+          vehicle_plate?: string | null
+        }
+        Update: {
+          call_log_id?: string | null
+          company_name?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          driver_id?: string | null
+          driver_name?: string | null
+          driver_phone?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+          vehicle_id?: string | null
+          vehicle_plate?: string | null
+        }
+        Relationships: []
+      }
       practical_driving_exams: {
         Row: {
           checklist: Json
