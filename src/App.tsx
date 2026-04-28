@@ -65,6 +65,7 @@ import SignDeclaration from "@/pages/SignDeclaration";
 import ServiceOrderHistory from "@/pages/ServiceOrderHistory";
 import TakeDrivingExam from "@/pages/TakeDrivingExam";
 import Voice from "@/pages/Voice";
+import PickupAppointments from "@/pages/PickupAppointments";
 
 const queryClient = new QueryClient();
 
