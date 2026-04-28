@@ -57,6 +57,7 @@ const managerCategories = [
       { path: '/service-orders', label: 'הזמנת שירות', icon: Briefcase },
       { path: '/routes', label: 'ניהול מסלולים', icon: Route },
       { path: '/work-orders', label: 'סידור עבודה', icon: ClipboardList },
+      { path: '/pickup-appointments', label: 'תיאומי איסוף', icon: Calendar },
       { path: '/towing', label: 'שינועים', icon: Truck },
       { path: '/vehicle-exchange', label: 'החלפת רכב', icon: RefreshCw },
       { path: '/accidents', label: 'דיווח תאונה', icon: AlertTriangle },
