@@ -55,8 +55,8 @@ export default function CallCustomerButton({
     // Verify vehicle exists and find assigned driver
     const { data: vehicle } = await supabase
       .from('vehicles')
-      .select('id, plate_number, driver_id, driver_name')
-      .eq('plate_number', plate)
+      .select('id, license_plate, assigned_driver_id')
+      .eq('license_plate', plate)
       .maybeSingle();
 
     if (!vehicle) {
@@ -64,40 +64,30 @@ export default function CallCustomerButton({
       return;
     }
 
-    // Check assigned driver
-    let driverPhone: string | null = null;
-    let driverId: string | null = (vehicle as any).driver_id || null;
-    let driverName: string = (vehicle as any).driver_name || '';
+    const driverId: string | null = (vehicle as any).assigned_driver_id || null;
 
-    if (driverId) {
-      const { data: drv } = await supabase
-        .from('drivers')
-        .select('id, full_name, phone')
-        .eq('id', driverId)
-        .maybeSingle();
-      if (drv) {
-        driverName = drv.full_name || driverName;
-        driverPhone = drv.phone || null;
-      }
-    } else if (driverName) {
-      // Try by name
-      const { data: drv } = await supabase
-        .from('drivers')
-        .select('id, full_name, phone')
-        .eq('full_name', driverName)
-        .maybeSingle();
-      if (drv) {
-        driverId = drv.id;
-        driverPhone = drv.phone || null;
-      }
-    }
-
-    if (!driverName && !driverId) {
+    if (!driverId) {
       setValidation({ status: 'no_driver' });
       return;
     }
 
-    setValidation({ status: 'ok', driverName, driverPhone, driverId });
+    const { data: drv } = await supabase
+      .from('drivers')
+      .select('id, full_name, phone')
+      .eq('id', driverId)
+      .maybeSingle();
+
+    if (!drv) {
+      setValidation({ status: 'no_driver' });
+      return;
+    }
+
+    setValidation({
+      status: 'ok',
+      driverName: drv.full_name || '',
+      driverPhone: drv.phone || null,
+      driverId: drv.id,
+    });
   };
 
   const submitPickupRequest = async () => {
