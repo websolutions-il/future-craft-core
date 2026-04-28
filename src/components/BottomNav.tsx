@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Car, Users, Route, Wrench, FileText, AlertTriangle, BarChart3, RefreshCw, Menu, X, LogOut, Settings, Bell, Briefcase, ClipboardList, History, UserCheck, Phone, Building2, ChevronsUpDown, Check, Truck, Shield, CheckSquare, Mail, Tag, MessageCircle, CreditCard, ScrollText, Upload, Search as SearchIcon, HeartPulse } from 'lucide-react';
+import { Home, Car, Users, Route, Wrench, FileText, AlertTriangle, BarChart3, RefreshCw, Menu, X, LogOut, Settings, Bell, Briefcase, ClipboardList, History, UserCheck, Phone, Building2, ChevronsUpDown, Check, Truck, Shield, CheckSquare, Mail, Tag, MessageCircle, CreditCard, ScrollText, Upload, Search as SearchIcon, HeartPulse, Calendar } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyScope } from '@/contexts/CompanyScopeContext';
 import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
@@ -57,6 +57,7 @@ const managerCategories = [
       { path: '/service-orders', label: 'הזמנת שירות', icon: Briefcase },
       { path: '/routes', label: 'ניהול מסלולים', icon: Route },
       { path: '/work-orders', label: 'סידור עבודה', icon: ClipboardList },
+      { path: '/pickup-appointments', label: 'תיאומי איסוף', icon: Calendar },
       { path: '/towing', label: 'שינועים', icon: Truck },
       { path: '/vehicle-exchange', label: 'החלפת רכב', icon: RefreshCw },
       { path: '/accidents', label: 'דיווח תאונה', icon: AlertTriangle },
