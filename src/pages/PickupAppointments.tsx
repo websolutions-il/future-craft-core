@@ -46,7 +46,8 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default function PickupAppointments() {
-  const { user, role } = useAuth();
+  const { user } = useAuth();
+  const role = user?.role;
   const [items, setItems] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
