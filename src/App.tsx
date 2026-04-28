@@ -155,6 +155,7 @@ function AppRoutes() {
         <Route path="/take-exam" element={<TakeDrivingExam />} />
         <Route path="/driving-exam/:id" element={<TakeDrivingExam />} />
         <Route path="/voice" element={<Voice />} />
+        <Route path="/pickup-appointments" element={<PickupAppointments />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
