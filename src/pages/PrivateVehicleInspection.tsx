@@ -140,7 +140,7 @@ export default function PrivateVehicleInspection() {
           <label className="block text-base font-medium mb-1.5">רכב מס׳ *</label>
           <select value={vehicleId} onChange={e => setVehicleId(e.target.value)} className={inputClass}>
             <option value="">בחר רכב...</option>
-            {vehicles.map(v => <option key={v.id} value={v.id}>{v.license_plate} - {v.manufacturer} {v.model}</option>)}
+            {vehicles.map(v => <option key={v.id} value={v.id}>{v.license_plate}{v.internal_number ? ` | ${v.internal_number}` : ''} - {v.manufacturer} {v.model}</option>)}
           </select>
         </div>
 
