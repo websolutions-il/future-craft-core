@@ -541,11 +541,31 @@ function VehicleDetail({ vehicle: v, drivers, isManager, onBack, onEdit, onDelet
           {v.license_doc_url && <DocLink label="רישיון רכב" url={v.license_doc_url} />}
           {v.insurance_doc_url && <DocLink label="פוליסת ביטוח חובה" url={v.insurance_doc_url} />}
           {v.comprehensive_insurance_doc_url && <DocLink label="פוליסת ביטוח מקיף" url={v.comprehensive_insurance_doc_url} />}
-          {!v.license_doc_url && !v.insurance_doc_url && !v.comprehensive_insurance_doc_url && (
+          {v.third_party_insurance_doc_url && <DocLink label="פוליסת ביטוח צד ג'" url={v.third_party_insurance_doc_url} />}
+          {!v.license_doc_url && !v.insurance_doc_url && !v.comprehensive_insurance_doc_url && !v.third_party_insurance_doc_url && (
             <p className="text-muted-foreground text-sm">אין מסמכים מצורפים</p>
           )}
         </div>
       </div>
+
+      {/* Vehicle Images */}
+      {(() => {
+        let imgs: string[] = [];
+        try { imgs = v.vehicle_images ? JSON.parse(v.vehicle_images) : []; } catch {}
+        if (!imgs.length) return null;
+        return (
+          <div className="card-elevated mb-4">
+            <h2 className="text-lg font-bold mb-4">📸 תמונות רכב / נזק</h2>
+            <div className="grid grid-cols-3 gap-2">
+              {imgs.map((url, i) => (
+                <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block">
+                  <img src={url} alt={`רכב ${i+1}`} className="w-full h-24 object-cover rounded-lg border border-border" />
+                </a>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Transport */}
       {v.needs_transport && (
