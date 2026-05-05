@@ -148,6 +148,7 @@ function AppRoutes() {
         <Route path="/vehicle-tasks" element={<VehicleTasks />} />
         <Route path="/health-declaration" element={<HealthDeclaration />} />
         <Route path="/vehicle-import" element={<VehicleImport />} />
+        <Route path="/driver-import" element={<DriverImport />} />
         <Route path="/private-vehicle-inspection" element={<PrivateVehicleInspection />} />
         <Route path="/vehicle-lookup" element={<VehicleLookup />} />
         <Route path="/vehicle-exchange" element={<VehicleExchange />} />
