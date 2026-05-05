@@ -29,6 +29,7 @@ interface InspectionItemRow {
 interface VehicleBasic {
   id: string;
   license_plate: string;
+  internal_number: string;
   manufacturer: string;
   model: string;
 }
