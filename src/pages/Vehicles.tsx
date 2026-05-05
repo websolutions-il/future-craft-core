@@ -726,6 +726,14 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
   const [licenseDocUrl, setLicenseDocUrl] = useState(vehicle?.license_doc_url || '');
   const [insuranceDocUrl, setInsuranceDocUrl] = useState(vehicle?.insurance_doc_url || '');
   const [compInsDocUrl, setCompInsDocUrl] = useState(vehicle?.comprehensive_insurance_doc_url || '');
+  const [thirdPartyInsExpiry, setThirdPartyInsExpiry] = useState(vehicle?.third_party_insurance_expiry || '');
+  const [thirdPartyInsDocUrl, setThirdPartyInsDocUrl] = useState(vehicle?.third_party_insurance_doc_url || '');
+  const [nextServiceKm, setNextServiceKm] = useState(vehicle?.next_service_km?.toString() || '');
+  const [insuranceCompany, setInsuranceCompany] = useState(vehicle?.insurance_company || '');
+  const [insuranceAgent, setInsuranceAgent] = useState(vehicle?.insurance_agent || '');
+  const [vehicleImages, setVehicleImages] = useState<string[]>(() => {
+    try { return vehicle?.vehicle_images ? JSON.parse(vehicle.vehicle_images) : []; } catch { return []; }
+  });
 
   // Company setting: is driver assignment required?
   const [driverRequired, setDriverRequired] = useState(false);
