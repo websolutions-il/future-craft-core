@@ -996,6 +996,24 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
+            <label className="block text-lg font-medium mb-2">קודן</label>
+            <input value={code} onChange={e => setCode(e.target.value)} placeholder="קודן..." className={inputClass} />
+          </div>
+          <div>
+            <label className="block text-lg font-medium mb-2">כינוי לרכב</label>
+            <input value={nickname} onChange={e => setNickname(e.target.value)} placeholder="כינוי..." className={inputClass} />
+          </div>
+        </div>
+        <div>
+          <label className="block text-lg font-medium mb-2">בעלות</label>
+          <select value={ownershipType} onChange={e => setOwnershipType(e.target.value)} className={inputClass}>
+            <option value="company">חברה</option>
+            <option value="leasing_company">חברת ליסינג</option>
+            <option value="private">פרטי</option>
+          </select>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
             <label className="block text-lg font-medium mb-2">יצרן</label>
             <input value={manufacturer} onChange={e => setManufacturer(e.target.value)} placeholder="יצרן..." className={inputClass} />
           </div>
