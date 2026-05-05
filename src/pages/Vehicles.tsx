@@ -868,6 +868,9 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
       has_loan: managementType === 'self_maintained' ? hasLoan : managementType === 'financial_leasing',
       is_leasing: managementType === 'operational_leasing' || managementType === 'financial_leasing',
       notes,
+      code,
+      nickname,
+      ownership_type: ownershipType,
     };
 
     let error;
