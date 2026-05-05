@@ -89,6 +89,9 @@ interface VehicleRow {
   planned_replacement_date: string | null;
   has_loan: boolean;
   is_leasing: boolean;
+  code: string;
+  nickname: string;
+  ownership_type: string;
 }
 
 interface InsuranceHistoryRow {
