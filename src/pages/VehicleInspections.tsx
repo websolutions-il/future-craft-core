@@ -79,7 +79,7 @@ export default function VehicleInspections() {
   }
 
   if (viewMode === 'detail' && selectedInspection) {
-    return <InspectionDetail inspection={selectedInspection} onBack={() => { setViewMode('list'); setSelectedInspection(null); }} />;
+    return <InspectionDetail inspection={selectedInspection} vehicles={vehicles} onBack={() => { setViewMode('list'); setSelectedInspection(null); }} />;
   }
 
   return (
