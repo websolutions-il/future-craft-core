@@ -131,7 +131,7 @@ export default function PrivateVehicleInspection() {
 
       <div className="flex items-center gap-3 mb-6">
         <ClipboardCheck size={28} className="text-primary" />
-        <h1 className="text-2xl font-bold">בדיקה תלת / חצי לרכב פרטי</h1>
+        <h1 className="text-2xl font-bold">בדיקה תלת / חצי לרכב פרטי{selectedVehicle?.internal_number ? ` | מס' פנימי ${selectedVehicle.internal_number}` : ''}</h1>
       </div>
 
       {/* Top Fields */}
