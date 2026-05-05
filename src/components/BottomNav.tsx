@@ -44,6 +44,7 @@ const managerCategories = [
       { path: '/private-vehicle-inspection', label: 'בדיקה תלת/חצי', icon: CheckSquare },
       { path: '/vehicle-tasks', label: 'ליקויים', icon: AlertTriangle },
       { path: '/vehicle-import', label: 'יבוא רכבים', icon: Upload },
+      { path: '/driver-import', label: 'יבוא נהגים', icon: Upload },
       { path: '/vehicle-lookup', label: 'בדיקת רכב ממשלתי', icon: SearchIcon },
       { path: '/health-declaration', label: 'הצהרת בריאות', icon: HeartPulse },
       { path: '/driver-declarations', label: 'תצהירי נהגים', icon: FileText },
