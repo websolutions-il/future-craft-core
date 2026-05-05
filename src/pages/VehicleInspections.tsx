@@ -292,7 +292,8 @@ function InspectionForm({ vehicles, user, onDone, onBack }: {
   );
 }
 
-function InspectionDetail({ inspection, onBack }: { inspection: InspectionRow; onBack: () => void }) {
+function InspectionDetail({ inspection, vehicles, onBack }: { inspection: InspectionRow; vehicles: VehicleBasic[]; onBack: () => void }) {
+  const vehicleInternal = vehicles.find(v => v.id === inspection.vehicle_id)?.internal_number;
   const [items, setItems] = useState<InspectionItemRow[]>([]);
 
   useEffect(() => {
