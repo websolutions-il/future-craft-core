@@ -2612,6 +2612,8 @@ export type Database = {
           has_loan: boolean | null
           has_no_claims: boolean | null
           id: string
+          insurance_agent: string | null
+          insurance_company: string | null
           insurance_cost: number | null
           insurance_doc_url: string | null
           insurance_expiry: string | null
@@ -2630,6 +2632,7 @@ export type Database = {
           monthly_loan_payment: number | null
           needs_transport: boolean | null
           next_service_date: string | null
+          next_service_km: number | null
           nickname: string | null
           notes: string | null
           odometer: number | null
@@ -2637,7 +2640,10 @@ export type Database = {
           planned_replacement_date: string | null
           status: string | null
           test_expiry: string | null
+          third_party_insurance_doc_url: string | null
+          third_party_insurance_expiry: string | null
           updated_at: string | null
+          vehicle_images: string | null
           vehicle_return_date: string | null
           vehicle_type: string | null
           year: number | null
@@ -2655,6 +2661,8 @@ export type Database = {
           has_loan?: boolean | null
           has_no_claims?: boolean | null
           id?: string
+          insurance_agent?: string | null
+          insurance_company?: string | null
           insurance_cost?: number | null
           insurance_doc_url?: string | null
           insurance_expiry?: string | null
@@ -2673,6 +2681,7 @@ export type Database = {
           monthly_loan_payment?: number | null
           needs_transport?: boolean | null
           next_service_date?: string | null
+          next_service_km?: number | null
           nickname?: string | null
           notes?: string | null
           odometer?: number | null
@@ -2680,7 +2689,10 @@ export type Database = {
           planned_replacement_date?: string | null
           status?: string | null
           test_expiry?: string | null
+          third_party_insurance_doc_url?: string | null
+          third_party_insurance_expiry?: string | null
           updated_at?: string | null
+          vehicle_images?: string | null
           vehicle_return_date?: string | null
           vehicle_type?: string | null
           year?: number | null
@@ -2698,6 +2710,8 @@ export type Database = {
           has_loan?: boolean | null
           has_no_claims?: boolean | null
           id?: string
+          insurance_agent?: string | null
+          insurance_company?: string | null
           insurance_cost?: number | null
           insurance_doc_url?: string | null
           insurance_expiry?: string | null
@@ -2716,6 +2730,7 @@ export type Database = {
           monthly_loan_payment?: number | null
           needs_transport?: boolean | null
           next_service_date?: string | null
+          next_service_km?: number | null
           nickname?: string | null
           notes?: string | null
           odometer?: number | null
@@ -2723,7 +2738,10 @@ export type Database = {
           planned_replacement_date?: string | null
           status?: string | null
           test_expiry?: string | null
+          third_party_insurance_doc_url?: string | null
+          third_party_insurance_expiry?: string | null
           updated_at?: string | null
+          vehicle_images?: string | null
           vehicle_return_date?: string | null
           vehicle_type?: string | null
           year?: number | null
