@@ -2602,6 +2602,7 @@ export type Database = {
         Row: {
           approval_status: string | null
           assigned_driver_id: string | null
+          code: string | null
           company_name: string | null
           comprehensive_insurance_doc_url: string | null
           comprehensive_insurance_expiry: string | null
@@ -2629,8 +2630,10 @@ export type Database = {
           monthly_loan_payment: number | null
           needs_transport: boolean | null
           next_service_date: string | null
+          nickname: string | null
           notes: string | null
           odometer: number | null
+          ownership_type: string | null
           planned_replacement_date: string | null
           status: string | null
           test_expiry: string | null
@@ -2642,6 +2645,7 @@ export type Database = {
         Insert: {
           approval_status?: string | null
           assigned_driver_id?: string | null
+          code?: string | null
           company_name?: string | null
           comprehensive_insurance_doc_url?: string | null
           comprehensive_insurance_expiry?: string | null
@@ -2669,8 +2673,10 @@ export type Database = {
           monthly_loan_payment?: number | null
           needs_transport?: boolean | null
           next_service_date?: string | null
+          nickname?: string | null
           notes?: string | null
           odometer?: number | null
+          ownership_type?: string | null
           planned_replacement_date?: string | null
           status?: string | null
           test_expiry?: string | null
@@ -2682,6 +2688,7 @@ export type Database = {
         Update: {
           approval_status?: string | null
           assigned_driver_id?: string | null
+          code?: string | null
           company_name?: string | null
           comprehensive_insurance_doc_url?: string | null
           comprehensive_insurance_expiry?: string | null
@@ -2709,8 +2716,10 @@ export type Database = {
           monthly_loan_payment?: number | null
           needs_transport?: boolean | null
           next_service_date?: string | null
+          nickname?: string | null
           notes?: string | null
           odometer?: number | null
+          ownership_type?: string | null
           planned_replacement_date?: string | null
           status?: string | null
           test_expiry?: string | null

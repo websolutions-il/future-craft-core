@@ -89,6 +89,9 @@ interface VehicleRow {
   planned_replacement_date: string | null;
   has_loan: boolean;
   is_leasing: boolean;
+  code: string;
+  nickname: string;
+  ownership_type: string;
 }
 
 interface InsuranceHistoryRow {
@@ -623,6 +626,9 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
   const isEdit = !!vehicle;
   const [licensePlate, setLicensePlate] = useState(vehicle?.license_plate || '');
   const [internalNumber, setInternalNumber] = useState(vehicle?.internal_number || '');
+  const [code, setCode] = useState(vehicle?.code || '');
+  const [nickname, setNickname] = useState(vehicle?.nickname || '');
+  const [ownershipType, setOwnershipType] = useState(vehicle?.ownership_type || 'company');
   const [manufacturer, setManufacturer] = useState(vehicle?.manufacturer || '');
   const [model, setModel] = useState(vehicle?.model || '');
   const [year, setYear] = useState(vehicle?.year?.toString() || new Date().getFullYear().toString());
@@ -862,6 +868,9 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
       has_loan: managementType === 'self_maintained' ? hasLoan : managementType === 'financial_leasing',
       is_leasing: managementType === 'operational_leasing' || managementType === 'financial_leasing',
       notes,
+      code,
+      nickname,
+      ownership_type: ownershipType,
     };
 
     let error;
@@ -984,6 +993,24 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
         <div>
           <label className="block text-lg font-medium mb-2">מספר פנימי</label>
           <input value={internalNumber} onChange={e => setInternalNumber(e.target.value)} placeholder="מספר פנימי בארגון..." className={inputClass} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-lg font-medium mb-2">קודן</label>
+            <input value={code} onChange={e => setCode(e.target.value)} placeholder="קודן..." className={inputClass} />
+          </div>
+          <div>
+            <label className="block text-lg font-medium mb-2">כינוי לרכב</label>
+            <input value={nickname} onChange={e => setNickname(e.target.value)} placeholder="כינוי..." className={inputClass} />
+          </div>
+        </div>
+        <div>
+          <label className="block text-lg font-medium mb-2">בעלות</label>
+          <select value={ownershipType} onChange={e => setOwnershipType(e.target.value)} className={inputClass}>
+            <option value="company">חברה</option>
+            <option value="leasing_company">חברת ליסינג</option>
+            <option value="private">פרטי</option>
+          </select>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
