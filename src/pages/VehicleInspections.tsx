@@ -230,7 +230,7 @@ function InspectionForm({ vehicles, user, onDone, onBack }: {
           <label className="block text-lg font-medium mb-2">רכב *</label>
           <select value={vehicleId} onChange={e => setVehicleId(e.target.value)} className={inputClass}>
             <option value="">בחר רכב...</option>
-            {vehicles.map(v => <option key={v.id} value={v.id}>{v.license_plate} - {v.manufacturer} {v.model}</option>)}
+            {vehicles.map(v => <option key={v.id} value={v.id}>{v.license_plate}{v.internal_number ? ` | ${v.internal_number}` : ''} - {v.manufacturer} {v.model}</option>)}
           </select>
         </div>
 
