@@ -1222,6 +1222,28 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
         </div>
 
         <div className="border border-border rounded-xl p-4 space-y-4">
+          <h3 className="font-bold text-lg">ביטוח צד ג'</h3>
+          <div>
+            <label className="block text-sm font-medium mb-1">תאריך תוקף</label>
+            <input type="date" value={thirdPartyInsExpiry} onChange={e => setThirdPartyInsExpiry(e.target.value)} className={inputClass} />
+          </div>
+        </div>
+
+        <div className="border border-border rounded-xl p-4 space-y-4">
+          <h3 className="font-bold text-lg">🏢 פרטי ביטוח</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">חברת ביטוח</label>
+              <input value={insuranceCompany} onChange={e => setInsuranceCompany(e.target.value)} placeholder="שם חברת הביטוח..." className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">סוכן ביטוח</label>
+              <input value={insuranceAgent} onChange={e => setInsuranceAgent(e.target.value)} placeholder="שם הסוכן..." className={inputClass} />
+            </div>
+          </div>
+        </div>
+
+        <div className="border border-border rounded-xl p-4 space-y-4">
           <h3 className="font-bold text-lg">🔧 טיפול</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -1232,6 +1254,10 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
               <label className="block text-sm font-medium mb-1">טיפול הבא</label>
               <input type="date" value={nextServiceDate} onChange={e => setNextServiceDate(e.target.value)} className={inputClass} />
             </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">ק"מ לטיפול הבא</label>
+            <input type="number" value={nextServiceKm} onChange={e => setNextServiceKm(e.target.value)} placeholder="לדוגמה: 80000" className={inputClass} />
           </div>
         </div>
 
