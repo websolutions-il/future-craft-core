@@ -57,7 +57,7 @@ export default function PrivateVehicleInspection() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    applyCompanyScope(supabase.from('vehicles').select('id, license_plate, manufacturer, model'), companyFilter)
+    applyCompanyScope(supabase.from('vehicles').select('id, license_plate, internal_number, manufacturer, model'), companyFilter)
       .then(({ data }) => { if (data) setVehicles(data as VehicleBasic[]); });
   }, []);
 
