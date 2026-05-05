@@ -179,10 +179,9 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
         .in('treatment_status', OPEN_TREATMENT_STATUSES)
         .or('service_category.ilike.%חירום%,description.ilike.%חירום%'),
       supabase
-        .from('service_orders')
-        .select('vehicle_plate')
-        .ilike('vendor_name', '%דליה%')
-        .in('treatment_status', OPEN_TREATMENT_STATUSES),
+        .from('vehicles')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'in_service'),
     ]);
 
     if (profilesRes.error || usersCountRes.error || emergencyRes.error || treatmentVehiclesRes.error) {
