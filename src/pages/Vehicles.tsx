@@ -421,6 +421,33 @@ function VehicleDetail({ vehicle: v, drivers, isManager, onBack, onEdit, onDelet
           </div>
         </div>
 
+        {(() => {
+          const today = new Date();
+          const missing: string[] = [];
+          if (!v.license_doc_url) missing.push('רישיון רכב חסר');
+          if (!v.test_expiry) missing.push('תוקף טסט לא מעודכן');
+          else if (new Date(v.test_expiry) < today) missing.push('טסט פג תוקף');
+          if (!v.insurance_expiry) missing.push('ביטוח חובה חסר');
+          else if (new Date(v.insurance_expiry) < today) missing.push('ביטוח חובה פג תוקף');
+          if (!v.insurance_doc_url) missing.push('מסמך ביטוח חובה חסר');
+          if (showInsurance) {
+            if (!v.comprehensive_insurance_expiry) missing.push('ביטוח מקיף חסר');
+            else if (new Date(v.comprehensive_insurance_expiry) < today) missing.push('ביטוח מקיף פג תוקף');
+          }
+          if (missing.length === 0) return null;
+          return (
+            <div className="mb-4 p-4 rounded-xl bg-destructive/10 border-2 border-destructive/30">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle size={20} className="text-destructive" />
+                <h3 className="font-bold text-destructive">חוסרים בכרטיס הרכב</h3>
+              </div>
+              <ul className="list-disc pr-6 text-destructive space-y-1">
+                {missing.map(m => <li key={m}>{m}</li>)}
+              </ul>
+            </div>
+          );
+        })()}
+
         <div className="grid grid-cols-2 gap-y-5 gap-x-4 text-lg">
           <InfoField label="סוג רכב" value={v.vehicle_type || '—'} />
           <InfoField label='ק"מ' value={`${(v.odometer || 0).toLocaleString()}`} />
