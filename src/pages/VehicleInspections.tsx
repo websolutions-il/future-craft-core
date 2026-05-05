@@ -66,9 +66,11 @@ export default function VehicleInspections() {
 
   useEffect(() => { loadData(); }, []);
 
-  const filtered = inspections.filter(i =>
-    !search || i.vehicle_plate?.includes(search) || i.inspector_name?.includes(search)
-  );
+  const filtered = inspections.filter(i => {
+    if (!search) return true;
+    const v = vehicles.find(x => x.id === i.vehicle_id);
+    return i.vehicle_plate?.includes(search) || i.inspector_name?.includes(search) || v?.internal_number?.includes(search);
+  });
 
   const isManager = user?.role === 'fleet_manager' || user?.role === 'super_admin';
 
