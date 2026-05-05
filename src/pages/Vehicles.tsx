@@ -886,6 +886,12 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
       code,
       nickname,
       ownership_type: ownershipType,
+      third_party_insurance_expiry: thirdPartyInsExpiry || null,
+      third_party_insurance_doc_url: thirdPartyInsDocUrl,
+      next_service_km: parseInt(nextServiceKm) || null,
+      insurance_company: insuranceCompany,
+      insurance_agent: insuranceAgent,
+      vehicle_images: JSON.stringify(vehicleImages),
     };
 
     let error;
