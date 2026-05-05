@@ -200,17 +200,11 @@ function SuperAdminDashboard({ onEnterFleetMode }: { onEnterFleetMode: (company:
         .filter((company): company is string => Boolean(company))
     );
 
-    const vehiclesInTreatment = new Set(
-      (treatmentVehiclesRes.data || [])
-        .map((row) => row.vehicle_plate?.trim())
-        .filter((plate): plate is string => Boolean(plate))
-    );
-
     setStats({
       companiesCount: companies.size,
       usersCount: usersCountRes.count || 0,
       emergencyOpenCount: emergencyRes.count || 0,
-      vehiclesInTreatmentCount: vehiclesInTreatment.size,
+      vehiclesInTreatmentCount: treatmentVehiclesRes.count || 0,
     });
 
     setLoading(false);
