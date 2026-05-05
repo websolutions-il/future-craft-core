@@ -57,7 +57,7 @@ export default function VehicleInspections() {
     setLoading(true);
     const [iRes, vRes] = await Promise.all([
       applyCompanyScope(supabase.from('vehicle_inspections').select('*'), companyFilter).order('inspection_date', { ascending: false }),
-      applyCompanyScope(supabase.from('vehicles').select('id, license_plate, manufacturer, model'), companyFilter),
+      applyCompanyScope(supabase.from('vehicles').select('id, license_plate, internal_number, manufacturer, model'), companyFilter),
     ]);
     if (iRes.data) setInspections(iRes.data as InspectionRow[]);
     if (vRes.data) setVehicles(vRes.data as VehicleBasic[]);
