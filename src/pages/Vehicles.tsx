@@ -1372,7 +1372,26 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
               folder="vehicle-docs"
               acceptPdf
             />
+            <ImageUpload
+              label="פוליסת ביטוח צד ג'"
+              imageUrl={thirdPartyInsDocUrl || null}
+              onImageUploaded={(url) => setThirdPartyInsDocUrl(url || '')}
+              folder="vehicle-docs"
+              acceptPdf
+            />
           </div>
+        </div>
+
+        {/* Vehicle Images / Damage */}
+        <div className="border-t border-border pt-5">
+          <h2 className="text-xl font-bold mb-4">📸 תמונות רכב / נזק</h2>
+          <MultiImageUpload
+            label="תמונות"
+            imageUrls={vehicleImages}
+            onImagesChanged={setVehicleImages}
+            folder="vehicle-images"
+            max={20}
+          />
         </div>
 
         {/* Transport */}
