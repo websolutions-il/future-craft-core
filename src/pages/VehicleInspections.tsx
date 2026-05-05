@@ -113,10 +113,12 @@ export default function VehicleInspections() {
                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${i.overall_status === 'passed' ? 'bg-success/10' : 'bg-destructive/10'}`}>
                   {i.overall_status === 'passed' ? <CheckCircle2 size={28} className="text-success" /> : <AlertTriangle size={28} className="text-destructive" />}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xl font-bold">רכב {i.vehicle_plate}</p>
-                  <p className="text-muted-foreground">{new Date(i.inspection_date).toLocaleDateString('he-IL')} • {i.inspector_name || 'לא צוין'}</p>
-                </div>
+                {(() => { const v = vehicles.find(x => x.id === i.vehicle_id); return (
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xl font-bold">רכב {i.vehicle_plate}{v?.internal_number ? ` | מס' פנימי ${v.internal_number}` : ''}</p>
+                    <p className="text-muted-foreground">{new Date(i.inspection_date).toLocaleDateString('he-IL')} • {i.inspector_name || 'לא צוין'}</p>
+                  </div>
+                ); })()}
                 <span className={`status-badge ${i.overall_status === 'passed' ? 'status-active' : 'status-inactive'}`}>
                   {i.overall_status === 'passed' ? 'תקין' : 'ליקויים'}
                 </span>
