@@ -309,7 +309,7 @@ function InspectionDetail({ inspection, vehicles, onBack }: { inspection: Inspec
 
       <div className="card-elevated mb-4">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">ביקורת רכב {inspection.vehicle_plate}</h1>
+          <h1 className="text-2xl font-bold">ביקורת רכב {inspection.vehicle_plate}{vehicleInternal ? ` | מס' פנימי ${vehicleInternal}` : ''}</h1>
           <span className={`status-badge ${inspection.overall_status === 'passed' ? 'status-active' : 'status-inactive'}`}>
             {inspection.overall_status === 'passed' ? 'תקין' : 'ליקויים'}
           </span>
