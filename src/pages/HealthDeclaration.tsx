@@ -72,15 +72,30 @@ export default function HealthDeclaration() {
         <div className="space-y-3">
           {filtered.map(d => (
             <div key={d.id} className="card-elevated">
-              <div className="flex items-center gap-4">
+              <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                   <FileSignature size={24} className="text-primary" />
                 </div>
-                <div className="flex-1">
-                  <p className="text-lg font-bold">{d.driver_name}</p>
-                  <p className="text-muted-foreground text-sm">ת.ז: {d.id_number} • {new Date(d.declaration_date).toLocaleDateString('he-IL')}</p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <p className="text-lg font-bold">{d.driver_name}</p>
+                    {d.signature_url && <span className="text-success text-sm font-medium">✅ חתום</span>}
+                  </div>
+                  <p className="text-muted-foreground text-sm">ת.ז: {d.id_number || '—'} • רישיון: {d.license_number || '—'}</p>
+                  <p className="text-muted-foreground text-sm">תאריך: {new Date(d.declaration_date).toLocaleDateString('he-IL')}</p>
+                  <div className="flex gap-3 mt-3 flex-wrap">
+                    {d.signature_url && (
+                      <a href={d.signature_url} target="_blank" rel="noopener noreferrer" className="px-3 py-2 rounded-xl bg-primary/10 text-primary text-sm font-bold">
+                        🖊️ צפה בחתימה
+                      </a>
+                    )}
+                    {d.license_image_url && (
+                      <a href={d.license_image_url} target="_blank" rel="noopener noreferrer" className="px-3 py-2 rounded-xl bg-info/10 text-info text-sm font-bold">
+                        🪪 צפה ברישיון
+                      </a>
+                    )}
+                  </div>
                 </div>
-                {d.signature_url && <span className="text-success text-sm font-medium">✅ חתום</span>}
               </div>
             </div>
           ))}
