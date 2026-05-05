@@ -41,6 +41,7 @@ import VehicleInspections from "@/pages/VehicleInspections";
 import VehicleTasks from "@/pages/VehicleTasks";
 import HealthDeclaration from "@/pages/HealthDeclaration";
 import VehicleImport from "@/pages/VehicleImport";
+import DriverImport from "@/pages/DriverImport";
 import PrivateVehicleInspection from "@/pages/PrivateVehicleInspection";
 import VehicleLookup from "@/pages/VehicleLookup";
 import VehicleExchange from "@/pages/VehicleExchange";
@@ -147,6 +148,7 @@ function AppRoutes() {
         <Route path="/vehicle-tasks" element={<VehicleTasks />} />
         <Route path="/health-declaration" element={<HealthDeclaration />} />
         <Route path="/vehicle-import" element={<VehicleImport />} />
+        <Route path="/driver-import" element={<DriverImport />} />
         <Route path="/private-vehicle-inspection" element={<PrivateVehicleInspection />} />
         <Route path="/vehicle-lookup" element={<VehicleLookup />} />
         <Route path="/vehicle-exchange" element={<VehicleExchange />} />
