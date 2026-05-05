@@ -41,6 +41,7 @@ import VehicleInspections from "@/pages/VehicleInspections";
 import VehicleTasks from "@/pages/VehicleTasks";
 import HealthDeclaration from "@/pages/HealthDeclaration";
 import VehicleImport from "@/pages/VehicleImport";
+import DriverImport from "@/pages/DriverImport";
 import PrivateVehicleInspection from "@/pages/PrivateVehicleInspection";
 import VehicleLookup from "@/pages/VehicleLookup";
 import VehicleExchange from "@/pages/VehicleExchange";
