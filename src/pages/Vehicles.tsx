@@ -492,11 +492,22 @@ function VehicleDetail({ vehicle: v, drivers, isManager, onBack, onEdit, onDelet
           <ExpiryRow label="טסט" date={v.test_expiry} daysLeft={testDays} colorCls={expiryColor(testDays)} />
           <ExpiryRow label="ביטוח חובה" date={v.insurance_expiry} daysLeft={insDays} colorCls={expiryColor(insDays)} />
           <ExpiryRow label="ביטוח מקיף" date={v.comprehensive_insurance_expiry} daysLeft={compDays} colorCls={expiryColor(compDays)} />
+          {v.third_party_insurance_expiry && (() => {
+            const tpDays = daysUntil(v.third_party_insurance_expiry);
+            return <ExpiryRow label="ביטוח צד ג'" date={v.third_party_insurance_expiry} daysLeft={tpDays} colorCls={expiryColor(tpDays)} />;
+          })()}
           {v.next_service_date && (() => {
             const svcDays = daysUntil(v.next_service_date);
             return <ExpiryRow label="טיפול הבא" date={v.next_service_date} daysLeft={svcDays} colorCls={expiryColor(svcDays)} />;
           })()}
         </div>
+        {(v.insurance_company || v.insurance_agent || v.next_service_km) && (
+          <div className="grid grid-cols-2 gap-y-3 gap-x-4 mt-4 pt-4 border-t border-border">
+            {v.insurance_company && <InfoField label="חברת ביטוח" value={v.insurance_company} />}
+            {v.insurance_agent && <InfoField label="סוכן ביטוח" value={v.insurance_agent} />}
+            {v.next_service_km && <InfoField label='ק"מ לטיפול הבא' value={v.next_service_km.toLocaleString()} />}
+          </div>
+        )}
       </div>
 
       {/* Insurance History */}
