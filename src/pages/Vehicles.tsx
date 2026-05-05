@@ -92,6 +92,12 @@ interface VehicleRow {
   code: string;
   nickname: string;
   ownership_type: string;
+  third_party_insurance_expiry: string | null;
+  third_party_insurance_doc_url: string;
+  next_service_km: number | null;
+  insurance_company: string;
+  insurance_agent: string;
+  vehicle_images: string;
 }
 
 interface InsuranceHistoryRow {
