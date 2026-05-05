@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { toast } from 'sonner';
 import ImageUpload from '@/components/ImageUpload';
+import MultiImageUpload from '@/components/MultiImageUpload';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import CallCustomerButton from '@/components/voice/CallCustomerButton';
@@ -92,6 +93,12 @@ interface VehicleRow {
   code: string;
   nickname: string;
   ownership_type: string;
+  third_party_insurance_expiry: string | null;
+  third_party_insurance_doc_url: string;
+  next_service_km: number | null;
+  insurance_company: string;
+  insurance_agent: string;
+  vehicle_images: string;
 }
 
 interface InsuranceHistoryRow {
@@ -485,11 +492,22 @@ function VehicleDetail({ vehicle: v, drivers, isManager, onBack, onEdit, onDelet
           <ExpiryRow label="טסט" date={v.test_expiry} daysLeft={testDays} colorCls={expiryColor(testDays)} />
           <ExpiryRow label="ביטוח חובה" date={v.insurance_expiry} daysLeft={insDays} colorCls={expiryColor(insDays)} />
           <ExpiryRow label="ביטוח מקיף" date={v.comprehensive_insurance_expiry} daysLeft={compDays} colorCls={expiryColor(compDays)} />
+          {v.third_party_insurance_expiry && (() => {
+            const tpDays = daysUntil(v.third_party_insurance_expiry);
+            return <ExpiryRow label="ביטוח צד ג'" date={v.third_party_insurance_expiry} daysLeft={tpDays} colorCls={expiryColor(tpDays)} />;
+          })()}
           {v.next_service_date && (() => {
             const svcDays = daysUntil(v.next_service_date);
             return <ExpiryRow label="טיפול הבא" date={v.next_service_date} daysLeft={svcDays} colorCls={expiryColor(svcDays)} />;
           })()}
         </div>
+        {(v.insurance_company || v.insurance_agent || v.next_service_km) && (
+          <div className="grid grid-cols-2 gap-y-3 gap-x-4 mt-4 pt-4 border-t border-border">
+            {v.insurance_company && <InfoField label="חברת ביטוח" value={v.insurance_company} />}
+            {v.insurance_agent && <InfoField label="סוכן ביטוח" value={v.insurance_agent} />}
+            {v.next_service_km && <InfoField label='ק"מ לטיפול הבא' value={v.next_service_km.toLocaleString()} />}
+          </div>
+        )}
       </div>
 
       {/* Insurance History */}
@@ -523,11 +541,31 @@ function VehicleDetail({ vehicle: v, drivers, isManager, onBack, onEdit, onDelet
           {v.license_doc_url && <DocLink label="רישיון רכב" url={v.license_doc_url} />}
           {v.insurance_doc_url && <DocLink label="פוליסת ביטוח חובה" url={v.insurance_doc_url} />}
           {v.comprehensive_insurance_doc_url && <DocLink label="פוליסת ביטוח מקיף" url={v.comprehensive_insurance_doc_url} />}
-          {!v.license_doc_url && !v.insurance_doc_url && !v.comprehensive_insurance_doc_url && (
+          {v.third_party_insurance_doc_url && <DocLink label="פוליסת ביטוח צד ג'" url={v.third_party_insurance_doc_url} />}
+          {!v.license_doc_url && !v.insurance_doc_url && !v.comprehensive_insurance_doc_url && !v.third_party_insurance_doc_url && (
             <p className="text-muted-foreground text-sm">אין מסמכים מצורפים</p>
           )}
         </div>
       </div>
+
+      {/* Vehicle Images */}
+      {(() => {
+        let imgs: string[] = [];
+        try { imgs = v.vehicle_images ? JSON.parse(v.vehicle_images) : []; } catch {}
+        if (!imgs.length) return null;
+        return (
+          <div className="card-elevated mb-4">
+            <h2 className="text-lg font-bold mb-4">📸 תמונות רכב / נזק</h2>
+            <div className="grid grid-cols-3 gap-2">
+              {imgs.map((url, i) => (
+                <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block">
+                  <img src={url} alt={`רכב ${i+1}`} className="w-full h-24 object-cover rounded-lg border border-border" />
+                </a>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Transport */}
       {v.needs_transport && (
@@ -719,6 +757,14 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
   const [licenseDocUrl, setLicenseDocUrl] = useState(vehicle?.license_doc_url || '');
   const [insuranceDocUrl, setInsuranceDocUrl] = useState(vehicle?.insurance_doc_url || '');
   const [compInsDocUrl, setCompInsDocUrl] = useState(vehicle?.comprehensive_insurance_doc_url || '');
+  const [thirdPartyInsExpiry, setThirdPartyInsExpiry] = useState(vehicle?.third_party_insurance_expiry || '');
+  const [thirdPartyInsDocUrl, setThirdPartyInsDocUrl] = useState(vehicle?.third_party_insurance_doc_url || '');
+  const [nextServiceKm, setNextServiceKm] = useState(vehicle?.next_service_km?.toString() || '');
+  const [insuranceCompany, setInsuranceCompany] = useState(vehicle?.insurance_company || '');
+  const [insuranceAgent, setInsuranceAgent] = useState(vehicle?.insurance_agent || '');
+  const [vehicleImages, setVehicleImages] = useState<string[]>(() => {
+    try { return vehicle?.vehicle_images ? JSON.parse(vehicle.vehicle_images) : []; } catch { return []; }
+  });
 
   // Company setting: is driver assignment required?
   const [driverRequired, setDriverRequired] = useState(false);
@@ -871,6 +917,12 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
       code,
       nickname,
       ownership_type: ownershipType,
+      third_party_insurance_expiry: thirdPartyInsExpiry || null,
+      third_party_insurance_doc_url: thirdPartyInsDocUrl,
+      next_service_km: parseInt(nextServiceKm) || null,
+      insurance_company: insuranceCompany,
+      insurance_agent: insuranceAgent,
+      vehicle_images: JSON.stringify(vehicleImages),
     };
 
     let error;
@@ -1201,6 +1253,28 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
         </div>
 
         <div className="border border-border rounded-xl p-4 space-y-4">
+          <h3 className="font-bold text-lg">ביטוח צד ג'</h3>
+          <div>
+            <label className="block text-sm font-medium mb-1">תאריך תוקף</label>
+            <input type="date" value={thirdPartyInsExpiry} onChange={e => setThirdPartyInsExpiry(e.target.value)} className={inputClass} />
+          </div>
+        </div>
+
+        <div className="border border-border rounded-xl p-4 space-y-4">
+          <h3 className="font-bold text-lg">🏢 פרטי ביטוח</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">חברת ביטוח</label>
+              <input value={insuranceCompany} onChange={e => setInsuranceCompany(e.target.value)} placeholder="שם חברת הביטוח..." className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">סוכן ביטוח</label>
+              <input value={insuranceAgent} onChange={e => setInsuranceAgent(e.target.value)} placeholder="שם הסוכן..." className={inputClass} />
+            </div>
+          </div>
+        </div>
+
+        <div className="border border-border rounded-xl p-4 space-y-4">
           <h3 className="font-bold text-lg">🔧 טיפול</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -1211,6 +1285,10 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
               <label className="block text-sm font-medium mb-1">טיפול הבא</label>
               <input type="date" value={nextServiceDate} onChange={e => setNextServiceDate(e.target.value)} className={inputClass} />
             </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">ק"מ לטיפול הבא</label>
+            <input type="number" value={nextServiceKm} onChange={e => setNextServiceKm(e.target.value)} placeholder="לדוגמה: 80000" className={inputClass} />
           </div>
         </div>
 
@@ -1325,7 +1403,26 @@ function VehicleForm({ vehicle, drivers, onDone, onBack, user }: {
               folder="vehicle-docs"
               acceptPdf
             />
+            <ImageUpload
+              label="פוליסת ביטוח צד ג'"
+              imageUrl={thirdPartyInsDocUrl || null}
+              onImageUploaded={(url) => setThirdPartyInsDocUrl(url || '')}
+              folder="vehicle-docs"
+              acceptPdf
+            />
           </div>
+        </div>
+
+        {/* Vehicle Images / Damage */}
+        <div className="border-t border-border pt-5">
+          <h2 className="text-xl font-bold mb-4">📸 תמונות רכב / נזק</h2>
+          <MultiImageUpload
+            label="תמונות"
+            imageUrls={vehicleImages}
+            onImagesChanged={setVehicleImages}
+            folder="vehicle-images"
+            max={20}
+          />
         </div>
 
         {/* Transport */}
