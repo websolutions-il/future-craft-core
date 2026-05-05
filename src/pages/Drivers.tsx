@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Search, ArrowRight, Phone, Mail, Plus, Save, Edit2, X, Download, Upload, FileImage, Eye } from 'lucide-react';
+import { Users, Search, ArrowRight, Phone, Mail, Plus, Save, Edit2, X, Download, Upload, FileImage, Eye, AlertTriangle } from 'lucide-react';
 import DriverDeclaration from '@/components/DriverDeclaration';
 import DriverExamsTab from '@/components/driving-exam/DriverExamsTab';
 import { exportToCsv } from '@/utils/exportCsv';
@@ -87,6 +87,28 @@ export default function Drivers() {
               )}
             </div>
           </div>
+          {(() => {
+            const missing: string[] = [];
+            if (!d.license_number) missing.push('מספר רישיון');
+            if (!d.license_expiry) missing.push('תוקף רישיון');
+            else if (new Date(d.license_expiry) < new Date()) missing.push('רישיון פג תוקף');
+            if (!d.id_number) missing.push('תעודת זהות');
+            if (!d.phone) missing.push('טלפון');
+            if (!d.license_image_url) missing.push('צילום רישיון');
+            if ((d as any).exam_expiry && new Date((d as any).exam_expiry) < new Date()) missing.push('מבחן כשירות פג תוקף');
+            if (missing.length === 0) return null;
+            return (
+              <div className="mb-4 p-4 rounded-xl bg-destructive/10 border-2 border-destructive/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle size={20} className="text-destructive" />
+                  <h3 className="font-bold text-destructive">חוסרים בכרטיס הנהג</h3>
+                </div>
+                <ul className="list-disc pr-6 text-destructive space-y-1">
+                  {missing.map(m => <li key={m}>{m}</li>)}
+                </ul>
+              </div>
+            );
+          })()}
           <div className="grid grid-cols-2 gap-4 text-lg">
             <div><span className="text-muted-foreground">טלפון:</span><p className="font-bold">{d.phone}</p></div>
             <div><span className="text-muted-foreground">אימייל:</span><p className="font-bold">{d.email || '—'}</p></div>
