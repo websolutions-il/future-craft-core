@@ -45,7 +45,9 @@ export default function ExpenseForm({ onSubmit, onCancel }: ExpenseFormProps) {
   const [paymentMethod, setPaymentMethod] = useState<'credit' | 'cash' | 'fuel_card'>('credit');
   const [notes, setNotes] = useState('');
   const [receiptImage, setReceiptImage] = useState<FaultAttachment | null>(null);
+  const [extraFiles, setExtraFiles] = useState<FaultAttachment[]>([]);
   const cameraRef = useRef<HTMLInputElement>(null);
+  const extraFilesRef = useRef<HTMLInputElement>(null);
 
   // Auto-fill for drivers
   useEffect(() => {
