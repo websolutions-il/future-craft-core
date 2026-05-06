@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
 import { toast } from 'sonner';
+import InfoGapTracker from '@/components/InfoGapTracker';
 
 interface DriverRow {
   id: string;
@@ -96,18 +97,7 @@ export default function Drivers() {
             if (!d.phone) missing.push('טלפון');
             if (!d.license_image_url) missing.push('צילום רישיון');
             if ((d as any).exam_expiry && new Date((d as any).exam_expiry) < new Date()) missing.push('מבחן כשירות פג תוקף');
-            if (missing.length === 0) return null;
-            return (
-              <div className="mb-4 p-4 rounded-xl bg-destructive/10 border-2 border-destructive/30">
-                <div className="flex items-center gap-2 mb-2">
-                  <AlertTriangle size={20} className="text-destructive" />
-                  <h3 className="font-bold text-destructive">חוסרים בכרטיס הנהג</h3>
-                </div>
-                <ul className="list-disc pr-6 text-destructive space-y-1">
-                  {missing.map(m => <li key={m}>{m}</li>)}
-                </ul>
-              </div>
-            );
+            return <InfoGapTracker entityType="driver" entityId={d.id} companyName={(d as any).company_name || ''} gaps={missing} />;
           })()}
           <div className="grid grid-cols-2 gap-4 text-lg">
             <div><span className="text-muted-foreground">טלפון:</span><p className="font-bold">{d.phone}</p></div>

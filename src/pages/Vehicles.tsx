@@ -10,6 +10,7 @@ import MultiImageUpload from '@/components/MultiImageUpload';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import CallCustomerButton from '@/components/voice/CallCustomerButton';
+import InfoGapTracker from '@/components/InfoGapTracker';
 
 interface GovVehicleData {
   mispar_rechev: number;
@@ -434,18 +435,7 @@ function VehicleDetail({ vehicle: v, drivers, isManager, onBack, onEdit, onDelet
             if (!v.comprehensive_insurance_expiry) missing.push('ביטוח מקיף חסר');
             else if (new Date(v.comprehensive_insurance_expiry) < today) missing.push('ביטוח מקיף פג תוקף');
           }
-          if (missing.length === 0) return null;
-          return (
-            <div className="mb-4 p-4 rounded-xl bg-destructive/10 border-2 border-destructive/30">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle size={20} className="text-destructive" />
-                <h3 className="font-bold text-destructive">חוסרים בכרטיס הרכב</h3>
-              </div>
-              <ul className="list-disc pr-6 text-destructive space-y-1">
-                {missing.map(m => <li key={m}>{m}</li>)}
-              </ul>
-            </div>
-          );
+          return <InfoGapTracker entityType="vehicle" entityId={v.id} companyName={v.company_name || ''} gaps={missing} />;
         })()}
 
         <div className="grid grid-cols-2 gap-y-5 gap-x-4 text-lg">
