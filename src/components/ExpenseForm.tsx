@@ -253,11 +253,23 @@ export default function ExpenseForm({ onSubmit, onCancel }: ExpenseFormProps) {
           {extraFiles.length > 0 && (
             <div className="space-y-2 mb-3">
               {extraFiles.map((f, i) => (
-                <div key={f.id} className="flex items-center justify-between p-3 rounded-xl bg-muted">
-                  <span className="text-sm truncate flex-1">{f.name}</span>
-                  <button onClick={() => { URL.revokeObjectURL(f.url); setExtraFiles(prev => prev.filter((_, idx) => idx !== i)); }} className="p-1 text-destructive">
-                    <X size={18} />
-                  </button>
+                <div key={f.id} className="p-3 rounded-xl bg-muted space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm truncate flex-1">{f.name}</span>
+                    <button onClick={() => { URL.revokeObjectURL(f.url); setExtraFiles(prev => prev.filter((_, idx) => idx !== i)); }} className="p-1 text-destructive shrink-0">
+                      <X size={18} />
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={(f as any).description || ''}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setExtraFiles(prev => prev.map((file, idx) => idx === i ? { ...file, description: val } as any : file));
+                    }}
+                    placeholder="שם / תיאור הקובץ (לדוגמה: אישור מיגון)..."
+                    className="w-full p-2 text-sm rounded-lg border border-input bg-background focus:border-primary focus:outline-none"
+                  />
                 </div>
               ))}
             </div>
@@ -267,7 +279,7 @@ export default function ExpenseForm({ onSubmit, onCancel }: ExpenseFormProps) {
           </button>
           <input ref={extraFilesRef} type="file" multiple onChange={(e) => {
             const files = Array.from(e.target.files || []);
-            const mapped = files.map(file => ({ id: crypto.randomUUID(), name: file.name, type: file.type, size: file.size, url: URL.createObjectURL(file) }));
+            const mapped = files.map(file => ({ id: crypto.randomUUID(), name: file.name, type: file.type, size: file.size, url: URL.createObjectURL(file), description: '' } as any));
             setExtraFiles(prev => [...prev, ...mapped]);
             e.target.value = '';
           }} className="hidden" />
