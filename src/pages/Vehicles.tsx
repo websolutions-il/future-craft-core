@@ -10,6 +10,7 @@ import MultiImageUpload from '@/components/MultiImageUpload';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import CallCustomerButton from '@/components/voice/CallCustomerButton';
+import InfoGapTracker from '@/components/InfoGapTracker';
 
 interface GovVehicleData {
   mispar_rechev: number;
