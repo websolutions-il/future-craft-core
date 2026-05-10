@@ -309,14 +309,15 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
   const [hideCreds, setHideCreds] = useState(false);
 
   useEffect(() => {
-    if (isEdit || !effectiveCompany) return;
+    if (isEdit || !effectiveCompany) { setHideCreds(false); return; }
     supabase
       .from('company_settings')
       .select('hide_driver_credentials')
       .eq('company_name', effectiveCompany)
       .maybeSingle()
-      .then(({ data }) => {
-        if (data?.hide_driver_credentials) setHideCreds(true);
+      .then(({ data, error }) => {
+        if (error) console.error('hide_driver_credentials fetch error', error);
+        setHideCreds(!!data?.hide_driver_credentials);
       });
   }, [effectiveCompany, isEdit]);
 
