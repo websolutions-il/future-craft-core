@@ -284,8 +284,24 @@ export default function Documents() {
     e.target.value = '';
   };
 
+  const resolveUrl = (doc: DocMeta) => {
+    if (/^https?:\/\//i.test(doc.file_path)) return doc.file_path;
+    const { data } = supabase.storage.from('documents').getPublicUrl(doc.file_path);
+    return data.publicUrl;
+  };
+
   const handleDelete = async (doc: DocMeta) => {
     if (!confirm('למחוק מסמך זה?')) return;
+    if (doc.source && doc.source !== 'metadata') {
+      // Aggregated doc — clear the URL on the source row instead of deleting from storage
+      if (doc.source_table && doc.source_id && doc.source_field) {
+        const { error } = await supabase.from(doc.source_table as any).update({ [doc.source_field]: null }).eq('id', doc.source_id);
+        if (error) { toast.error('שגיאה במחיקה'); return; }
+        toast.success('נמחק');
+        if (selectedCategory) { loadDocs(selectedCategory); loadCounts(); }
+      }
+      return;
+    }
     const { error: storageErr } = await supabase.storage.from('documents').remove([doc.file_path]);
     if (storageErr) { toast.error('שגיאה במחיקה'); return; }
     await supabase.from('document_metadata').delete().eq('id', doc.id);
@@ -294,13 +310,11 @@ export default function Documents() {
   };
 
   const handleDownload = (doc: DocMeta) => {
-    const { data } = supabase.storage.from('documents').getPublicUrl(doc.file_path);
-    window.open(data.publicUrl, '_blank');
+    window.open(resolveUrl(doc), '_blank');
   };
 
   const handlePreview = (doc: DocMeta) => {
-    const { data } = supabase.storage.from('documents').getPublicUrl(doc.file_path);
-    setPreviewUrl(data.publicUrl);
+    setPreviewUrl(resolveUrl(doc));
   };
 
   // Apply filters
