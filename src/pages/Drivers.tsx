@@ -304,6 +304,19 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
   const [licenseImageUrl, setLicenseImageUrl] = useState(driver?.license_image_url || '');
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [hideCreds, setHideCreds] = useState(false);
+
+  useEffect(() => {
+    if (isEdit || !user?.company_name) return;
+    supabase
+      .from('company_settings')
+      .select('hide_driver_credentials')
+      .eq('company_name', user.company_name)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.hide_driver_credentials) setHideCreds(true);
+      });
+  }, [user?.company_name, isEdit]);
 
   const handleLicenseUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
