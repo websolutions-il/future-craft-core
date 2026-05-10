@@ -473,9 +473,10 @@ export default function Documents() {
       ) : (
         <div className="space-y-2">
           {filteredDocs.map(doc => {
-            const ext = doc.original_name?.split('.').pop()?.toLowerCase();
-            const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext || '');
-            const isPdf = ext === 'pdf';
+            const nameExt = doc.original_name?.split('.').pop()?.toLowerCase() || '';
+            const pathLower = (doc.file_path || '').toLowerCase();
+            const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(nameExt) || /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(pathLower);
+            const isPdf = nameExt === 'pdf' || /\.pdf(\?|$)/i.test(pathLower);
 
             return (
               <div key={doc.id} className="card-elevated flex items-center gap-3 p-3">
