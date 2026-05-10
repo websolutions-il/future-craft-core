@@ -414,12 +414,12 @@ export default function Documents() {
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium mb-1">יצרן</label>
-              <input value={filterManufacturer} onChange={e => setFilterManufacturer(e.target.value)} className={inputClass} placeholder="יצרן..." />
+              <label className="block text-sm font-medium mb-1">{selectedCategory?.key === 'other' ? 'תאריך כולל שנה' : 'יצרן'}</label>
+              <input value={filterManufacturer} onChange={e => setFilterManufacturer(e.target.value)} className={inputClass} placeholder={selectedCategory?.key === 'other' ? 'dd/mm/yyyy' : 'יצרן...'} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">דגם</label>
-              <input value={filterModel} onChange={e => setFilterModel(e.target.value)} className={inputClass} placeholder="דגם..." />
+              <label className="block text-sm font-medium mb-1">{selectedCategory?.key === 'other' ? 'הערות' : 'דגם'}</label>
+              <input value={filterModel} onChange={e => setFilterModel(e.target.value)} className={inputClass} placeholder={selectedCategory?.key === 'other' ? 'הערות...' : 'דגם...'} />
             </div>
           </div>
           {activeFilterCount > 0 && (
