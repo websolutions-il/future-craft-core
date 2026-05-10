@@ -19,6 +19,7 @@ interface CompanyAlertConfig {
   require_insurance_docs: boolean;
   require_no_claims: boolean;
   hidden_buttons: string[];
+  hide_driver_credentials: boolean;
 }
 
 interface ProfileCompany {
