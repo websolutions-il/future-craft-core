@@ -376,12 +376,16 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
       }
     } else {
       // Create new driver: use edge function to create auth user + profile + driver record
-      const effectiveEmail = email.trim() || `${phone.replace(/\D/g, '')}@placeholder.local`;
+      const phoneDigits = phone.replace(/\D/g, '');
+      const effectiveEmail = hideCreds
+        ? `${phoneDigits}@gmail.com`
+        : (email.trim() || `${phoneDigits}@placeholder.local`);
+      const effectivePassword = hideCreds ? `Passxyz+${phoneDigits}` : password;
 
       const { data, error } = await supabase.functions.invoke('create-admin-user', {
         body: {
           email: effectiveEmail,
-          password,
+          password: effectivePassword,
           full_name: fullName,
           phone,
           role: 'driver',
