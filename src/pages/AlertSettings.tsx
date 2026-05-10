@@ -355,6 +355,7 @@ export default function AlertSettings() {
                     משתמש: <code dir="ltr">{`{phone}@gmail.com`}</code> · סיסמה: <code dir="ltr">{`Passxyz+{phone}`}</code>
                   </p>
                 )}
+              </div>
 
               {/* Button Visibility Settings */}
               <div className="border-t border-border pt-4 space-y-3">
