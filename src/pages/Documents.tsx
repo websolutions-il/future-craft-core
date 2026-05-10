@@ -322,7 +322,7 @@ export default function Documents() {
     !searchQuery || d.original_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
   if (isManager && filterVehicle) filteredDocs = filteredDocs.filter(d => d.vehicle_plate?.includes(filterVehicle));
-  if (isManager && filterDriver) filteredDocs = filteredDocs.filter(d => d.driver_name?.includes(filterDriver));
+  if (isManager && filterDriver) filteredDocs = filteredDocs.filter(d => d.original_name?.toLowerCase().includes(filterDriver.toLowerCase()) || d.category?.toLowerCase().includes(filterDriver.toLowerCase()));
   if (isManager && filterCompany) filteredDocs = filteredDocs.filter(d => d.company_name?.includes(filterCompany));
   if (isManager && filterManufacturer) filteredDocs = filteredDocs.filter(d => d.manufacturer?.includes(filterManufacturer));
   if (isManager && filterModel) filteredDocs = filteredDocs.filter(d => d.model?.includes(filterModel));
@@ -404,8 +404,8 @@ export default function Documents() {
               <input value={filterVehicle} onChange={e => setFilterVehicle(e.target.value)} className={inputClass} placeholder="חיפוש לפי לוחית..." />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">שם נהג</label>
-              <input value={filterDriver} onChange={e => setFilterDriver(e.target.value)} className={inputClass} placeholder="שם נהג..." />
+              <label className="block text-sm font-medium mb-1">סוג המסמך</label>
+              <input value={filterDriver} onChange={e => setFilterDriver(e.target.value)} className={inputClass} placeholder="סוג מסמך..." />
             </div>
             {user?.role === 'super_admin' && (
               <div>
