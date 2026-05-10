@@ -364,7 +364,7 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
         status,
         notes,
         license_image_url: licenseImageUrl,
-        company_name: user?.company_name || '',
+        company_name: effectiveCompany,
       };
 
       const { error } = await supabase.from('drivers').update(payload).eq('id', driver!.id);
@@ -391,7 +391,7 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
           full_name: fullName,
           phone,
           role: 'driver',
-          company_name: user?.company_name || '',
+          company_name: effectiveCompany,
           is_active: false, // Requires super_admin approval
         },
       });
