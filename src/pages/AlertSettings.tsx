@@ -115,6 +115,7 @@ export default function AlertSettings() {
       require_insurance_docs: activeConfig.require_insurance_docs,
       require_no_claims: activeConfig.require_no_claims,
       hidden_buttons: activeConfig.hidden_buttons || [],
+      hide_driver_credentials: activeConfig.hide_driver_credentials,
     }).eq('id', activeConfig.id);
     setSaving(false);
     if (error) toast.error('שגיאה בשמירה');
