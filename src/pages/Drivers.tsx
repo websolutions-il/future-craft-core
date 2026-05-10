@@ -289,6 +289,8 @@ export default function Drivers() {
 
 function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: any; onDone: () => void }) {
   const isEdit = !!driver;
+  const companyFilter = useCompanyFilter();
+  const effectiveCompany = companyFilter || user?.company_name || '';
   const [fullName, setFullName] = useState(driver?.full_name || '');
   const [idNumber, setIdNumber] = useState(driver?.id_number || '');
   const [phone, setPhone] = useState(driver?.phone || '');
