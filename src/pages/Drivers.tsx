@@ -440,7 +440,7 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
           <input value={idNumber} onChange={e => setIdNumber(e.target.value)} placeholder="תעודת זהות..." className={inputClass} />
         </div>
         {/* Login credentials - only for new drivers */}
-        {!isEdit && (
+        {!isEdit && !hideCreds && (
           <div className="p-4 rounded-xl border-2 border-primary/30 bg-primary/5 space-y-4">
             <p className="text-lg font-bold text-primary">פרטי התחברות לאפליקציה</p>
             <div className="grid grid-cols-2 gap-4">
