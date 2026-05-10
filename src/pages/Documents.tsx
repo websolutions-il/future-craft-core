@@ -49,6 +49,59 @@ interface DocMeta {
   model: string;
   original_name: string;
   created_at: string;
+  source?: 'metadata' | 'vehicle' | 'driver' | 'health' | 'expense';
+  source_table?: string;
+  source_id?: string;
+  source_field?: string;
+}
+
+// Aggregate docs that live as URL columns on other tables (vehicles/drivers/expenses/health)
+async function fetchAggregatedDocs(companyFilter: string | null): Promise<DocMeta[]> {
+  const out: DocMeta[] = [];
+
+  // Vehicles
+  let vq = supabase.from('vehicles').select('id, license_plate, manufacturer, model, company_name, license_doc_url, insurance_doc_url, comprehensive_insurance_doc_url, third_party_insurance_doc_url, updated_at');
+  if (companyFilter) vq = vq.eq('company_name', companyFilter);
+  const { data: vehicles } = await vq;
+  vehicles?.forEach((v: any) => {
+    const base = { company_name: v.company_name || '', vehicle_plate: v.license_plate || '', manufacturer: v.manufacturer || '', model: v.model || '', driver_name: '', created_at: v.updated_at, source: 'vehicle' as const, source_table: 'vehicles', source_id: v.id };
+    if (v.license_doc_url) out.push({ ...base, id: `v-lic-${v.id}`, file_path: v.license_doc_url, category: 'vehicle-license', original_name: `רישיון רכב ${v.license_plate || ''}`, source_field: 'license_doc_url' });
+    if (v.insurance_doc_url) out.push({ ...base, id: `v-ins-${v.id}`, file_path: v.insurance_doc_url, category: 'insurance', original_name: `ביטוח חובה ${v.license_plate || ''}`, source_field: 'insurance_doc_url' });
+    if (v.comprehensive_insurance_doc_url) out.push({ ...base, id: `v-comp-${v.id}`, file_path: v.comprehensive_insurance_doc_url, category: 'comprehensive', original_name: `ביטוח מקיף ${v.license_plate || ''}`, source_field: 'comprehensive_insurance_doc_url' });
+    if (v.third_party_insurance_doc_url) out.push({ ...base, id: `v-tp-${v.id}`, file_path: v.third_party_insurance_doc_url, category: 'comprehensive', original_name: `ביטוח צד ג' ${v.license_plate || ''}`, source_field: 'third_party_insurance_doc_url' });
+  });
+
+  // Drivers
+  let dq = supabase.from('drivers').select('id, full_name, company_name, license_image_url, updated_at');
+  if (companyFilter) dq = dq.eq('company_name', companyFilter);
+  const { data: drivers } = await dq;
+  drivers?.forEach((d: any) => {
+    if (d.license_image_url) out.push({ id: `d-lic-${d.id}`, file_path: d.license_image_url, category: 'driver-license', company_name: d.company_name || '', vehicle_plate: '', driver_name: d.full_name || '', manufacturer: '', model: '', original_name: `רישיון נהיגה ${d.full_name || ''}`, created_at: d.updated_at, source: 'driver', source_table: 'drivers', source_id: d.id, source_field: 'license_image_url' });
+  });
+
+  // Health declarations
+  let hq = supabase.from('driver_health_declarations').select('id, driver_name, company_name, license_image_url, created_at');
+  if (companyFilter) hq = hq.eq('company_name', companyFilter);
+  const { data: health } = await hq;
+  health?.forEach((h: any) => {
+    if (h.license_image_url) out.push({ id: `h-${h.id}`, file_path: h.license_image_url, category: 'health', company_name: h.company_name || '', vehicle_plate: '', driver_name: h.driver_name || '', manufacturer: '', model: '', original_name: `הצהרת בריאות ${h.driver_name || ''}`, created_at: h.created_at, source: 'health', source_table: 'driver_health_declarations', source_id: h.id, source_field: 'license_image_url' });
+  });
+
+  // Expenses
+  let eq2 = supabase.from('expenses').select('id, category, vehicle_plate, driver_name, company_name, image_url, created_at');
+  if (companyFilter) eq2 = eq2.eq('company_name', companyFilter);
+  const { data: expenses } = await eq2;
+  expenses?.forEach((e: any) => {
+    if (!e.image_url) return;
+    const cat = (e.category || '').toString();
+    let key: string = 'receipts';
+    if (cat.includes('דלק')) key = 'fuel';
+    else if (cat.includes('תיקון') || cat.includes('שמן') || cat.includes('צמיג')) key = 'maintenance';
+    else if (cat.includes('ספק')) key = 'vendors';
+    out.push({ id: `e-${e.id}`, file_path: e.image_url, category: key, company_name: e.company_name || '', vehicle_plate: e.vehicle_plate || '', driver_name: e.driver_name || '', manufacturer: '', model: '', original_name: `${cat || 'קבלה'} ${e.vehicle_plate || ''}`.trim(), created_at: e.created_at, source: 'expense', source_table: 'expenses', source_id: e.id, source_field: 'image_url' });
+  });
+
+  return out;
 }
 
 function getFileIcon(name: string) {
