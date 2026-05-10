@@ -174,50 +174,61 @@ export default function Documents() {
     loadDriverData();
   }, [isDriver, user?.id, user?.email]);
 
-  // Load category counts from metadata table
+  // Load category counts (metadata + aggregated sources)
   const loadCounts = useCallback(async () => {
     let query = supabase.from('document_metadata').select('category');
     if (companyFilter) query = query.eq('company_name', companyFilter);
-    
-    // Driver: only see docs for their vehicle/name
     if (isDriver && driverVehicle) {
       query = query.or(`vehicle_plate.eq.${driverVehicle.license_plate},driver_name.eq.${driverProfile?.full_name || ''}`);
     }
-
     const { data } = await query;
     const counts: Record<string, number> = {};
     allCategories.forEach(c => { counts[c.key] = 0; });
-    data?.forEach(d => {
-      if (counts[d.category] !== undefined) counts[d.category]++;
+    data?.forEach(d => { if (counts[d.category] !== undefined) counts[d.category]++; });
+
+    const aggregated = await fetchAggregatedDocs(companyFilter || null);
+    aggregated.forEach(d => {
+      if (counts[d.category] === undefined) return;
+      if (isDriver) {
+        const cat = allCategories.find(c => c.key === d.category);
+        if (!cat) return;
+        if (cat.scope === 'vehicle' && d.vehicle_plate !== driverVehicle?.license_plate) return;
+        if (cat.scope === 'driver' && d.driver_name !== driverProfile?.full_name) return;
+        if (cat.scope === 'expense') return;
+      }
+      counts[d.category]++;
     });
     setCategoryCounts(counts);
   }, [companyFilter, isDriver, driverVehicle, driverProfile]);
 
   useEffect(() => { loadCounts(); }, [loadCounts]);
 
-  // Load docs for category
+  // Load docs for category (metadata + aggregated)
   const loadDocs = useCallback(async (cat: DocCategory) => {
     setLoadingFiles(true);
     let query = supabase.from('document_metadata').select('*').eq('category', cat.key).order('created_at', { ascending: false });
     if (companyFilter) query = query.eq('company_name', companyFilter);
 
-    // Driver: restrict to own vehicle/driver docs
     if (isDriver) {
-      if (cat.scope === 'vehicle' && driverVehicle) {
-        query = query.eq('vehicle_plate', driverVehicle.license_plate);
-      } else if (cat.scope === 'driver' && driverProfile) {
-        query = query.eq('driver_name', driverProfile.full_name);
-      } else if (cat.scope === 'expense') {
-        // drivers don't see expense docs
-        setDocs([]);
-        setLoadingFiles(false);
-        return;
-      }
+      if (cat.scope === 'vehicle' && driverVehicle) query = query.eq('vehicle_plate', driverVehicle.license_plate);
+      else if (cat.scope === 'driver' && driverProfile) query = query.eq('driver_name', driverProfile.full_name);
+      else if (cat.scope === 'expense') { setDocs([]); setLoadingFiles(false); return; }
     }
 
     const { data, error } = await query;
     if (error) toast.error('שגיאה בטעינת מסמכים');
-    else setDocs((data || []) as DocMeta[]);
+    const metadataDocs = ((data || []) as any[]).map(d => ({ ...d, source: 'metadata' as const })) as DocMeta[];
+
+    const aggregated = (await fetchAggregatedDocs(companyFilter || null)).filter(d => d.category === cat.key);
+    let aggFiltered = aggregated;
+    if (isDriver) {
+      if (cat.scope === 'vehicle' && driverVehicle) aggFiltered = aggregated.filter(d => d.vehicle_plate === driverVehicle.license_plate);
+      else if (cat.scope === 'driver' && driverProfile) aggFiltered = aggregated.filter(d => d.driver_name === driverProfile.full_name);
+      else if (cat.scope === 'expense') aggFiltered = [];
+    }
+
+    const merged = [...metadataDocs, ...aggFiltered].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+    setDocs(merged);
     setLoadingFiles(false);
   }, [companyFilter, isDriver, driverVehicle, driverProfile]);
 
