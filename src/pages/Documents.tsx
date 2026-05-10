@@ -404,8 +404,8 @@ export default function Documents() {
               <input value={filterVehicle} onChange={e => setFilterVehicle(e.target.value)} className={inputClass} placeholder="חיפוש לפי לוחית..." />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">שם נהג</label>
-              <input value={filterDriver} onChange={e => setFilterDriver(e.target.value)} className={inputClass} placeholder="שם נהג..." />
+              <label className="block text-sm font-medium mb-1">סוג המסמך</label>
+              <input value={filterDriver} onChange={e => setFilterDriver(e.target.value)} className={inputClass} placeholder="סוג מסמך..." />
             </div>
             {user?.role === 'super_admin' && (
               <div>
