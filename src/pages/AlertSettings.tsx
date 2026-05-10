@@ -338,6 +338,24 @@ export default function AlertSettings() {
                 </label>
               </div>
 
+              {/* Driver Credentials Settings */}
+              <div className="border-t border-border pt-4 space-y-3">
+                <h3 className="font-bold text-lg">👤 הגדרות נהגים</h3>
+                <label className="flex items-center gap-3 p-3 rounded-xl bg-muted cursor-pointer hover:bg-muted/80 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={activeConfig.hide_driver_credentials}
+                    onChange={e => updateConfig('hide_driver_credentials', e.target.checked)}
+                    className="rounded w-5 h-5 accent-primary"
+                  />
+                  <span className="text-base font-medium">הסתר סיסמה ומשתמש ביצירת נהג (יווצר אוטומטית)</span>
+                </label>
+                {activeConfig.hide_driver_credentials && (
+                  <p className="text-xs text-muted-foreground mr-8">
+                    משתמש: <code dir="ltr">{`{phone}@gmail.com`}</code> · סיסמה: <code dir="ltr">{`Passxyz+{phone}`}</code>
+                  </p>
+                )}
+
               {/* Button Visibility Settings */}
               <div className="border-t border-border pt-4 space-y-3">
                 <h3 className="font-bold text-lg">🎛️ ניהול כפתורים — הצגה / הסתרה</h3>
