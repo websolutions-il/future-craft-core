@@ -441,16 +441,16 @@ export default function Documents() {
               <input value={uploadVehicle} onChange={e => setUploadVehicle(e.target.value)} className={inputClass} placeholder="לוחית רישוי" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">שם נהג</label>
-              <input value={uploadDriver} onChange={e => setUploadDriver(e.target.value)} className={inputClass} placeholder="שם הנהג" />
+              <label className="block text-sm font-medium mb-1">{selectedCategory?.key === 'other' ? 'סוג המסמך' : 'שם נהג'}</label>
+              <input value={uploadDriver} onChange={e => setUploadDriver(e.target.value)} className={inputClass} placeholder={selectedCategory?.key === 'other' ? 'סוג מסמך' : 'שם הנהג'} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">יצרן</label>
-              <input value={uploadManufacturer} onChange={e => setUploadManufacturer(e.target.value)} className={inputClass} placeholder="יצרן" />
+              <label className="block text-sm font-medium mb-1">{selectedCategory?.key === 'other' ? 'תאריך כולל שנה' : 'יצרן'}</label>
+              <input value={uploadManufacturer} onChange={e => setUploadManufacturer(e.target.value)} className={inputClass} placeholder={selectedCategory?.key === 'other' ? 'dd/mm/yyyy' : 'יצרן'} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">דגם</label>
-              <input value={uploadModel} onChange={e => setUploadModel(e.target.value)} className={inputClass} placeholder="דגם" />
+              <label className="block text-sm font-medium mb-1">{selectedCategory?.key === 'other' ? 'הערות' : 'דגם'}</label>
+              <input value={uploadModel} onChange={e => setUploadModel(e.target.value)} className={inputClass} placeholder={selectedCategory?.key === 'other' ? 'הערות' : 'דגם'} />
             </div>
           </div>
           <label className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-bold cursor-pointer hover:bg-primary/90 active:scale-95 transition-transform ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
