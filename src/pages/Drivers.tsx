@@ -60,6 +60,7 @@ export default function Drivers() {
       <DriverForm
         driver={editingDriver}
         user={user}
+        targetCompany={editingDriver?.company_name || filterCompany || companyFilter || undefined}
         onDone={() => { setShowForm(false); setEditingDriver(null); loadDrivers(); }}
       />
     );
@@ -287,10 +288,10 @@ export default function Drivers() {
   );
 }
 
-function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: any; onDone: () => void }) {
+function DriverForm({ driver, user, targetCompany, onDone }: { driver: DriverRow | null; user: any; targetCompany?: string; onDone: () => void }) {
   const isEdit = !!driver;
   const companyFilter = useCompanyFilter();
-  const effectiveCompany = companyFilter || user?.company_name || '';
+  const effectiveCompany = driver?.company_name || targetCompany || companyFilter || user?.company_name || '';
   const [fullName, setFullName] = useState(driver?.full_name || '');
   const [idNumber, setIdNumber] = useState(driver?.id_number || '');
   const [phone, setPhone] = useState(driver?.phone || '');
