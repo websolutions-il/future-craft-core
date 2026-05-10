@@ -289,6 +289,8 @@ export default function Drivers() {
 
 function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: any; onDone: () => void }) {
   const isEdit = !!driver;
+  const companyFilter = useCompanyFilter();
+  const effectiveCompany = companyFilter || user?.company_name || '';
   const [fullName, setFullName] = useState(driver?.full_name || '');
   const [idNumber, setIdNumber] = useState(driver?.id_number || '');
   const [phone, setPhone] = useState(driver?.phone || '');
@@ -307,16 +309,16 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
   const [hideCreds, setHideCreds] = useState(false);
 
   useEffect(() => {
-    if (isEdit || !user?.company_name) return;
+    if (isEdit || !effectiveCompany) return;
     supabase
       .from('company_settings')
       .select('hide_driver_credentials')
-      .eq('company_name', user.company_name)
+      .eq('company_name', effectiveCompany)
       .maybeSingle()
       .then(({ data }) => {
         if (data?.hide_driver_credentials) setHideCreds(true);
       });
-  }, [user?.company_name, isEdit]);
+  }, [effectiveCompany, isEdit]);
 
   const handleLicenseUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -362,7 +364,7 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
         status,
         notes,
         license_image_url: licenseImageUrl,
-        company_name: user?.company_name || '',
+        company_name: effectiveCompany,
       };
 
       const { error } = await supabase.from('drivers').update(payload).eq('id', driver!.id);
@@ -389,7 +391,7 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
           full_name: fullName,
           phone,
           role: 'driver',
-          company_name: user?.company_name || '',
+          company_name: effectiveCompany,
           is_active: false, // Requires super_admin approval
         },
       });
