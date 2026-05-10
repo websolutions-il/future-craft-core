@@ -304,6 +304,19 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
   const [licenseImageUrl, setLicenseImageUrl] = useState(driver?.license_image_url || '');
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [hideCreds, setHideCreds] = useState(false);
+
+  useEffect(() => {
+    if (isEdit || !user?.company_name) return;
+    supabase
+      .from('company_settings')
+      .select('hide_driver_credentials')
+      .eq('company_name', user.company_name)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.hide_driver_credentials) setHideCreds(true);
+      });
+  }, [user?.company_name, isEdit]);
 
   const handleLicenseUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -321,8 +334,9 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
   };
 
   // For new drivers, email and password are required to create login credentials
+  // unless company has hide_driver_credentials enabled (auto-generated from phone)
   const isValid = fullName.trim().length > 0 && phone.trim().length > 0 && licenseNumber.trim().length > 0 && idNumber.trim().length > 0
-    && (isEdit || (email.trim().length > 0 && password.trim().length >= 6));
+    && (isEdit || hideCreds || (email.trim().length > 0 && password.trim().length >= 6));
   const inputClass = "w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
 
   const toggleLicense = (type: string) => {
@@ -362,12 +376,16 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
       }
     } else {
       // Create new driver: use edge function to create auth user + profile + driver record
-      const effectiveEmail = email.trim() || `${phone.replace(/\D/g, '')}@placeholder.local`;
+      const phoneDigits = phone.replace(/\D/g, '');
+      const effectiveEmail = hideCreds
+        ? `${phoneDigits}@gmail.com`
+        : (email.trim() || `${phoneDigits}@placeholder.local`);
+      const effectivePassword = hideCreds ? `Passxyz+${phoneDigits}` : password;
 
       const { data, error } = await supabase.functions.invoke('create-admin-user', {
         body: {
           email: effectiveEmail,
-          password,
+          password: effectivePassword,
           full_name: fullName,
           phone,
           role: 'driver',
@@ -422,7 +440,7 @@ function DriverForm({ driver, user, onDone }: { driver: DriverRow | null; user: 
           <input value={idNumber} onChange={e => setIdNumber(e.target.value)} placeholder="תעודת זהות..." className={inputClass} />
         </div>
         {/* Login credentials - only for new drivers */}
-        {!isEdit && (
+        {!isEdit && !hideCreds && (
           <div className="p-4 rounded-xl border-2 border-primary/30 bg-primary/5 space-y-4">
             <p className="text-lg font-bold text-primary">פרטי התחברות לאפליקציה</p>
             <div className="grid grid-cols-2 gap-4">
