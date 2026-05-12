@@ -413,6 +413,7 @@ function RouteForm({ route, onDone, onBack, user }: { route: RouteRow | null; on
       valid_from: validFrom || null,
       valid_to: validTo || null,
       department, companion, route_group: routeGroup,
+    };
     let error;
     if (isEdit) { ({ error } = await supabase.from('routes').update(payload).eq('id', route!.id)); }
     else { ({ error } = await supabase.from('routes').insert({ ...payload, company_name: user?.company_name || '', created_by: user?.id })); }
