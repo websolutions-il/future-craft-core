@@ -40,6 +40,7 @@ interface RouteRow {
   vehicle_type_pricing: VehicleTypePricing[];
   valid_from: string | null;
   valid_to: string | null;
+  company_name?: string;
 }
 
 function isDatePassed(dateStr: string | null): boolean {
