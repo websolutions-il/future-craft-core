@@ -436,6 +436,61 @@ function RouteForm({ route, onDone, onBack, user }: { route: RouteRow | null; on
         </div>
         <div><label className="block text-lg font-medium mb-2">תחנות ביניים (מופרדות בפסיק)</label><input value={stopsText} onChange={e => setStopsText(e.target.value)} placeholder="תחנה 1, תחנה 2..." className={inputClass} /></div>
 
+        {/* Department / Companion / Group */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {([
+            { kind: 'department' as OptKind, label: 'מחלקה', value: department, set: setDepartment },
+            { kind: 'companion' as OptKind, label: 'מלווה', value: companion, set: setCompanion },
+            { kind: 'group' as OptKind, label: 'קבוצה', value: routeGroup, set: setRouteGroup },
+          ]).map(f => (
+            <div key={f.kind}>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-lg font-medium">{f.label}</label>
+                <button type="button" onClick={() => { setAddOptKind(f.kind); setNewOptCode(''); setNewOptLabel(''); }}
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/10 text-primary text-sm font-bold">
+                  <Plus size={14} /> הוסף {f.label}
+                </button>
+              </div>
+              <select value={f.value} onChange={e => f.set(e.target.value)} className={inputClass}>
+                <option value="">בחר...</option>
+                {optsByKind(f.kind).map(o => {
+                  const v = fmtOpt(o);
+                  return <option key={o.id} value={v}>{v}</option>;
+                })}
+                {f.value && !optsByKind(f.kind).some(o => fmtOpt(o) === f.value) && (
+                  <option value={f.value}>{f.value}</option>
+                )}
+              </select>
+            </div>
+          ))}
+        </div>
+
+        <Dialog open={!!addOptKind} onOpenChange={(o) => { if (!o) setAddOptKind(null); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                הוספת {addOptKind === 'department' ? 'מחלקה' : addOptKind === 'companion' ? 'מלווה' : 'קבוצה'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 mt-2">
+              <div>
+                <label className="block text-sm font-medium mb-1">מזהה פנימי</label>
+                <input value={newOptCode} onChange={e => setNewOptCode(e.target.value)} placeholder="למשל: 102"
+                  className="w-full p-3 rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">שם</label>
+                <input value={newOptLabel} onChange={e => setNewOptLabel(e.target.value)} placeholder="למשל: הסעות"
+                  className="w-full p-3 rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none" />
+              </div>
+              <button type="button" onClick={handleAddOption}
+                className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold">
+                שמור
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Vehicle Type & Amount */}
         <div className="grid grid-cols-2 gap-4">
           <div>
