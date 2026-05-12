@@ -33,6 +33,9 @@ interface RouteRow {
   execution_date: string | null;
   route_vehicle_type: string;
   route_vehicle_type_custom: string;
+  department: string;
+  companion: string;
+  route_group: string;
   amount: number;
   vehicle_type_pricing: VehicleTypePricing[];
   valid_from: string | null;
