@@ -308,6 +308,9 @@ function RouteForm({ route, onDone, onBack, user }: { route: RouteRow | null; on
   const [executionDate, setExecutionDate] = useState(route?.execution_date || '');
   const [routeVehicleType, setRouteVehicleType] = useState(route?.route_vehicle_type || '');
   const [routeVehicleTypeCustom, setRouteVehicleTypeCustom] = useState(route?.route_vehicle_type_custom || '');
+  const [department, setDepartment] = useState(route?.department || '');
+  const [companion, setCompanion] = useState(route?.companion || '');
+  const [routeGroup, setRouteGroup] = useState(route?.route_group || '');
   const [amount, setAmount] = useState(route?.amount?.toString() || '');
   const [validFrom, setValidFrom] = useState(route?.valid_from || '');
   const [validTo, setValidTo] = useState(route?.valid_to || '');
@@ -317,6 +320,48 @@ function RouteForm({ route, onDone, onBack, user }: { route: RouteRow | null; on
       : []
   );
   const [loading, setLoading] = useState(false);
+
+  // Route options (departments / companions / groups)
+  type OptKind = 'department' | 'companion' | 'group';
+  const [options, setOptions] = useState<{ id: string; kind: string; code: string; label: string }[]>([]);
+  const [addOptKind, setAddOptKind] = useState<OptKind | null>(null);
+  const [newOptCode, setNewOptCode] = useState('');
+  const [newOptLabel, setNewOptLabel] = useState('');
+
+  const companyFilter = useCompanyFilter();
+  const effectiveCompany = route?.company_name || companyFilter || user?.company_name || '';
+
+  const loadOptions = () => {
+    applyCompanyScope(supabase.from('route_options').select('*'), companyFilter)
+      .order('code', { ascending: true })
+      .then(({ data }) => { if (data) setOptions(data as any); });
+  };
+  useEffect(() => { loadOptions(); }, [companyFilter]);
+
+  const optsByKind = (k: OptKind) => options.filter(o => o.kind === k);
+  const fmtOpt = (o: { code: string; label: string }) => `${o.code ? o.code + ' ' : ''}${o.label}`.trim();
+
+  const handleAddOption = async () => {
+    if (!addOptKind || !newOptLabel.trim()) { toast.error('הזן שם'); return; }
+    const { data, error } = await supabase.from('route_options').insert({
+      kind: addOptKind,
+      code: newOptCode.trim(),
+      label: newOptLabel.trim(),
+      company_name: effectiveCompany,
+      created_by: user?.id,
+    }).select().single();
+    if (error) { toast.error('שגיאה בהוספה'); console.error(error); return; }
+    const value = fmtOpt(data as any);
+    if (addOptKind === 'department') setDepartment(value);
+    if (addOptKind === 'companion') setCompanion(value);
+    if (addOptKind === 'group') setRouteGroup(value);
+    setOptions(prev => [...prev, data as any]);
+    setAddOptKind(null);
+    setNewOptCode('');
+    setNewOptLabel('');
+    toast.success('נוסף');
+  };
+
 
   const [drivers, setDrivers] = useState<{ full_name: string }[]>([]);
   const [vehicles, setVehicles] = useState<{ license_plate: string; manufacturer: string; model: string }[]>([]);
