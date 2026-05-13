@@ -136,24 +136,32 @@ export default function Alerts() {
 
     // 1. Vehicle expiries
     const { data: vehicles } = await applyCompanyScope(supabase.from('vehicles').select('*'), companyFilter);
+    const vehicleByPlate: Record<string, { id: string; internal_number: string }> = {};
+    const vehicleById: Record<string, { id: string; internal_number: string; license_plate: string }> = {};
     if (vehicles) {
+      for (const v of vehicles as any[]) {
+        if (v.license_plate) vehicleByPlate[v.license_plate] = { id: v.id, internal_number: v.internal_number || '' };
+        vehicleById[v.id] = { id: v.id, internal_number: v.internal_number || '', license_plate: v.license_plate || '' };
+      }
       for (const v of vehicles) {
         const plate = v.license_plate;
-        const label = `${v.manufacturer || ''} ${v.model || ''} - ${plate}`.trim();
+        const internal = (v as any).internal_number ? ` | פנימי ${(v as any).internal_number}` : '';
+        const label = `${v.manufacturer || ''} ${v.model || ''} - ${plate}${internal}`.trim();
+        const vehicleLink = `/vehicles?vehicleId=${v.id}`;
 
         const testDays = getDaysLeft(v.test_expiry);
         if (testDays !== null && testDays <= 30) {
-          allAlerts.push({ id: `test-${v.id}`, category: 'test', severity: getSeverity(testDays), title: testDays <= 0 ? 'טסט פג תוקף!' : 'טסט עומד לפוג', subtitle: label, daysLeft: testDays, date: v.test_expiry, link: '/vehicles' });
+          allAlerts.push({ id: `test-${v.id}`, category: 'test', severity: getSeverity(testDays), title: testDays <= 0 ? 'טסט פג תוקף!' : 'טסט עומד לפוג', subtitle: label, daysLeft: testDays, date: v.test_expiry, link: vehicleLink });
         }
 
         const insDays = getDaysLeft(v.insurance_expiry);
         if (insDays !== null && insDays <= 30) {
-          allAlerts.push({ id: `ins-${v.id}`, category: 'insurance', severity: getSeverity(insDays), title: insDays <= 0 ? 'ביטוח חובה פג!' : 'ביטוח חובה עומד לפוג', subtitle: label, daysLeft: insDays, date: v.insurance_expiry, link: '/vehicles' });
+          allAlerts.push({ id: `ins-${v.id}`, category: 'insurance', severity: getSeverity(insDays), title: insDays <= 0 ? 'ביטוח חובה פג!' : 'ביטוח חובה עומד לפוג', subtitle: label, daysLeft: insDays, date: v.insurance_expiry, link: vehicleLink });
         }
 
         const compDays = getDaysLeft(v.comprehensive_insurance_expiry);
         if (compDays !== null && compDays <= 30) {
-          allAlerts.push({ id: `comp-${v.id}`, category: 'comprehensive_insurance', severity: getSeverity(compDays), title: compDays <= 0 ? 'ביטוח מקיף פג!' : 'ביטוח מקיף עומד לפוג', subtitle: label, daysLeft: compDays, date: v.comprehensive_insurance_expiry, link: '/vehicles' });
+          allAlerts.push({ id: `comp-${v.id}`, category: 'comprehensive_insurance', severity: getSeverity(compDays), title: compDays <= 0 ? 'ביטוח מקיף פג!' : 'ביטוח מקיף עומד לפוג', subtitle: label, daysLeft: compDays, date: v.comprehensive_insurance_expiry, link: vehicleLink });
         }
       }
     }
@@ -188,8 +196,11 @@ export default function Alerts() {
       companyFilter
     );
     if (faults) {
-      for (const f of faults) {
-        allAlerts.push({ id: `fault-${f.id}`, category: 'fault', severity: 'critical', title: `תקלה דחופה - ${f.fault_type || 'כללי'}`, subtitle: `${f.vehicle_plate || 'ללא רכב'} • ${f.driver_name || 'ללא נהג'}`, daysLeft: null, date: f.date ? new Date(f.date).toISOString().split('T')[0] : null, meta: f.description || undefined, link: '/faults' });
+      for (const f of faults as any[]) {
+        const v = f.vehicle_id ? vehicleById[f.vehicle_id] : (f.vehicle_plate ? vehicleByPlate[f.vehicle_plate] : null);
+        const internal = v?.internal_number ? ` | פנימי ${v.internal_number}` : '';
+        const link = v ? `/vehicles?vehicleId=${v.id}` : '/faults';
+        allAlerts.push({ id: `fault-${f.id}`, category: 'fault', severity: 'critical', title: `תקלה דחופה - ${f.fault_type || 'כללי'}`, subtitle: `${f.vehicle_plate || 'ללא רכב'}${internal} • ${f.driver_name || 'ללא נהג'}`, daysLeft: null, date: f.date ? new Date(f.date).toISOString().split('T')[0] : null, meta: f.description || undefined, link });
       }
     }
 
