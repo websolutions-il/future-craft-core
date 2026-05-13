@@ -294,9 +294,14 @@ export default function Faults() {
             <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
                 <Car size={18} className="text-muted-foreground shrink-0" />
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-xs text-muted-foreground">רכב</p>
-                  <p className="font-bold">{f.vehicle_plate || '—'}</p>
+                  <p className="font-bold">{f.vehicle_plate || '—'}{getInternal(f) ? ` | פנימי ${getInternal(f)}` : ''}</p>
+                  {getVehicleId(f) && (
+                    <button onClick={() => window.location.assign(`/vehicles?vehicleId=${getVehicleId(f)}`)} className="inline-flex items-center gap-1 text-primary hover:underline text-xs mt-1">
+                      <ExternalLink size={12} /> פתח כרטיס רכב
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
