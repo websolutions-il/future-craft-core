@@ -278,6 +278,40 @@ export default function HistoryPage() {
           ))}
         </div>
       )}
+
+      <Dialog open={importOpen} onOpenChange={setImportOpen}>
+        <DialogContent dir="rtl" className="max-w-md">
+          <DialogHeader><DialogTitle>ייבוא היסטוריית טיפולים מ-Excel</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              עמודות מזוהות: תאריך, קטגוריה, תיאור, ספק, הערות.
+              הרשומות יישמרו תחת "שירותים ותחזוקה" וישויכו לרכב הנבחר.
+            </p>
+            <div>
+              <label className="text-sm font-bold mb-1 block">בחר רכב</label>
+              <select value={importVehicleId} onChange={e => setImportVehicleId(e.target.value)}
+                className="w-full p-3 rounded-xl border-2 border-input bg-background">
+                <option value="">-- בחר --</option>
+                {vehicles.map(v => (
+                  <option key={v.id} value={v.id}>
+                    {v.license_plate} {v.internal_number ? `(${v.internal_number})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-bold mb-1 block">קובץ Excel / CSV</label>
+              <input type="file" accept=".xlsx,.xls,.csv"
+                onChange={e => setImportFile(e.target.files?.[0] || null)}
+                className="w-full p-2 rounded-xl border-2 border-input bg-background text-sm" />
+            </div>
+            <button onClick={handleImport} disabled={importing || !importFile || !importVehicleId}
+              className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold disabled:opacity-50">
+              {importing ? 'מייבא...' : 'ייבא'}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
