@@ -214,16 +214,19 @@ export default function Alerts() {
         const daysSince = Math.floor((Date.now() - new Date(vt.created_at).getTime()) / (1000 * 60 * 60 * 24));
         const isOverdue = vt.follow_up_date && new Date(vt.follow_up_date) < new Date();
         const severity: AlertSeverity = isOverdue ? 'critical' : daysSince > 7 ? 'warning' : 'info';
+        const v = vt.vehicle_id ? vehicleById[vt.vehicle_id] : (vt.vehicle_plate ? vehicleByPlate[vt.vehicle_plate] : null);
+        const internal = v?.internal_number ? ` | פנימי ${v.internal_number}` : '';
+        const link = v ? `/vehicles?vehicleId=${v.id}` : '/vehicle-tasks';
         allAlerts.push({
           id: `defect-${vt.id}`,
           category: 'fault',
           severity,
           title: isOverdue ? `ליקוי באיחור: ${vt.title}` : `ליקוי פתוח: ${vt.title}`,
-          subtitle: `רכב ${vt.vehicle_plate || '—'} • ${daysSince} ימים`,
+          subtitle: `רכב ${vt.vehicle_plate || '—'}${internal} • ${daysSince} ימים`,
           daysLeft: vt.follow_up_date ? Math.floor((new Date(vt.follow_up_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null,
           date: vt.created_at?.split('T')[0] || null,
           meta: vt.description || undefined,
-          link: '/vehicle-tasks',
+          link,
         });
       }
     }
@@ -234,15 +237,17 @@ export default function Alerts() {
       companyFilter
     );
     if (serviceOrders) {
-      for (const so of serviceOrders) {
+      for (const so of serviceOrders as any[]) {
         const isUrgent = so.urgency === 'urgent' || so.urgency === 'critical';
         const severity: AlertSeverity = isUrgent ? 'critical' : so.treatment_status === 'new' ? 'warning' : 'info';
+        const v = so.vehicle_id ? vehicleById[so.vehicle_id] : (so.vehicle_plate ? vehicleByPlate[so.vehicle_plate] : null);
+        const internal = v?.internal_number ? ` | פנימי ${v.internal_number}` : '';
         allAlerts.push({
           id: `so-${so.id}`,
           category: 'service_order',
           severity,
           title: isUrgent ? `קריאת שירות ותחזוקה דחופה` : `שירותים ותחזוקה ${so.treatment_status === 'new' ? 'חדשה' : 'בטיפול'}`,
-          subtitle: `${so.vehicle_plate || 'ללא רכב'} • ${so.driver_name || 'ללא נהג'}`,
+          subtitle: `${so.vehicle_plate || 'ללא רכב'}${internal} • ${so.driver_name || 'ללא נהג'}`,
           daysLeft: null,
           date: so.created_at ? new Date(so.created_at).toISOString().split('T')[0] : null,
           meta: `${so.service_category || ''} ${so.description ? '- ' + so.description : ''}`.trim() || undefined,
