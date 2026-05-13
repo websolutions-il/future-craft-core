@@ -64,6 +64,7 @@ export default function ServiceOrders() {
   const { user } = useAuth();
   const companyFilter = useCompanyFilter();
   const [orders, setOrders] = useState<ServiceRow[]>([]);
+  const [vehiclesByPlate, setVehiclesByPlate] = useState<Record<string, { id: string; internal_number: string }>>({});
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editOrder, setEditOrder] = useState<ServiceRow | null>(null);
@@ -82,11 +83,16 @@ export default function ServiceOrders() {
   const isManager = user?.role === 'fleet_manager' || user?.role === 'super_admin';
 
   const loadOrders = async () => {
-    const { data } = await applyCompanyScope(
-      supabase.from('service_orders').select('*').order('created_at', { ascending: false }),
-      companyFilter
-    );
-    if (data) setOrders(data as unknown as ServiceRow[]);
+    const [oRes, vRes] = await Promise.all([
+      applyCompanyScope(supabase.from('service_orders').select('*').order('created_at', { ascending: false }), companyFilter),
+      applyCompanyScope(supabase.from('vehicles').select('id, license_plate, internal_number'), companyFilter),
+    ]);
+    if (oRes.data) setOrders(oRes.data as unknown as ServiceRow[]);
+    if (vRes.data) {
+      const map: Record<string, { id: string; internal_number: string }> = {};
+      (vRes.data as any[]).forEach(v => { if (v.license_plate) map[v.license_plate] = { id: v.id, internal_number: v.internal_number || '' }; });
+      setVehiclesByPlate(map);
+    }
   };
 
   useEffect(() => {
@@ -99,14 +105,15 @@ export default function ServiceOrders() {
   }, [companyFilter]);
 
   const filtered = orders.filter(o => {
+    const internal = vehiclesByPlate[o.vehicle_plate]?.internal_number || '';
     const matchSearch = !search ||
-      o.vehicle_plate?.includes(search) || o.service_category?.includes(search) ||
+      o.vehicle_plate?.includes(search) || internal.includes(search) || o.service_category?.includes(search) ||
       o.driver_name?.includes(search) || o.company_name?.includes(search) ||
       o.ordering_user?.includes(search) || o.reference_number?.includes(search);
     const matchStatus = !filterStatus || o.treatment_status === filterStatus;
     const matchName = !filterName || o.driver_name?.includes(filterName) || o.ordering_user?.includes(filterName);
     const matchCompany = !filterCompany || o.company_name?.includes(filterCompany);
-    const matchVehicle = !filterVehicle || o.vehicle_plate?.includes(filterVehicle);
+    const matchVehicle = !filterVehicle || o.vehicle_plate?.includes(filterVehicle) || internal.includes(filterVehicle);
     return matchSearch && matchStatus && matchName && matchCompany && matchVehicle;
   });
 
