@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { History as HistoryIcon, Wrench, AlertTriangle, Car, FileText, RefreshCw, Filter, Search, ExternalLink } from 'lucide-react';
+import { History as HistoryIcon, Wrench, AlertTriangle, Car, FileText, RefreshCw, Filter, Search, ExternalLink, Upload } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyFilter, applyCompanyScope } from '@/hooks/useCompanyFilter';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 type EventType = 'fault' | 'accident' | 'handover' | 'service' | 'expense';
 
