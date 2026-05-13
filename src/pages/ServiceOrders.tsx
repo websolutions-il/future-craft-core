@@ -510,15 +510,15 @@ function ServiceOrderForm({ onDone, user, editData }: { onDone: () => void; user
   const [imageUrl, setImageUrl] = useState(editData?.images || '');
   const [loading, setLoading] = useState(false);
 
-  const [dbVehicles, setDbVehicles] = useState<{ license_plate: string; manufacturer: string; model: string }[]>([]);
+  const [dbVehicles, setDbVehicles] = useState<{ id: string; license_plate: string; manufacturer: string; model: string }[]>([]);
   const [dbDrivers, setDbDrivers] = useState<{ full_name: string; phone: string }[]>([]);
 
   useEffect(() => {
     Promise.all([
-      supabase.from('vehicles').select('license_plate, manufacturer, model'),
+      supabase.from('vehicles').select('id, license_plate, manufacturer, model'),
       supabase.from('drivers').select('full_name, phone'),
     ]).then(([v, d]) => {
-      if (v.data) setDbVehicles(v.data);
+      if (v.data) setDbVehicles(v.data as any);
       if (d.data) setDbDrivers(d.data);
     });
   }, []);
@@ -535,9 +535,11 @@ function ServiceOrderForm({ onDone, user, editData }: { onDone: () => void; user
   const handleSubmit = async () => {
     if (!isValid) return;
     setLoading(true);
-    const payload = {
+    const matchedVehicle = dbVehicles.find(v => v.license_plate === vehiclePlate);
+    const payload: any = {
       service_category: serviceCategory === 'אחר' ? otherCategory || 'אחר' : serviceCategory,
       description, vehicle_plate: vehiclePlate,
+      vehicle_id: matchedVehicle?.id || null,
       driver_name: driverName, driver_phone: driverPhone,
       vendor_name: vendorName, vendor_phone: vendorPhone,
       service_date: serviceDate || null, service_time: serviceTime,
