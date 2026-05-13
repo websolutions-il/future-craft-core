@@ -186,10 +186,15 @@ export default function HistoryPage() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="page-header flex items-center gap-3">
-        <HistoryIcon size={28} />
-        היסטוריה
-      </h1>
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="page-header flex items-center gap-3 mb-0">
+          <HistoryIcon size={28} />
+          היסטוריה
+        </h1>
+        <button onClick={() => setImportOpen(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/10 text-primary font-bold text-sm">
+          <Upload size={16} /> ייבוא Excel
+        </button>
+      </div>
 
       {/* Search */}
       <div className="relative mb-4">
