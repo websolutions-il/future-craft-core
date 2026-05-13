@@ -573,15 +573,15 @@ function FaultForm({ fault, onDone, onBack, user }: { fault: FaultRow | null; on
   const [imageUrls, setImageUrls] = useState<string[]>(parseImages(fault?.images || ''));
   const [loading, setLoading] = useState(false);
 
-  const [vehicles, setVehicles] = useState<{ license_plate: string; manufacturer: string; model: string }[]>([]);
+  const [vehicles, setVehicles] = useState<{ id: string; license_plate: string; manufacturer: string; model: string }[]>([]);
   const [drivers, setDrivers] = useState<{ full_name: string }[]>([]);
 
   useEffect(() => {
     Promise.all([
-      supabase.from('vehicles').select('license_plate, manufacturer, model'),
+      supabase.from('vehicles').select('id, license_plate, manufacturer, model'),
       supabase.from('drivers').select('full_name'),
     ]).then(([v, d]) => {
-      if (v.data) setVehicles(v.data);
+      if (v.data) setVehicles(v.data as any);
       if (d.data) setDrivers(d.data);
     });
   }, []);
@@ -592,8 +592,10 @@ function FaultForm({ fault, onDone, onBack, user }: { fault: FaultRow | null; on
   const handleSubmit = async () => {
     if (!isValid) return;
     setLoading(true);
-    const payload = {
+    const matchedVehicle = vehicles.find(v => v.license_plate === vehiclePlate);
+    const payload: any = {
       vehicle_plate: vehiclePlate,
+      vehicle_id: matchedVehicle?.id || null,
       driver_name: driverName,
       fault_type: faultType,
       description,
