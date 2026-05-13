@@ -468,13 +468,13 @@ export default function Faults() {
       {loading ? (
         <div className="text-center py-16">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">טוען מעקב רכב...</p>
+          <p className="text-muted-foreground">טוען...</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 card-elevated">
           <Wrench size={56} className="mx-auto mb-4 text-muted-foreground opacity-30" />
-          <p className="text-xl font-bold">אין מעקב רכב</p>
-          <p className="text-muted-foreground mt-2">לא נמצאו מעקב רכב התואמות לחיפוש</p>
+          <p className="text-xl font-bold">אין רשומות</p>
+          <p className="text-muted-foreground mt-2">לא נמצאו רשומות התואמות לחיפוש</p>
         </div>
       ) : (
         <div className="space-y-3">
