@@ -314,6 +314,14 @@ export default function VehicleTasks() {
                     <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground flex-wrap">
                       <Car size={14} />
                       <span className="font-medium">רכב {t.vehicle_plate}</span>
+                      {getInternal(t) && (
+                        <span className="font-medium text-primary">| פנימי {getInternal(t)}</span>
+                      )}
+                      {getVehicleId(t) && (
+                        <button onClick={() => navigate(`/vehicles?vehicleId=${getVehicleId(t)}`)} className="inline-flex items-center gap-1 text-primary hover:underline text-xs">
+                          <ExternalLink size={12} /> כרטיס רכב
+                        </button>
+                      )}
                       <span>•</span>
                       <span>{new Date(t.created_at).toLocaleDateString('he-IL')}</span>
                       {t.status !== 'resolved' && daysSinceCreated > 0 && (
