@@ -171,6 +171,8 @@ export default function Faults() {
   const { user } = useAuth();
   const companyFilter = useCompanyFilter();
   const [faults, setFaults] = useState<FaultRow[]>([]);
+  const [vehiclesMap, setVehiclesMap] = useState<Record<string, { id: string; internal_number: string }>>({});
+  const [vehiclesByPlate, setVehiclesByPlate] = useState<Record<string, { id: string; internal_number: string }>>({});
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterUrgency, setFilterUrgency] = useState('');
@@ -183,8 +185,21 @@ export default function Faults() {
 
   const loadFaults = async () => {
     setLoading(true);
-    const { data } = await applyCompanyScope(supabase.from('faults').select('*'), companyFilter).order('created_at', { ascending: false });
-    if (data) setFaults(data as FaultRow[]);
+    const [fRes, vRes] = await Promise.all([
+      applyCompanyScope(supabase.from('faults').select('*'), companyFilter).order('created_at', { ascending: false }),
+      applyCompanyScope(supabase.from('vehicles').select('id, license_plate, internal_number'), companyFilter),
+    ]);
+    if (fRes.data) setFaults(fRes.data as FaultRow[]);
+    if (vRes.data) {
+      const byId: Record<string, { id: string; internal_number: string }> = {};
+      const byPlate: Record<string, { id: string; internal_number: string }> = {};
+      (vRes.data as any[]).forEach(v => {
+        byId[v.id] = { id: v.id, internal_number: v.internal_number || '' };
+        if (v.license_plate) byPlate[v.license_plate] = { id: v.id, internal_number: v.internal_number || '' };
+      });
+      setVehiclesMap(byId);
+      setVehiclesByPlate(byPlate);
+    }
     setLoading(false);
   };
 
@@ -192,8 +207,12 @@ export default function Faults() {
 
   const isManager = user?.role === 'fleet_manager' || user?.role === 'super_admin';
 
+  const getInternal = (f: FaultRow) => ((f as any).vehicle_id && vehiclesMap[(f as any).vehicle_id]?.internal_number) || vehiclesByPlate[f.vehicle_plate]?.internal_number || '';
+  const getVehicleId = (f: FaultRow) => (f as any).vehicle_id || vehiclesByPlate[f.vehicle_plate]?.id || null;
+
   const filtered = faults.filter(f => {
-    const matchSearch = !search || f.driver_name?.includes(search) || f.vehicle_plate?.includes(search) || f.fault_type?.includes(search) || f.description?.includes(search) || f.serial_id?.includes(search);
+    const internal = getInternal(f);
+    const matchSearch = !search || f.driver_name?.includes(search) || f.vehicle_plate?.includes(search) || internal.includes(search) || f.fault_type?.includes(search) || f.description?.includes(search) || f.serial_id?.includes(search);
     const matchStatus = !filterStatus || f.status === filterStatus;
     const matchUrgency = !filterUrgency || f.urgency === filterUrgency;
     // Quick filter
