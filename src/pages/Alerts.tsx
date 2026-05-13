@@ -30,7 +30,7 @@ const categoryLabels: Record<AlertCategory, string> = {
   comprehensive_insurance: 'ביטוח מקיף',
   license: 'רישיון נהיגה',
   fault: 'תקלה דחופה',
-  service_order: 'הזמנת שירות',
+  service_order: 'שירותים ותחזוקה',
   work_assignment: 'סידור עבודה',
 };
 
@@ -92,7 +92,7 @@ const ACTION_LABELS: Record<string, string> = {
 
 const ENTITY_LABELS: Record<string, string> = {
   vehicle: 'רכב', driver: 'נהג', fault: 'תקלה', accident: 'תאונה',
-  work_assignment: 'סידור עבודה', service_order: 'הזמנת שירות',
+  work_assignment: 'סידור עבודה', service_order: 'שירותים ותחזוקה',
   approval_request: 'בקשת אישור', handover: 'חילופי רכב',
 };
 
@@ -230,7 +230,7 @@ export default function Alerts() {
           id: `so-${so.id}`,
           category: 'service_order',
           severity,
-          title: isUrgent ? `הזמנת שירות דחופה` : `הזמנת שירות ${so.treatment_status === 'new' ? 'חדשה' : 'בטיפול'}`,
+          title: isUrgent ? `קריאת שירות ותחזוקה דחופה` : `שירותים ותחזוקה ${so.treatment_status === 'new' ? 'חדשה' : 'בטיפול'}`,
           subtitle: `${so.vehicle_plate || 'ללא רכב'} • ${so.driver_name || 'ללא נהג'}`,
           daysLeft: null,
           date: so.created_at ? new Date(so.created_at).toISOString().split('T')[0] : null,
