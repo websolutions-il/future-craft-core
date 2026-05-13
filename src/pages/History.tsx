@@ -32,15 +32,89 @@ const typeConfig: Record<EventType, { label: string; icon: typeof Wrench; colorC
 
 export default function HistoryPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const companyFilter = useCompanyFilter();
   const [events, setEvents] = useState<HistoryEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<EventType | ''>('');
+  const [importOpen, setImportOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importVehicleId, setImportVehicleId] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [vehicles, setVehicles] = useState<Array<{ id: string; license_plate: string; internal_number: string; company_name: string }>>([]);
 
   useEffect(() => {
     loadHistory();
+    loadVehicles();
   }, []);
+
+  const loadVehicles = async () => {
+    const { data } = await applyCompanyScope(supabase.from('vehicles').select('id, license_plate, internal_number, company_name'), companyFilter).order('license_plate');
+    if (data) setVehicles(data as any);
+  };
+
+  const handleImport = async () => {
+    if (!importFile || !importVehicleId) { toast.error('בחר רכב וקובץ'); return; }
+    const vehicle = vehicles.find(v => v.id === importVehicleId);
+    if (!vehicle) { toast.error('רכב לא נמצא'); return; }
+    setImporting(true);
+    try {
+      const buf = await importFile.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array', cellDates: true });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows: any[] = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      if (rows.length === 0) { toast.error('הקובץ ריק'); setImporting(false); return; }
+
+      const pick = (row: any, keys: string[]) => {
+        for (const k of keys) {
+          for (const rk of Object.keys(row)) {
+            if (rk.toString().toLowerCase().trim() === k.toLowerCase()) return row[rk];
+          }
+        }
+        return '';
+      };
+
+      const records = rows.map(r => {
+        const dateRaw = pick(r, ['תאריך', 'date', 'Date']);
+        let dateIso = new Date().toISOString();
+        if (dateRaw instanceof Date) dateIso = dateRaw.toISOString();
+        else if (dateRaw) {
+          const d = new Date(dateRaw);
+          if (!isNaN(d.getTime())) dateIso = d.toISOString();
+        }
+        return {
+          service_category: String(pick(r, ['קטגוריה', 'category', 'סוג']) || 'שירות'),
+          description: String(pick(r, ['תיאור', 'description', 'פירוט']) || ''),
+          vendor_name: String(pick(r, ['ספק', 'vendor', 'מוסך']) || ''),
+          notes: String(pick(r, ['הערות', 'notes', 'amount', 'סכום']) || ''),
+          service_date: dateIso.slice(0, 10),
+          date_time: dateIso,
+          vehicle_plate: vehicle.license_plate,
+          vehicle_id: vehicle.id,
+          company_name: vehicle.company_name,
+          treatment_status: 'completed',
+          imported: true,
+          imported_source: importFile.name,
+          imported_at: new Date().toISOString(),
+          created_by: user?.id,
+        } as any;
+      });
+
+      const { error } = await (supabase.from('service_orders') as any).insert(records);
+      if (error) { toast.error('שגיאה בייבוא: ' + error.message); }
+      else {
+        toast.success(`יובאו ${records.length} רשומות`);
+        setImportOpen(false); setImportFile(null); setImportVehicleId('');
+        loadHistory();
+      }
+    } catch (e: any) {
+      toast.error('שגיאה בקריאת הקובץ');
+    } finally {
+      setImporting(false);
+    }
+  };
+
 
   const loadHistory = async () => {
     setLoading(true);
