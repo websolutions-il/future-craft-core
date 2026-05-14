@@ -157,7 +157,8 @@ export default function RoutesPage() {
           </div>
           {r.vehicle_type_pricing?.length > 0 && (
             <div className="mt-4">
-              <h3 className="font-bold text-lg mb-2">תמחור לפי סוג רכב</h3>
+              <h3 className="font-bold text-lg mb-1">תמחור לפי סוג רכב</h3>
+              <p className="text-xs text-muted-foreground mb-2">המחירים האלה דורסים את סכום ברירת המחדל של המסלול</p>
               <div className="bg-muted rounded-xl p-3 space-y-2">
                 {r.vehicle_type_pricing.map((p, i) => (
                   <div key={i} className="flex items-center justify-between">
