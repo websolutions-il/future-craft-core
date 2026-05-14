@@ -375,7 +375,7 @@ function RouteForm({ route, onDone, onBack, user }: { route: RouteRow | null; on
   }, []);
 
   const toggleDay = (day: string) => setSelectedDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
-  const isValid = name && origin && destination;
+  const isValid = (name || routeNumber) && origin && destination;
   const inputClass = "w-full p-4 text-lg rounded-xl border-2 border-input bg-background focus:border-primary focus:outline-none";
 
   const addPricingRow = () => {
