@@ -393,8 +393,9 @@ function RouteForm({ route, onDone, onBack, user }: { route: RouteRow | null; on
   const handleSubmit = async () => {
     if (!isValid) return;
     setLoading(true);
+    const finalName = name?.trim() || routeNumber?.trim() || '';
     const payload: any = {
-      name, origin, destination,
+      name: finalName, origin, destination,
       route_number: routeNumber,
       stops: stopsText ? stopsText.split(',').map(s => s.trim()) : [],
       distance_km: parseFloat(distanceKm) || 0,
