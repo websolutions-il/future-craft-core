@@ -55,6 +55,7 @@ function isDatePassed(dateStr: string | null): boolean {
 const serviceTypes: Record<string, string> = { regular: 'קו קבוע', charter: 'שכר', school: 'הסעות תלמידים', tourism: 'תיירות', delivery: 'משלוחים', other: 'אחר' };
 const daysOptions = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 const vehicleTypeOptions = [
+  { value: 'all', label: 'כל סוגי הרכב' },
   { value: 'private', label: 'רכב פרטי' },
   { value: 'commercial', label: 'רכב מסחרי' },
   { value: 'taxi', label: 'מונית' },
@@ -62,6 +63,7 @@ const vehicleTypeOptions = [
   { value: 'van_14', label: 'רכב 14 מקומות' },
   { value: 'minibus', label: 'מיניבוס' },
   { value: 'bus', label: 'אוטובוס' },
+  { value: 'lift', label: 'מעלון' },
   { value: 'other', label: 'אחר' },
 ];
 
