@@ -428,7 +428,7 @@ function RouteForm({ route, onDone, onBack, user }: { route: RouteRow | null; on
       <h1 className="text-2xl font-bold mb-6">{isEdit ? 'עריכת מסלול' : 'מסלול חדש'}</h1>
       <div className="space-y-5">
         <div className="grid grid-cols-2 gap-4">
-          <div><label className="block text-lg font-medium mb-2">שם מסלול *</label><input value={name} onChange={e => setName(e.target.value)} className={inputClass} /></div>
+          <div><label className="block text-lg font-medium mb-2">שם מסלול</label><input value={name} onChange={e => setName(e.target.value)} className={inputClass} placeholder="אם ריק - יועתק מספר המסלול" /></div>
           <div><label className="block text-lg font-medium mb-2">מספר מסלול</label><input value={routeNumber} onChange={e => setRouteNumber(e.target.value)} className={inputClass} placeholder="לדוגמה: 101" /></div>
         </div>
         <div className="grid grid-cols-2 gap-4">
