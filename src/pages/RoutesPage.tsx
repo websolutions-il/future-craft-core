@@ -518,12 +518,13 @@ function RouteForm({ route, onDone, onBack, user }: { route: RouteRow | null; on
 
         {/* Vehicle Type Pricing */}
         <div className="border-2 border-input rounded-xl p-4">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-1">
             <label className="text-lg font-medium">תמחור לפי סוג רכב</label>
             <button type="button" onClick={addPricingRow} className="flex items-center gap-1 px-3 py-2 rounded-xl bg-primary/10 text-primary text-sm font-bold min-h-[40px]">
               <Plus size={16} /> הוסף שורה
             </button>
           </div>
+          <p className="text-xs text-muted-foreground mb-3">⚠️ מחיר שמוגדר כאן דורס את "סכום למסלול" (ברירת המחדל) עבור אותו סוג רכב</p>
           {vehicleTypePricing.length === 0 && <p className="text-muted-foreground text-sm">לא הוגדר תמחור שונה לפי סוג רכב</p>}
           <div className="space-y-3">
             {vehicleTypePricing.map((p, i) => (
