@@ -82,6 +82,13 @@ const CompletedTasks = () => {
   const completedTasks = tasks
     .filter(t => t.status === 'completed')
     .sort((a, b) => b.task_number - a.task_number);
+  const recentTasks = [...tasks]
+    .sort((a, b) => {
+      const aDate = a.completed_at || a.edited_at || a.created_at;
+      const bDate = b.completed_at || b.edited_at || b.created_at;
+      return new Date(bDate).getTime() - new Date(aDate).getTime();
+    })
+    .slice(0, 10);
 
   const handleAddTask = async () => {
     if (!newSummary.trim()) {
