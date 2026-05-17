@@ -511,8 +511,11 @@ function ManualEventDialog({ open, onClose, vehicle, onSaved, userId }: {
             className="w-full p-2.5 rounded-xl border-2 border-input bg-background" rows={2} />
 
           <div className="grid grid-cols-2 gap-2">
-            <input value={driver} onChange={e => setDriver(e.target.value)} placeholder="נהג"
-              className="p-2.5 rounded-xl border-2 border-input bg-background" />
+            <select value={driver} onChange={e => setDriver(e.target.value)}
+              className="p-2.5 rounded-xl border-2 border-input bg-background">
+              <option value="">בחר נהג</option>
+              {driversList.map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
             <input value={vendor} onChange={e => setVendor(e.target.value)} placeholder="ספק"
               className="p-2.5 rounded-xl border-2 border-input bg-background" />
             <input value={status} onChange={e => setStatus(e.target.value)} placeholder="סטטוס"
