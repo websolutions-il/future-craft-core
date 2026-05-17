@@ -182,6 +182,7 @@ export default function VehicleTasks() {
 
   const statusCounts = {
     all: tasks.length,
+    recent: Math.min(10, tasks.length),
     open: tasks.filter(t => t.status === 'open').length,
     in_progress: tasks.filter(t => t.status === 'in_progress').length,
     resolved: tasks.filter(t => t.status === 'resolved').length,
