@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import CallCustomerButton from '@/components/voice/CallCustomerButton';
 import InfoGapTracker from '@/components/InfoGapTracker';
+import VehicleFilePanel from '@/components/VehicleFilePanel';
 
 interface GovVehicleData {
   mispar_rechev: number;
@@ -628,6 +629,9 @@ function VehicleDetail({ vehicle: v, drivers, isManager, onBack, onEdit, onDelet
           <p className="text-muted-foreground">{v.notes}</p>
         </div>
       )}
+
+      {/* Vehicle File / History */}
+      <VehicleFilePanel vehicle={v as any} />
 
       {/* Archive / Delete */}
       {isManager && (
