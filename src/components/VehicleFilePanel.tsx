@@ -368,6 +368,17 @@ function ManualEventDialog({ open, onClose, vehicle, onSaved, userId }: {
   const [file, setFile] = useState<File | null>(null);
   const [createAlert, setCreateAlert] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [driversList, setDriversList] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    let q = supabase.from('drivers').select('full_name, company_name');
+    if (vehicle.company_name) q = q.eq('company_name', vehicle.company_name);
+    q.then(({ data }) => {
+      const names = Array.from(new Set((data || []).map((d: any) => d.full_name).filter(Boolean)));
+      setDriversList(names);
+    });
+  }, [open, vehicle.company_name]);
 
   function reset() {
     setType('service'); setDate(new Date().toISOString().slice(0, 10));
