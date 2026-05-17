@@ -223,6 +223,7 @@ export default function VehicleTasks() {
       <div className="flex gap-2 mb-3 flex-wrap">
         {([
           { key: 'all', label: 'הכל', emoji: '📋' },
+          { key: 'recent', label: 'אחרונות', emoji: '🕒' },
           { key: 'open', label: 'פתוחים', emoji: '🔴' },
           { key: 'in_progress', label: 'בטיפול', emoji: '🟡' },
           { key: 'resolved', label: 'טופלו', emoji: '🟢' },
