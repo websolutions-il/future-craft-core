@@ -630,6 +630,9 @@ function VehicleDetail({ vehicle: v, drivers, isManager, onBack, onEdit, onDelet
         </div>
       )}
 
+      {/* Vehicle File / History */}
+      <VehicleFilePanel vehicle={v as any} />
+
       {/* Archive / Delete */}
       {isManager && (
         <div className="space-y-3 mt-4">
