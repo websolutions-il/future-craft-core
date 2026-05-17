@@ -306,8 +306,11 @@ const CompletedTasks = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="completed" className="w-full">
+      <Tabs defaultValue="recent" className="w-full">
         <TabsList className="mb-4">
+          <TabsTrigger value="recent" className="gap-1.5">
+            🕒 אחרונות ({recentTasks.length})
+          </TabsTrigger>
           <TabsTrigger value="pending" className="gap-1.5">
             <Clock size={14} />
             משימות לביצוע ({pendingTasks.length})
@@ -321,6 +324,10 @@ const CompletedTasks = () => {
             הוספת משימה
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="recent">
+          <TaskTable items={recentTasks} showComplete={true} />
+        </TabsContent>
 
         <TabsContent value="pending">
           <TaskTable items={pendingTasks} showComplete={true} />
