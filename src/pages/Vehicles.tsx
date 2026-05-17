@@ -329,12 +329,15 @@ export default function Vehicles() {
                     <div className="flex-1 min-w-0">
                       <p className="text-xl font-bold truncate">{v.manufacturer} {v.model}</p>
                       <p className="text-muted-foreground text-lg truncate" dir="rtl">
-                        <span className="inline-flex max-w-full items-center gap-1" dir="rtl">
-                          {v.internal_number && <><span>{v.internal_number}</span><span>|</span></>}
-                          <span>{v.license_plate}</span>
-                          <span>•</span>
-                          <span>{v.year}</span>
-                        </span>
+                        {v.internal_number && (
+                          <>
+                            <span className="font-bold text-primary">מס' פנימי {v.internal_number}</span>
+                            <span className="mx-2">|</span>
+                          </>
+                        )}
+                        <span>{v.license_plate}</span>
+                        <span className="mx-2">•</span>
+                        <span>{v.year}</span>
                       </p>
                       <p className="text-sm text-muted-foreground truncate">נהג: {getDriverName(v.assigned_driver_id)}</p>
                     </div>
